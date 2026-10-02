@@ -161,7 +161,7 @@ supabase functions deploy delete-account
 
 **https://proexcellencenetwork-art.github.io/mojtama-al-saytara/**
 
-اختر مرة واحدة في GitHub **Settings → Pages → Build and deployment → Source: GitHub Actions**. كل دفع إلى `main` يبني `dist` وينشره؛ يضبط الـ workflow مسار Vite الأساسي ويمرر متغيرات Supabase العامة إن أضفتها. استخدم `HashRouter` للصفحات الداخلية.
+يبني workflow في GitHub Actions الموقع إلى `dist` بمسار `/mojtama-al-saytara/`، ثم يرفع الـ artifact ويحدّث كذلك نسخة ثابتة مولّدة في جذر `main`. هذه النسخة الجذرية مطلوبة لأن إعداد المستودع الحالي هو **Deploy from a branch → `main` / root**؛ وهي تمنع GitHub Pages من عرض ملفات React/Vite الخام. لا تعدّل `index.html` أو `assets/` في الجذر يدوياً؛ مصدر HTML هو `src/index.html`، ومصدر الصور والمسارات العامة هو `public/`. يمرر الـ workflow متغيرات Supabase العامة عند إضافتها. يعمل `HashRouter` للصفحات الداخلية سواء كان مصدر Pages هو الفرع أو GitHub Actions.
 
 ## ما يلزمك أنت لإكمال الربط
 
