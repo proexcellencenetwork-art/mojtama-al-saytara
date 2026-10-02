@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
-import type { RealtimeChannel } from '@supabase/supabase-js'
-import { HashRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import type { RealtimeChannel, User } from '@supabase/supabase-js'
+import { HashRouter, Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
 import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, X } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
+import type { Role } from './appTypes'
+import { LoginPage, ResetPasswordPage } from './components/AuthPages'
+import { LiveDashboardPage } from './components/LiveDashboardPage'
+import { LiveFeedPage } from './components/LiveFeedPage'
+import { LivePublicPage } from './components/LivePublicPage'
 import './App.css'
 
-type Role = 'member' | 'verified' | 'coach' | 'moderator' | 'manager'
 const roleNames: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير' }
 const demoPosts = [
   { id: 1, name: 'د. ليان الحربي', title: 'طبيبة أسرة · الرياض', role: 'verified' as Role, time: 'منذ ٣ ساعات', text: 'في نهاية المناوبة، أحياناً يكون ألطف قرار مهني هو أن نمنح أنفسنا استراحة قصيرة قبل أن نجيب عن كل شيء. ما الطقس الصغير الذي يساعدكم على استعادة تركيزكم؟', tags: ['التوازن المهني', 'العناية بالذات'], likes: 28, comments: 6, avatar: 'ل' },
@@ -25,9 +29,9 @@ function Verified({ role }: { role: Role }) { return role !== 'member' ? <span c
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
 function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مجتمع مهني يضع الإنسان في قلب التطور.</span><div className="footer-links"><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div></footer> }
 
-function Header({ demo, role, toggleTheme, dark }: { demo: boolean; role: Role; toggleTheme: () => void; dark: boolean }) {
+function Header({ demo, authenticated, displayName, role, toggleTheme, dark }: { demo: boolean; authenticated: boolean; displayName: string; role: Role; toggleTheme: () => void; dark: boolean }) {
   const [open, setOpen] = useState(false)
-  return <header className="topbar"><div className="topbar-inner wrap"><Brand/><nav className={`public-nav ${open ? 'nav-open' : ''}`}><NavLink to="/about">عن المجتمع</NavLink><NavLink to="/coaching">الكوتشنج</NavLink><NavLink to="/coaches">الكوتشات</NavLink><NavLink to="/articles">المقالات</NavLink><NavLink to="/events">الفعاليات</NavLink></nav><div className="header-actions"><button className="icon-btn theme-toggle" aria-label="تبديل الوضع" onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>{demo ? <Link className="user-chip" to="/profile"><Avatar letter="ن" size="sm"/><span>نورة · {roleNames[role]}</span><ChevronDown size={14}/></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}<button className="icon-btn menu-btn" onClick={() => setOpen(!open)} aria-label="القائمة">{open ? <X size={20}/> : <Menu size={20}/>}</button></div></div></header>
+  return <header className="topbar"><div className="topbar-inner wrap"><Brand/><nav className={`public-nav ${open ? 'nav-open' : ''}`}><NavLink to="/about">عن المجتمع</NavLink><NavLink to="/coaching">الكوتشنج</NavLink><NavLink to="/coaches">الكوتشات</NavLink><NavLink to="/articles">المقالات</NavLink><NavLink to="/events">الفعاليات</NavLink></nav><div className="header-actions"><button className="icon-btn theme-toggle" aria-label="تبديل الوضع" onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>{authenticated ? <Link className="user-chip" to="/profile"><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span><ChevronDown size={14}/></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}<button className="icon-btn menu-btn" onClick={() => setOpen(!open)} aria-label="القائمة">{open ? <X size={20}/> : <Menu size={20}/>}</button></div></div></header>
 }
 function PublicHome() { return <><section className="hero wrap"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot"/> مساحة مهنية للقطاع الصحي</div><h1>مسارك المهني،<br/><em>بإيقاعك أنت.</em></h1><p className="hero-lead">مجتمع السيطرة مساحة آمنة للمهنيين الصحيين كي يتطوروا، يتواصلوا، ويصنعوا توازناً مهنياً يشبههم.</p><div className="hero-actions"><Link className="btn btn-primary" to="/register">اكتشف مساحتك <ArrowLeft size={17}/></Link><Link className="btn btn-quiet" to="/coaching">تعرّف على الكوتشنج <ArrowUpLeft size={17}/></Link></div><div className="hero-proof"><div className="avatar-stack"><Avatar letter="ل" size="sm"/><Avatar letter="ع" tone={1} size="sm"/><Avatar letter="م" tone={2} size="sm"/><Avatar letter="ر" tone={3} size="sm"/></div><span><b>مجتمع يبدأ بالإنصات</b><small>لكل مرحلة من رحلتك المهنية</small></span></div></div><div className="hero-art" aria-label="تصميم تجريدي يرمز إلى التواصل والدعم المهني"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><HeartHandshake size={65} strokeWidth={1.2}/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Sparkles size={16}/></span><span><b>خطوة صغيرة</b><small>تصنع فرقاً مستمراً</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>خبرة موثّقة</b><small>من أهل الاختصاص</small></span></div><div className="art-ring-label">تطوّر · تواصل · توازن</div></div></section><section className="trust-strip"><div className="wrap trust-inner"><span>مساحة تجمع بين</span><b><BriefcaseMedical size={17}/> الخبرة المهنية</b><i/><b><Heart size={17}/> الرفاه والتوازن</b><i/><b><Shield size={17}/> الخصوصية والاحترام</b></div></section><section className="section wrap"><div className="section-heading"><div><span className="eyebrow">مساحتك، بطريقتك</span><h2>ما تحتاجه في رحلتك المهنية</h2></div><Link to="/about" className="text-link">اكتشف المجتمع <ArrowLeft size={15}/></Link></div><div className="feature-grid"><article className="feature-card feature-main"><span className="feature-icon"><HeartHandshake/></span><span className="feature-count">01</span><h3>كوتشنج فردي</h3><p>مساحة حوار خاصة تساعدك على رؤية خياراتك المهنية بوضوح، وبناء خطوات تناسبك.</p><Link to="/coaching" className="card-link">كيف يعمل الكوتشنج؟ <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon feature-icon-blue"><Users/></span><span className="feature-count">02</span><h3>زمالة حقيقية</h3><p>تواصل مع مهنيين يشاركونك المجال، التحديات والطموح.</p><Link to="/register" className="card-link">ابدأ التواصل <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon feature-icon-gold"><BadgeCheck/></span><span className="feature-count">03</span><h3>خبرة موثّقة</h3><p>تعرّف على الكوتشات والمهنيين بعد مراجعة بياناتهم المهنية.</p><Link to="/coaches" className="card-link">تعرّف على الكوتشات <ArrowLeft size={14}/></Link></article></div></section><section className="quote-section"><div className="wrap quote-inner"><span className="quote-mark">“</span><div><p>حين نمنح أنفسنا مساحة للتفكير، نصبح أقرب إلى الطريق الذي نختاره بوعي.</p><small>مجتمع السيطرة · مساحتك المهنية الآمنة</small></div><Link to="/charter" className="btn btn-outline">ميثاقنا المهني <ArrowLeft size={15}/></Link></div></section><section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>أنت أكثر من مسماك المهني.</h2><p>انضم إلى مساحة ترى خبرتك، وتحترم حدودك، وتدعم نموّك.</p></div><Link className="btn btn-primary" to="/register">انضم إلى مجتمع السيطرة <ArrowLeft size={16}/></Link></section><Footer/></> }
 
@@ -42,30 +46,32 @@ const publicCopy: Record<string, { title: string; eyebrow: string; intro: string
   terms: { eyebrow: 'الشروط', title: 'مساحة مهنية تقوم على الوضوح.', intro: 'باستخدام المجتمع، توافق على احترام الأعضاء وخصوصيتهم، وعدم نشر محتوى مضلل أو مسيء، والامتناع عن مشاركة أي معلومات أو صور تخص المرضى.', points: [['استخدم المنصة بمسؤولية', 'لا تشارك بيانات دخولك أو بيانات الغير.'], ['لا محتوى للمرضى', 'يُمنع نشر معلومات أو صور المرضى منعاً باتاً.'], ['إشراف عادل', 'يحق لفريق الإشراف مراجعة البلاغات واتخاذ إجراء.']] },
   charter: { eyebrow: 'ميثاق السلوك', title: 'الاحترام ليس خياراً إضافياً.', intro: 'نحافظ معاً على مساحة مهنية تحترم الإنسان والخصوصية وتفسح المجال للاختلاف.', points: [['احترام متبادل', 'نختلف في الرأي دون إساءة أو تحرش.'], ['سرية مهنية', 'لا تعيد نشر محتوى الأعضاء خارج سياقه.'], ['لا إزعاج ولا ترويج', 'لا رسائل مزعجة، ولا ادعاءات أو ترويج مضلل.']] },
 }
-function PublicPage({ page }: { page: keyof typeof publicCopy }) { const item = publicCopy[page]; return <><main className="public-page wrap"><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div></main><Footer/></> }
-
-function LoginPage({ onDemo, onSignedIn }: { onDemo: () => void; onSignedIn: () => void }) {
-  const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [message, setMessage] = useState('')
-  const location = useLocation()
-  const mode = location.pathname === '/register' ? 'register' : 'login'
-  const go = useNavigate()
-  async function submit(e: React.FormEvent) { e.preventDefault(); if (!isSupabaseConfigured || !supabase) { setMessage('أضف إعدادات Supabase في ملف .env لتفعيل الحسابات الحقيقية، أو استخدم وضع التجربة.'); return }
-    const result = mode === 'login' ? await supabase.auth.signInWithPassword({ email, password }) : await supabase.auth.signUp({ email, password })
-    if (result.error) { setMessage(result.error.message); return } setMessage(mode === 'login' ? 'تم تسجيل الدخول.' : 'تحقق من بريدك الإلكتروني لإكمال التسجيل.'); if (mode === 'login') { onSignedIn(); go('/feed') }
-  }
-  return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">{mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'}</h1><p>{mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div><form onSubmit={submit} className="auth-form"><label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@example.com" dir="ltr"/></label><label>كلمة المرور<input type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} placeholder="٨ أحرف على الأقل" dir="ltr"/></label><button className="btn btn-primary btn-full" type="submit">{mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'} <ArrowLeft size={16}/></button></form>{message && <div className="inline-message">{message}</div>}<div className="auth-separator"><span>أو</span></div><button className="btn btn-outline btn-full" onClick={()=>{onDemo(); go('/feed')}}><Sparkles size={16}/> استكشف نسخة التجربة</button><p className="auth-switch">{mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب؟'} <button onClick={()=>{setMessage('');go(mode==='login'?'/register':'/login')}}>{mode === 'login' ? 'أنشئ حساباً' : 'سجّل الدخول'}</button></p><small className="auth-privacy"><LockKeyhole size={13}/> لن نطلب بيانات صحية حساسة.</small></div></main>
+function PublicPage({ page }: { page: keyof typeof publicCopy }) {
+  if (isSupabaseConfigured && supabase && ['coaches', 'articles', 'events'].includes(page)) return <LivePublicPage page={page} />
+  const item = publicCopy[page]
+  return <><main className="public-page wrap"><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div></main><Footer/></>
 }
+
 
 function PostCard({ post, role }: { post: typeof demoPosts[number]; role: Role }) {
   const [liked, setLiked] = useState(false), [saved, setSaved] = useState(false), [showComment, setShowComment] = useState(false), [comment, setComment] = useState(''), [count, setCount] = useState(post.comments), [reported, setReported] = useState(false)
   return <article className="post-card"><div className="post-head"><Avatar letter={post.avatar} tone={post.id} size="lg"/><div className="post-author"><div><b>{post.name}</b><Verified role={post.role}/></div><span>{post.title}</span><small>{post.time} · <span className="globe">◉</span></small></div><button className="icon-btn" aria-label="خيارات المنشور" onClick={()=>setReported(true)}><MoreHorizontal size={20}/></button></div><p className="post-text">{post.text}</p><div className="post-tags">{post.tags.map(t=><span key={t}>#{t}</span>)}</div>{reported && <div className="inline-message">تم تسجيل البلاغ للمراجعة في نسخة التجربة.</div>}<div className="post-stats"><span><span className="tiny-heart">♥</span> {post.likes + (liked ? 1 : 0)} إعجاب</span><button onClick={()=>setShowComment(!showComment)}>{count} تعليقات</button></div><div className="post-actions"><button className={liked?'active':''} onClick={()=>setLiked(!liked)}><Heart size={17}/> إعجاب</button><button onClick={()=>setShowComment(!showComment)}><MessageCircle size={17}/> تعليق</button><button onClick={()=>navigator.clipboard?.writeText(window.location.href)}><Send size={16}/> مشاركة</button><button className={saved?'active':''} onClick={()=>setSaved(!saved)} aria-label="حفظ"><Bookmark size={17}/> حفظ</button></div>{showComment && <form className="comment-form" onSubmit={e=>{e.preventDefault();if(comment.trim()){setCount(count+1);setComment('')}}}><input value={comment} onChange={e=>setComment(e.target.value)} placeholder="اكتب تعليقاً مهنياً..."/><button type="submit" disabled={!comment.trim()}><Send size={16}/></button></form>}<div className="patient-warning"><ShieldCheck size={14}/> تذكير: لا تشارك معلومات أو صوراً تخص المرضى.</div>{role==='moderator' || role==='manager' ? <button className="mod-inline" onClick={()=>setReported(true)}><Flag size={13}/> أدوات مراجعة</button> : null}</article>
 }
 function SideCard({ role }: { role: Role }) { return <aside className="feed-aside"><div className="profile-mini"><div className="mini-cover"/><Avatar letter="ن" size="xl"/><b>نورة العبدالله <Verified role={role}/></b><span>ممرضة · صحة المجتمع</span><Link to="/profile" className="mini-link">عرض ملفك الشخصي</Link><div className="mini-stats"><div><b>١٢</b><small>اتصالاً</small></div><div><b>٤</b><small>اهتمامات</small></div></div></div><div className="aside-box"><div className="aside-title"><span>مساحات مقترحة</span><Link to="/groups">عرض الكل</Link></div><Link className="suggestion" to="/groups"><span className="group-icon">◈</span><span><b>توازن الممارس الصحي</b><small>١٬٢٤٠ عضواً</small></span><Plus size={16}/></Link><Link className="suggestion" to="/groups"><span className="group-icon aqua">✳</span><span><b>بدايات مهنية</b><small>٨٣٦ عضواً</small></span><Plus size={16}/></Link></div><div className="aside-disclaimer"><Shield size={16}/><p>مساحة للكوتشنج المهني والتواصل، وليست بديلاً عن الرعاية الطبية أو النفسية.</p></div></aside> }
-function FeedPage({ role }: { role: Role }) { const [posts, setPosts] = useState(demoPosts), [text, setText] = useState(''), [notice, setNotice] = useState(false), [filter, setFilter] = useState('الأحدث')
+function DemoFeedPage({ role }: { role: Role }) { const [posts, setPosts] = useState(demoPosts), [text, setText] = useState(''), [notice, setNotice] = useState(false), [filter, setFilter] = useState('الأحدث')
   const canPost = ['verified','coach','moderator','manager'].includes(role)
   return <main className="app-main wrap"><div className="feed-top"><div><span className="eyebrow">مساحتك المهنية</span><h1>الخلاصة</h1></div><div className="feed-search"><Search size={17}/><input placeholder="ابحث عن أشخاص أو موضوعات"/><kbd>/</kbd></div></div><div className="feed-layout"><SideCard role={role}/><section className="feed-stream"><div className="feed-tabs"><button className={filter==='الأحدث'?'selected':''} onClick={()=>setFilter('الأحدث')}>الأحدث</button><button className={filter==='المتابَعون'?'selected':''} onClick={()=>setFilter('المتابَعون')}>المتابَعون</button><span className="tab-note"><Activity size={14}/> مساحة مهنية هادئة</span></div><div className="composer"><div className="composer-top"><Avatar letter="ن"/><button onClick={()=>{if(!canPost)setNotice(true)}} className="composer-input">{canPost ? 'ما الفكرة المهنية التي تود مشاركتها؟' : 'اكتب منشوراً مهنياً — متاح للأعضاء الموثّقين'}</button></div>{!canPost && notice ? <div className="inline-message">ميزة النشر متاحة للمهنيين الموثّقين. يمكنك التقدم بطلب التوثيق من ملفك.</div> : null}<div className="composer-bottom"><span className="patient-warning compact"><Shield size={14}/> لا تنشر معلومات أو صور مرضى</span>{canPost ? <button className="btn btn-primary btn-small" onClick={()=>setNotice(true)}><Plus size={15}/> اكتب منشوراً</button> : <Link to="/verification" className="text-link">طلب التوثيق <ArrowLeft size={14}/></Link>}</div>{notice && canPost && <form className="composer-expanded" onSubmit={e=>{e.preventDefault();if(text.trim()){setPosts([{id:Date.now(),name:'نورة العبدالله',title:'ممرضة · صحة المجتمع',role, time:'الآن',text,tags:['مجتمع السيطرة'],likes:0,comments:0,avatar:'ن'},...posts]);setText('');setNotice(false)}}}><textarea value={text} onChange={e=>setText(e.target.value)} placeholder="شارك فكرة مهنية عامة، من دون معلومات أو صور تخص المرضى."/><button className="btn btn-primary btn-small" disabled={!text.trim()}>نشر</button></form>}</div>{posts.map(p=><PostCard key={p.id} post={p} role={role}/>)}</section><aside className="feed-right"><div className="trending-box"><span className="eyebrow">في مجتمعنا</span><h3>موضوعات للنقاش</h3>{[['#تطوير_مهني','١٢٤ مشاركة'],['#التوازن_الحياتي','٨٦ مشاركة'],['#تمريض','٧٢ مشاركة'],['#إدارة_الضغط','٥٨ مشاركة']].map(([a,b])=><Link to="/feed" className="trend" key={a}><b>{a}</b><small>{b}</small></Link>)}<Link to="/groups" className="text-link">اكتشف المزيد <ArrowLeft size={14}/></Link></div><div className="event-teaser"><CalendarDays size={20}/><span><b>لقاء هذا الأسبوع</b><small>جلسة وضوح المسار المهني</small></span><Link to="/events">سجّل</Link></div></aside></div></main>
 }
-function DashboardPage({ page, role, setRole, demoMode }: { page: string; role: Role; setRole: (role:Role)=>void; demoMode: boolean }) {
+function FeedPage({ role, demoMode, userId, displayName }: { role: Role; demoMode: boolean; userId: string; displayName: string }) {
+  if (!demoMode && supabase && userId) return <LiveFeedPage userId={userId} role={role} displayName={displayName} />
+  return <DemoFeedPage role={role} />
+}
+
+function DashboardPage(props: { page: string; role: Role; setRole: (role: Role) => void; demoMode: boolean; userId: string }) {
+  if (!props.demoMode && props.page !== 'settings' && supabase && props.userId) return <LiveDashboardPage page={props.page} role={props.role} userId={props.userId} />
+  return <DemoDashboardPage page={props.page} role={props.role} setRole={props.setRole} demoMode={props.demoMode} />
+}
+function DemoDashboardPage({ page, role, setRole, demoMode }: { page: string; role: Role; setRole: (role:Role)=>void; demoMode: boolean }) {
  const [tab, setTab] = useState('نشاطي'), [success,setSuccess]=useState('')
  const title = ({profile:'الملف الشخصي',connections:'الاتصالات',messages:'الرسائل',notifications:'الإشعارات',groups:'المجموعات',verification:'طلب التوثيق',moderation:'لوحة الإشراف',admin:'لوحة المدير',settings:'الإعدادات'} as Record<string,string>)[page] || page
  const staff = ['moderator','manager'].includes(role)
@@ -80,8 +86,114 @@ function DashboardPage({ page, role, setRole, demoMode }: { page: string; role: 
  : page==='groups' ? <div className="panel-card"><div className="panel-icon"><Compass/></div><h2>مجموعات قريبة من اهتماماتك</h2><p>مجتمعات تخصصية ومساحات حوار مهنية.</p>{[['توازن الممارس الصحي','١٬٢٤٠ عضواً · عامة'],['بدايات مهنية','٨٣٦ عضواً · عامة'],['تمريض الرعاية الحرجة','٤٥٠ عضواً · طلب انضمام']].map((x)=><div className="review-row" key={x[0]}><span className="group-icon">◈</span><div><b>{x[0]}</b><small>{x[1]}</small></div><button className="btn btn-small btn-outline" onClick={()=>setSuccess('تم إرسال طلب الانضمام التجريبي.')}>انضمام <Plus size={13}/></button></div>)}</div>
  : <div className="panel-card"><div className="panel-icon"><FileText/></div><h2>{title}</h2><p>تعرّف على أعضاء المجتمع، وشارك في النقاشات والفعاليات المهنية.</p><div className="feature-grid compact-grid">{[['توازن الممارس الصحي','مجموعة مجتمعية مفتوحة'],['وضوح المسار المهني','لقاء افتراضي · هذا الأسبوع'],['تطوير مهني','مقالات وأدوات للنمو']].map(x=><article className="feature-card" key={x[0]}><h3>{x[0]}</h3><p>{x[1]}</p><button className="text-link" onClick={()=>setSuccess('هذه الخاصية تعمل في وضع التجربة.')}>استكشف <ArrowLeft size={14}/></button></article>)}</div></div>}</section></div></main>
 }
-function AppShell({ role, setRole: _setRole, children, authenticated, demoMode, unread, unreadMessages }: { role: Role; setRole: (r:Role)=>void; children: React.ReactNode; authenticated: boolean; demoMode: boolean; unread: number; unreadMessages: number }) { const navigate=useNavigate(); useEffect(()=>{if(!authenticated)navigate('/login',{replace:true})},[authenticated,navigate]); if(!authenticated)return null; return <div className="signed-shell"><div className="signed-top"><Brand/><div className="feed-search"><Search size={16}/><input placeholder="ابحث في مجتمع السيطرة"/></div><div className="signed-top-actions"><Link to="/notifications" className="icon-btn"><Bell size={18}/>{unread>0 && <i className="notification-dot"/>}</Link><Link to="/profile" className="user-chip"><Avatar letter="ن" size="sm"/><span>نورة</span><Verified role={role}/></Link></div></div><nav className="signed-nav wrap">{navItems.map(n=><NavLink to={n.to} key={n.to} className={({isActive})=>isActive?'selected':''}><n.icon size={16}/>{n.label}{n.label==='الرسائل'&&unreadMessages>0&&<span className="nav-count">{unreadMessages}</span>}</NavLink>)}<NavLink to="/profile"><Users size={16}/>ملفي</NavLink><span className="demo-label">{demoMode?'وضع تجريبي':'مساحة خاصة'}</span></nav>{children}<Footer/></div> }
-function App() { const [demo,setDemo]=useState(localStorage.getItem('saytara-demo')==='true'), [signedIn,setSignedIn]=useState(localStorage.getItem('saytara-demo')==='true'), [role,setRoleState]=useState<Role>((localStorage.getItem('saytara-role') as Role)||'member'), [dark,setDark]=useState(localStorage.getItem('saytara-dark')==='true'), [unread,setUnread]=useState(0), [unreadMessages,setUnreadMessages]=useState(0); useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data})=>setSignedIn(Boolean(data.session)));const {data}=supabase.auth.onAuthStateChange((_event,session)=>setSignedIn(Boolean(session)));return()=>data.subscription.unsubscribe()},[]); useEffect(()=>{const client=supabase;if(!client||!signedIn)return;let live=true;let channel:RealtimeChannel|null=null;const connect=async()=>{const {data:{user}}=await client.auth.getUser();if(!live||!user)return;const [n,m]=await Promise.all([client.from('notifications').select('id',{count:'exact',head:true}).eq('recipient_id',user.id).eq('is_read',false),client.from('messages').select('id',{count:'exact',head:true}).eq('recipient_id',user.id).is('read_at',null)]);if(!live)return;setUnread(n.count??0);setUnreadMessages(m.count??0);channel=client.channel('saytara-'+user.id).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'recipient_id=eq.'+user.id},()=>setUnread(v=>v+1)).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'recipient_id=eq.'+user.id},()=>setUnreadMessages(v=>v+1)).subscribe()};void connect();return()=>{live=false;if(channel)void client.removeChannel(channel)}},[signedIn]); const setRole=(r:Role)=>{setRoleState(r);localStorage.setItem('saytara-role',r)}; const toggleTheme=()=>{setDark(!dark);localStorage.setItem('saytara-dark',String(!dark))}; const onDemo=()=>{setDemo(true);setSignedIn(true);localStorage.setItem('saytara-demo','true')}; const onSignedIn=()=>{setSignedIn(true);setDemo(false);localStorage.removeItem('saytara-demo')}; const routes = useMemo(()=>publicCopy,[])
- return <HashRouter><div className={dark?'app dark':'app'}><Header demo={signedIn || demo} role={role} toggleTheme={toggleTheme} dark={dark}/><Routes><Route path="/" element={<PublicHome/>}/>{Object.keys(routes).map(key=><Route path={`/${key}`} key={key} element={<PublicPage page={key as keyof typeof publicCopy}/>}/>)}<Route path="/faq" element={<PublicPage page="faq"/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} setRole={setRole} authenticated={signedIn||demo} demoMode={demo} unread={unread} unreadMessages={unreadMessages}><FeedPage role={role}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(p=><Route path={`/${p}`} key={p} element={<AppShell role={role} setRole={setRole} authenticated={signedIn||demo} demoMode={demo} unread={unread} unreadMessages={unreadMessages}><DashboardPage demoMode={demo} page={p} role={role} setRole={setRole}/></AppShell>}/>)}</Routes></div></HashRouter>
+function AppShell({ role, children, authenticated, authReady, demoMode, unread, unreadMessages, displayName, onSignOut }: { role: Role; children: React.ReactNode; authenticated: boolean; authReady: boolean; demoMode: boolean; unread: number; unreadMessages: number; displayName: string; onSignOut: () => void }) {
+  const navigate = useNavigate()
+  useEffect(() => { if (authReady && !authenticated) navigate('/login', { replace: true }) }, [authReady, authenticated, navigate])
+  if (!authReady || !authenticated) return null
+  return <div className="signed-shell"><div className="signed-top"><Brand/><div className="signed-top-actions"><span className="signed-user">{displayName} · {roleNames[role]}</span><button className="btn btn-outline btn-small" onClick={onSignOut}>تسجيل الخروج</button></div></div><nav className="signed-nav">{navItems.map(n => <NavLink to={n.to} key={n.to}>{<n.icon size={16}/>} {n.label}{n.to==='/notifications'&&unread>0&&<span className="nav-count">{unread}</span>}{n.to==='/messages'&&unreadMessages>0&&<span className="nav-count">{unreadMessages}</span>}</NavLink>)}<NavLink to="/profile"><Users size={16}/>ملفي</NavLink><span className="demo-label">{demoMode?'وضع تجريبي':'مساحة خاصة'}</span></nav>{children}<Footer/></div>
 }
+
+function SupabaseCallbackRouter() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const client = supabase
+    if (!client) return
+    const flow = new URLSearchParams(window.location.search).get('flow')
+    if (flow !== 'confirm' && flow !== 'recovery') return
+    let active = true
+    void client.auth.getSession().then(({ data, error }) => {
+      if (!active) return
+      const target = error || !data.session ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
+      const callbackUrl = new URL(window.location.href)
+      for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
+      window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
+      navigate(target, { replace: true })
+    }).catch(() => { if (active) navigate('/login', { replace: true }) })
+    return () => { active = false }
+  }, [navigate])
+  return null
+}
+
+function App() {
+  const demoMode = !isSupabaseConfigured
+  const [demo, setDemo] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true')
+  const [signedIn, setSignedIn] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true')
+  const [authReady, setAuthReady] = useState(() => !isSupabaseConfigured)
+  const [user, setUser] = useState<User | null>(null)
+  const [role, setRoleState] = useState<Role>(() => demoMode ? (localStorage.getItem('saytara-role') as Role || 'member') : 'member')
+  const [displayName, setDisplayName] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true' ? 'نورة العبدالله' : 'حسابي')
+  const [dark, setDark] = useState(localStorage.getItem('saytara-dark') === 'true')
+  const [unread, setUnread] = useState(0)
+  const [unreadMessages, setUnreadMessages] = useState(0)
+
+  useEffect(() => {
+    if (!supabase) return
+    let active = true
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return
+      const session = error ? null : data.session
+      setUser(session?.user ?? null)
+      setSignedIn(Boolean(session))
+      setDemo(false)
+      localStorage.removeItem('saytara-demo')
+      setAuthReady(true)
+    }).catch(() => { if (active) setAuthReady(true) })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setSignedIn(Boolean(session))
+      setAuthReady(true)
+      if (session) { setDemo(false); localStorage.removeItem('saytara-demo') }
+      else if (isSupabaseConfigured) { setDemo(false); setRoleState('member'); setDisplayName('حسابي') }
+    })
+    return () => { active = false; subscription.unsubscribe() }
+  }, [])
+
+  useEffect(() => {
+    if (demo || !supabase || !user) return
+    let active = true
+    void Promise.all([
+      supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_roles').select('role').eq('user_id', user.id),
+    ]).then(([profileResult, roleResult]) => {
+      if (!active) return
+      const metadataName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : ''
+      setDisplayName(profileResult.data?.display_name || metadataName || user.email?.split('@')[0] || 'حسابي')
+      const roles = (roleResult.data ?? []).map(row => row.role as Role)
+      const rank: Role[] = ['manager', 'moderator', 'coach', 'verified', 'member']
+      setRoleState(rank.find(candidate => roles.includes(candidate)) || 'member')
+    }).catch(() => { if (active) { setRoleState('member'); setDisplayName(user.email?.split('@')[0] || 'حسابي') } })
+    return () => { active = false }
+  }, [demo, user])
+
+  useEffect(() => {
+    const client = supabase
+    if (!client || !signedIn || !user) return
+    let live = true
+    let channel: RealtimeChannel | null = null
+    const connect = async () => {
+      const [n, m] = await Promise.all([
+        client.from('notifications').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).eq('is_read', false),
+        client.from('messages').select('id', { count: 'exact', head: true }).eq('recipient_id', user.id).is('read_at', null),
+      ])
+      if (!live) return
+      setUnread(n.count ?? 0); setUnreadMessages(m.count ?? 0)
+      channel = client.channel('saytara-' + user.id)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'recipient_id=eq.' + user.id }, () => setUnread(value => value + 1))
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'recipient_id=eq.' + user.id }, () => setUnreadMessages(value => value + 1))
+        .subscribe()
+    }
+    void connect()
+    return () => { live = false; if (channel) void client.removeChannel(channel) }
+  }, [signedIn, user])
+
+  const setRole = (next: Role) => { if (demo) { setRoleState(next); localStorage.setItem('saytara-role', next) } }
+  const toggleTheme = () => { setDark(value => { localStorage.setItem('saytara-dark', String(!value)); return !value }) }
+  const onDemo = () => { if (!demoMode) return; setDemo(true); setSignedIn(true); setRoleState((localStorage.getItem('saytara-role') as Role) || 'member'); setDisplayName('نورة العبدالله'); localStorage.setItem('saytara-demo', 'true') }
+  const onSignedIn = () => { setSignedIn(true); setDemo(false); localStorage.removeItem('saytara-demo') }
+  const onSignOut = () => { if (supabase) void supabase.auth.signOut(); setUser(null); setSignedIn(false); setDemo(false); setRoleState('member'); setDisplayName('حسابي'); localStorage.removeItem('saytara-demo') }
+  const authenticated = signedIn || demo
+  const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
+  return <HashRouter><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''}/></AppShell>}/>)}</Routes></div></HashRouter>
+}
+
 export default App

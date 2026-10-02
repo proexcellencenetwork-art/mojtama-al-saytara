@@ -24,13 +24,13 @@ drop policy if exists "Owner uploads own verification document" on storage.objec
 create policy "Owner uploads own verification document" on storage.objects for insert to authenticated
 with check (bucket_id='verification-private' and (storage.foldername(name))[1]=auth.uid()::text and array_length(storage.foldername(name),1)=1);
 drop policy if exists "Pending owner or staff reads verification document" on storage.objects;
-create policy "Pending owner or staff reads verification document" on storage.objects for select to authenticated
-using (bucket_id='verification-private' and array_length(storage.foldername(name),1)=1 and
- (public.is_staff() or ((storage.foldername(name))[1]=auth.uid()::text and exists(select 1 from public.verification_requests v where v.user_id=auth.uid() and v.document_path=name and v.status in ('pending','more_information')))));
+drop policy if exists "Staff reads verification documents" on storage.objects;
+create policy "Staff reads verification documents" on storage.objects for select to authenticated
+using (bucket_id='verification-private' and array_length(storage.foldername(name),1)=1 and public.is_staff());
 drop policy if exists "Owner or staff removes own pending document" on storage.objects;
 create policy "Owner or staff removes own pending document" on storage.objects for delete to authenticated
 using (bucket_id='verification-private' and array_length(storage.foldername(name),1)=1 and
- (public.is_staff() or ((storage.foldername(name))[1]=auth.uid()::text and exists(select 1 from public.verification_requests v where v.user_id=auth.uid() and v.document_path=name and v.status in ('pending','more_information')))));
+ (public.is_staff() or (storage.foldername(name))[1]=auth.uid()::text));
 
 -- The anonymous coach directory is only the explicitly whitelisted view; never expose coach_profiles directly.
 drop policy if exists "Coach pages public" on public.coach_profiles;
@@ -126,5 +126,25 @@ begin
 end $$;
 drop trigger if exists coaching_booking_transition_guard on public.coaching_bookings;
 create trigger coaching_booking_transition_guard before update on public.coaching_bookings for each row execute procedure public.guard_booking_transition();
+
+-- Staff may update a report's workflow state, but its submitted evidence is immutable.
+create or replace function public.guard_report_transition() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.role()='service_role' then return new; end if;
+  if not public.is_staff(auth.uid()) then raise exception 'Staff access required to update reports.'; end if;
+  if new.id is distinct from old.id or new.reporter_id is distinct from old.reporter_id
+     or new.target_type is distinct from old.target_type or new.target_id is distinct from old.target_id
+     or new.reason is distinct from old.reason or new.details is distinct from old.details
+     or new.created_at is distinct from old.created_at then
+    raise exception 'Report evidence and identity are immutable.';
+  end if;
+  new.moderator_id := auth.uid();
+  if new.status in ('resolved','dismissed') then new.resolved_at := coalesce(old.resolved_at,now());
+  else new.resolved_at := null; end if;
+  return new;
+end $$;
+drop trigger if exists reports_transition_guard on public.reports;
+create trigger reports_transition_guard before update on public.reports for each row execute procedure public.guard_report_transition();
 
 commit;

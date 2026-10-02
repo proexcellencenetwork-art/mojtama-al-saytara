@@ -20,6 +20,22 @@ join public.user_roles ur on ur.user_id=p.user_id and ur.role='coach'
 where p.visibility='public';
 grant select on public.public_coaches to anon,authenticated;
 
+-- The live feed uses an invoker-security view: underlying RLS still decides which
+-- posts, profiles, likes, and comments this authenticated user can see.
+create or replace view public.community_feed with (security_invoker=true) as
+select p.id,p.author_id,p.body,p.visibility,p.created_at,
+       coalesce(pr.display_name,'عضو في المجتمع') as author_name,
+       nullif(concat_ws(' · ',nullif(pr.headline,''),nullif(pr.profession,''),nullif(pr.city,'')),'') as author_title,
+       (select r.role from public.user_roles r where r.user_id=p.author_id
+        order by case r.role when 'manager' then 1 when 'moderator' then 2 when 'coach' then 3 when 'verified' then 4 else 5 end limit 1) as author_role,
+       (select count(*)::integer from public.post_likes l where l.post_id=p.id) as likes_count,
+       (select count(*)::integer from public.comments c where c.post_id=p.id and c.moderation_state='visible') as comments_count,
+       exists(select 1 from public.post_likes l where l.post_id=p.id and l.user_id=auth.uid()) as liked_by_me
+from public.posts p
+left join public.profiles pr on pr.user_id=p.author_id
+where p.moderation_state='visible';
+grant select on public.community_feed to authenticated;
+
 -- Serialize parallel writes by author so two simultaneous transactions cannot both evade daily limits.
 create or replace function public.enforce_post_rate_limit() returns trigger
 language plpgsql security definer set search_path = public as $$

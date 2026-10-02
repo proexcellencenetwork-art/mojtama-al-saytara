@@ -1,0 +1,11 @@
+# Local CLI label; `supabase link --project-ref <your-project-ref>` replaces it for your project.
+project_id = "mojtama-al-saytara"
+
+# The cleanup endpoint is called by a database webhook and authenticates with its own
+# high-entropy CLEANUP_WEBHOOK_SECRET header. Do not expose it to browsers.
+[functions.cleanup-verification-files]
+verify_jwt = false
+
+# The account deletion endpoint must receive a valid signed-in user's JWT.
+[functions.delete-account]
+verify_jwt = true
