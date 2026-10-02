@@ -27,6 +27,7 @@
    - `supabase/migrations/202610020003_guest_scope_and_atomic_limits.sql`
    - `supabase/migrations/202610020004_integrity_and_storage_scope.sql`
    - `supabase/migrations/202610020005_least_privilege_and_booking_rules.sql`
+   - `supabase/migrations/202610020006_coach_schedule_completion.sql`
    - (اختياري، للتطوير المحلي فقط) `supabase/seed/seed.sql`
 4. اضبط **Authentication → URL Configuration** بحيث يشمل رابط GitHub Pages، مثلاً `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/`، وأضف عنوان إعادة التوجيه `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/#/login` وعنوان المعاينة المحلية عند الحاجة.
 5. محلياً ضع القيم في `.env.local`؛ الملف مستثنى من Git.
