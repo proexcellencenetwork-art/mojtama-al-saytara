@@ -30,8 +30,8 @@ insert into public.user_roles(user_id,role) values
 on conflict (user_id,role) do nothing;
 
 insert into public.coach_profiles(user_id,public_bio,coaching_topics,booking_enabled)
-values ('d0000000-0000-4000-8000-000000000003','كوتشنج مهني للممارسين الصحيين في وضوح المسار وإدارة التغيير.',array['تطوير المسار','اتخاذ القرار','التوازن المهني'],false)
-on conflict (user_id) do nothing;
+values ('d0000000-0000-4000-8000-000000000003','كوتشنج مهني للممارسين الصحيين في وضوح المسار وإدارة التغيير.',array['تطوير المسار','اتخاذ القرار','التوازن المهني'],true)
+on conflict (user_id) do update set booking_enabled=excluded.booking_enabled;
 
 insert into public.posts(id,author_id,body,visibility) values
  ('d1000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000002','في نهاية المناوبة، أحياناً يكون ألطف قرار مهني هو أن نمنح أنفسنا استراحة قصيرة قبل أن نجيب عن كل شيء. ما الطقس الصغير الذي يساعدكم على استعادة تركيزكم؟','members'),
@@ -77,7 +77,10 @@ on conflict (id) do nothing;
 insert into public.reports(id,reporter_id,target_type,target_id,reason,details)
 values ('d9000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000001','post','d1000000-0000-4000-8000-000000000001','other','بلاغ تجريبي للمشرف؛ احذفه بعد الاختبار.')
 on conflict (id) do nothing;
-insert into public.coaching_bookings(id,coach_id,member_id,starts_at,minutes,member_note,status)
-values ('da000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000003','d0000000-0000-4000-8000-000000000001','2026-10-20 16:00:00+00',30,'طلب تجريبي لمناقشة الأهداف المهنية.','requested')
+insert into public.coach_availability(id,coach_id,starts_at,ends_at,is_available)
+values ('db000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000003','2026-10-20 16:00:00+00','2026-10-20 16:30:00+00',true)
+on conflict (id) do nothing;
+insert into public.coaching_bookings(id,coach_id,member_id,availability_id,starts_at,minutes,member_note,status)
+values ('da000000-0000-4000-8000-000000000001','d0000000-0000-4000-8000-000000000003','d0000000-0000-4000-8000-000000000001','db000000-0000-4000-8000-000000000001','2026-10-20 16:00:00+00',30,'طلب تجريبي لمناقشة الأهداف المهنية.','requested')
 on conflict (id) do nothing;
 commit;

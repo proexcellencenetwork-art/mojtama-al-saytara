@@ -26,6 +26,7 @@
    - `supabase/migrations/202610020002_policy_hardening.sql`
    - `supabase/migrations/202610020003_guest_scope_and_atomic_limits.sql`
    - `supabase/migrations/202610020004_integrity_and_storage_scope.sql`
+   - `supabase/migrations/202610020005_least_privilege_and_booking_rules.sql`
    - (اختياري، للتطوير المحلي فقط) `supabase/seed/seed.sql`
 4. اضبط **Authentication → URL Configuration** بحيث يشمل رابط GitHub Pages، مثلاً `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/`، وأضف عنوان إعادة التوجيه `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/#/login` وعنوان المعاينة المحلية عند الحاجة.
 5. محلياً ضع القيم في `.env.local`؛ الملف مستثنى من Git.
@@ -60,7 +61,7 @@ on conflict (user_id, role) do nothing;
 
 ### حذف الحساب من Supabase
 
-لنشر وظيفة الحذف الآمن، أضف `SUPABASE_ANON_KEY` أيضاً إلى أسرار Edge Functions (إضافةً إلى `SUPABASE_URL` و`SUPABASE_SERVICE_ROLE_KEY`)، ثم نفّذ `supabase functions deploy delete-account` مع تفعيل التحقق الافتراضي من JWT. تقبل الوظيفة جلسة صاحب الحساب و`confirm: true` فقط، وتحذف أولاً ملفاته الخاصة من Storage ثم تحذف مستخدم Auth كي تعمل قيود `ON DELETE CASCADE`. يظهر تأكيد صريح قبل الطلب في الواجهة. اختبرها بحساب تطوير قبل استخدامها على بيانات حقيقية.
+لنشر وظيفة الحذف الآمن، أضف `SUPABASE_ANON_KEY` أيضاً إلى أسرار Edge Functions (إضافةً إلى `SUPABASE_URL` و`SUPABASE_SERVICE_ROLE_KEY`)، ثم نفّذ `supabase functions deploy delete-account` مع تفعيل التحقق الافتراضي من JWT. تقبل الوظيفة جلسة صاحب الحساب و`confirm: true` فقط، وتحذف أولاً ملفاته الخاصة من Storage ثم تحذف مستخدم Auth وتُحذف البيانات المرتبطة بحسب قيد كل جدول (حذف متسلسل أو فصل معرف المراجع للحفاظ على سجل التدقيق). يظهر تأكيد صريح قبل الطلب في الواجهة. اختبرها بحساب تطوير قبل استخدامها على بيانات حقيقية.
 
 ## النشر على GitHub Pages
 
