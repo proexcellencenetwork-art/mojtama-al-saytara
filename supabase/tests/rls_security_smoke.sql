@@ -22,9 +22,13 @@ declare
   v_manager uuid;
   v_conversation_ab uuid;
   v_conversation_bv uuid;
+  v_pending_connection uuid;
+  v_private_group uuid;
+  v_test_post uuid;
   v_own_request uuid;
   v_moderator_request uuid;
   v_test_message_id uuid;
+  v_moderation_action_id uuid;
   v_doc_path text;
 begin
   select id into v_a from auth.users where lower(email)=lower(current_setting('saytara.test.member_a_email')) limit 1;
@@ -69,6 +73,15 @@ begin
   insert into public.connections(requester_id,recipient_id,status,responded_at)
   values(v_b,v_verified,'accepted',now()) on conflict (requester_id,recipient_id)
   do update set status='accepted',responded_at=now();
+  insert into public.connections(requester_id,recipient_id,status)
+  values(v_a,v_manager,'pending') returning id into v_pending_connection;
+
+  insert into public.groups(name,description,topic,is_public,owner_id)
+  values('مجموعة اختبار خاصة','مجموعة اختبار مؤقتة','اختبار',false,v_verified)
+  returning id into v_private_group;
+  insert into public.posts(author_id,body,visibility,moderation_state)
+  values(v_verified,'منشور مخفي للاختبار','members','hidden')
+  returning id into v_test_post;
 
   insert into public.conversations(member_a,member_b)
   values(least(v_a,v_b),greatest(v_a,v_b)) on conflict (member_a,member_b) do nothing;
@@ -90,6 +103,9 @@ begin
   insert into public.verification_requests(user_id,full_name,profession,professional_registration_no,document_path)
   values(v_moderator,'مشرف اختبار','مهنة اختبار','RLS-SMOKE-MOD-'||substr(v_moderator::text,1,8),v_moderator::text||'/rls-smoke-moderator-metadata.pdf')
   returning id into v_moderator_request;
+  insert into public.moderation_actions(moderator_id,subject_user_id,target_type,action,reason)
+  values(v_moderator,v_a,'test','hide','RLS smoke: preserve audit after account deletion')
+  returning id into v_moderation_action_id;
   perform set_config('saytara.test.member_a_id',v_a::text,true);
   perform set_config('saytara.test.member_b_id',v_b::text,true);
   perform set_config('saytara.test.verified_id',v_verified::text,true);
@@ -97,9 +113,13 @@ begin
   perform set_config('saytara.test.manager_id',v_manager::text,true);
   perform set_config('saytara.test.conversation_ab',v_conversation_ab::text,true);
   perform set_config('saytara.test.conversation_bv',v_conversation_bv::text,true);
+  perform set_config('saytara.test.pending_connection',v_pending_connection::text,true);
+  perform set_config('saytara.test.private_group',v_private_group::text,true);
+  perform set_config('saytara.test.post_id',v_test_post::text,true);
   perform set_config('saytara.test.own_request',v_own_request::text,true);
   perform set_config('saytara.test.moderator_request',v_moderator_request::text,true);
   perform set_config('saytara.test.message_id',v_test_message_id::text,true);
+  perform set_config('saytara.test.moderation_action_id',v_moderation_action_id::text,true);
   perform set_config('saytara.test.document_path',v_doc_path,true);
 end;
 $$;
@@ -115,6 +135,9 @@ declare
   v_manager uuid := current_setting('saytara.test.manager_id')::uuid;
   v_conversation_ab uuid := current_setting('saytara.test.conversation_ab')::uuid;
   v_conversation_bv uuid := current_setting('saytara.test.conversation_bv')::uuid;
+  v_pending_connection uuid := current_setting('saytara.test.pending_connection')::uuid;
+  v_private_group uuid := current_setting('saytara.test.private_group')::uuid;
+  v_test_post uuid := current_setting('saytara.test.post_id')::uuid;
   v_own_request uuid := current_setting('saytara.test.own_request')::uuid;
   v_moderator_request uuid := current_setting('saytara.test.moderator_request')::uuid;
   v_test_message_id uuid := current_setting('saytara.test.message_id')::uuid;
@@ -128,6 +151,41 @@ begin
   perform set_config('request.jwt.claim.sub',v_a::text,true);
   perform set_config('request.jwt.claim.role','authenticated',true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_a::text,'role','authenticated')::text,true);
+  -- A requester cannot self-accept a pending connection to unlock messaging.
+  v_denied := false;
+  begin
+    update public.connections set status='accepted' where id=v_pending_connection;
+    get diagnostics v_rows = row_count;
+    v_denied := v_rows=0;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied or exists(select 1 from public.connections where id=v_pending_connection and status<>'pending') then
+    raise exception 'FAIL: مقدم طلب الاتصال قبله بنفسه.';
+  end if;
+
+  -- A member may request to join a private group, but cannot self-activate membership.
+  v_denied := false;
+  begin
+    insert into public.group_memberships(group_id,user_id,status) values(v_private_group,v_a,'active');
+    get diagnostics v_rows = row_count;
+    v_denied := v_rows=0;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied or exists(select 1 from public.group_memberships where group_id=v_private_group and user_id=v_a and status='active') then
+    raise exception 'FAIL: عضو فعّل عضويته بنفسه في مجموعة خاصة.';
+  end if;
+  insert into public.group_memberships(group_id,user_id,status) values(v_private_group,v_a,'pending');
+  v_denied := false;
+  begin
+    update public.group_memberships set status='active' where group_id=v_private_group and user_id=v_a;
+    get diagnostics v_rows = row_count;
+    v_denied := v_rows=0;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied or exists(select 1 from public.group_memberships where group_id=v_private_group and user_id=v_a and status='active') then
+    raise exception 'FAIL: عضو غيّر طلب المجموعة الخاصة من معلق إلى نشط.';
+  end if;
+
   select count(*) into v_count from public.messages where conversation_id=v_conversation_bv;
   if v_count<>0 then raise exception 'FAIL: عضو عادي قرأ رسائل محادثة ليس طرفاً فيها.'; end if;
 
@@ -178,6 +236,18 @@ begin
   -- A verified recipient can mark a message read once; the database chooses the timestamp and blocks later rewrites.
   perform set_config('request.jwt.claim.sub',v_verified::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_verified::text,'role','authenticated')::text,true);
+  -- An author cannot undo a staff-hidden content state.
+  v_denied := false;
+  begin
+    update public.posts set moderation_state='visible' where id=v_test_post;
+    get diagnostics v_rows = row_count;
+    v_denied := v_rows=0;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied or exists(select 1 from public.posts where id=v_test_post and moderation_state<>'hidden') then
+    raise exception 'FAIL: صاحب المنشور أعاد نشر محتوى أخفاه الإشراف.';
+  end if;
+
   update public.messages set read_at=now()-interval '2 days' where id=v_test_message_id;
   select count(*) into v_count from public.messages where id=v_test_message_id and read_at>now()-interval '1 minute' and read_at<=clock_timestamp();
   if v_count<>1 then raise exception 'FAIL: قراءة الرسالة لم تُسجّل بوقت الخادم.'; end if;
@@ -226,5 +296,16 @@ end;
 $$;
 
 reset role;
+do $$
+declare
+  v_moderator uuid := current_setting('saytara.test.moderator_id')::uuid;
+  v_action_id uuid := current_setting('saytara.test.moderation_action_id')::uuid;
+begin
+  delete from auth.users where id=v_moderator;
+  if not exists(select 1 from public.moderation_actions where id=v_action_id and moderator_id is null) then
+    raise exception 'FAIL: حذف حساب المشرف منعته سجلات المراجعة أو حذف سجل التدقيق بدلاً من حفظه.';
+  end if;
+end;
+$$;
 rollback;
-select 'نجاح: عُزلت البيانات الخاصة، ومُنع النشر/تصعيد الدور/التوثيق الذاتي، ونجح حد الرسائل والتوقيت الخادمي وإشارة القراءة؛ أُلغيت كل بيانات الاختبار.' as نتيجة;
+select 'نجاح: عُزلت البيانات الخاصة، ومُنع النشر/تصعيد الدور/الاتصال/عضوية المجموعة/إعادة النشر، وحُفظ سجل المراجعة عند حذف الحساب، ونجح حد الرسائل وإشارة القراءة؛ أُلغيت كل بيانات الاختبار.' as نتيجة;

@@ -1,6 +1,6 @@
 -- مجتمع السيطرة — ملف إعداد موحّد لمشروع Supabase جديد.
 -- انسخ الملف كاملاً إلى SQL Editor وشغّله مرة واحدة فقط.
--- يضم migrations 001–009 بترتيبها داخل معاملة واحدة؛ لا يتضمن seed.sql.
+-- يضم migrations 001–013 بترتيبها داخل معاملة واحدة؛ لا يتضمن seed.sql.
 -- يجب تطبيقه على مشروع Supabase فارغ، لا فوق مخطط سابق.
 
 BEGIN;
@@ -1182,6 +1182,153 @@ begin
 
   raise exception 'Recipients may only mark their messages as read once.';
 end $$;
+
+
+
+-- ===== Source: supabase/migrations/202610020010_is_staff_acl_and_audit_retention.sql =====
+-- مجتمع السيطرة — preserve moderation audit rows when a moderator deletes their account.
+
+-- Keep moderation history if its author later deletes their account; preserve the row,
+-- but remove the deleted account reference instead of blocking auth.admin.deleteUser().
+alter table public.moderation_actions
+  alter column moderator_id drop not null;
+alter table public.moderation_actions
+  drop constraint if exists moderation_actions_moderator_id_fkey;
+alter table public.moderation_actions
+  add constraint moderation_actions_moderator_id_fkey
+  foreign key (moderator_id) references auth.users(id) on delete set null;
+
+
+
+-- ===== Source: supabase/migrations/202610020011_coach_duration_membership.sql =====
+-- مجتمع السيطرة — use proper array membership when validating coach session durations.
+
+create or replace function public.guard_booking_insert() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  slot public.coach_availability;
+  coach public.coach_profiles;
+begin
+  if auth.role()='service_role' then return new; end if;
+  if exists(select 1 from public.coaching_bookings b where b.id=new.id) then return null; end if;
+  if new.status <> 'requested' or (auth.uid() is not null and new.member_id <> auth.uid()) then
+    raise exception 'Members may only create their own requested bookings.';
+  end if;
+  select * into coach from public.coach_profiles cp where cp.user_id=new.coach_id and cp.booking_enabled=true;
+  if not found or not public.has_role(new.coach_id,'coach') then raise exception 'Coach bookings are not enabled.'; end if;
+  if new.availability_id is null then raise exception 'Choose an available coaching slot.'; end if;
+  select * into slot from public.coach_availability a
+  where a.id=new.availability_id and a.coach_id=new.coach_id and a.is_available=true
+  for update;
+  if not found or slot.starts_at <> new.starts_at
+     or not (new.minutes = any(coach.session_minutes))
+     or new.minutes*60 > extract(epoch from (slot.ends_at-slot.starts_at)) then
+    raise exception 'The selected slot is unavailable or incompatible with the session length.';
+  end if;
+  return new;
+end $$;
+
+
+
+-- ===== Source: supabase/migrations/202610020012_validate_existing_coach_slots.sql =====
+-- مجتمع السيطرة — reject legacy rows that violate the protected storage/schedule invariants.
+
+do $$
+declare
+  conflict_row record;
+begin
+  select a.coach_id, a.id as first_slot_id, b.id as second_slot_id
+    into conflict_row
+  from public.coach_availability a
+  join public.coach_availability b
+    on b.coach_id=a.coach_id
+   and b.id>a.id
+   and tstzrange(a.starts_at,a.ends_at,'[)') && tstzrange(b.starts_at,b.ends_at,'[)')
+  limit 1;
+
+  if found then
+    raise exception 'Existing overlapping coach availability slots must be reconciled before continuing. coach_id=%, slot_ids=%,%',
+      conflict_row.coach_id, conflict_row.first_slot_id, conflict_row.second_slot_id;
+  end if;
+
+  select id, user_id, document_path
+    into conflict_row
+  from public.verification_requests
+  where split_part(document_path,'/',1) <> user_id::text
+     or array_length(string_to_array(document_path,'/'),1) <> 2
+     or split_part(document_path,'/',2) = ''
+  limit 1;
+
+  if found then
+    raise exception 'Existing verification request has a non-canonical document path. request_id=%, user_id=%, path=%',
+      conflict_row.id, conflict_row.user_id, conflict_row.document_path;
+  end if;
+end $$;
+
+
+
+-- ===== Source: supabase/migrations/202610020013_group_rls_no_recursion.sql =====
+-- مجتمع السيطرة — break the groups/group_memberships RLS recursion without exposing arbitrary-user lookups.
+
+create or replace function public.is_group_owner(p_group_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(
+    select 1 from public.groups g
+    where g.id=p_group_id and g.owner_id=auth.uid()
+  );
+$$;
+revoke all on function public.is_group_owner(uuid) from public,anon;
+grant execute on function public.is_group_owner(uuid) to anon,authenticated;
+
+create or replace function public.is_active_group_member(p_group_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(
+    select 1 from public.group_memberships gm
+    where gm.group_id=p_group_id and gm.user_id=auth.uid() and gm.status='active'
+  );
+$$;
+revoke all on function public.is_active_group_member(uuid) from public,anon;
+grant execute on function public.is_active_group_member(uuid) to anon,authenticated;
+
+create or replace function public.is_public_group(p_group_id uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists(
+    select 1 from public.groups g
+    where g.id=p_group_id and g.is_public=true
+  );
+$$;
+revoke all on function public.is_public_group(uuid) from public,anon;
+grant execute on function public.is_public_group(uuid) to authenticated;
+
+-- The former SELECT policies queried each other and could recurse when members listed their own memberships.
+drop policy if exists "Public groups or members read" on public.groups;
+create policy "Public groups or members read" on public.groups for select to anon,authenticated
+using (
+  (is_public and moderation_state='active')
+  or owner_id=auth.uid()
+  or public.is_staff()
+  or public.is_active_group_member(id)
+);
+
+drop policy if exists "Members read own memberships" on public.group_memberships;
+create policy "Members read own memberships" on public.group_memberships for select to authenticated
+using (user_id=auth.uid() or public.is_group_owner(group_id) or public.is_staff());
+
+drop policy if exists "Members request or join" on public.group_memberships;
+create policy "Members request or join" on public.group_memberships for insert to authenticated
+with check (
+  user_id=auth.uid() and
+  (status='pending' or (status='active' and public.is_public_group(group_id)))
+);
+
+drop policy if exists "Member or group owner updates membership" on public.group_memberships;
+create policy "Member or group owner updates membership" on public.group_memberships for update to authenticated
+using (user_id=auth.uid() or public.is_group_owner(group_id) or public.is_staff())
+with check (
+  (user_id=auth.uid() and status in ('pending','removed'))
+  or public.is_group_owner(group_id)
+  or public.is_staff()
+);
 
 
 COMMIT;
