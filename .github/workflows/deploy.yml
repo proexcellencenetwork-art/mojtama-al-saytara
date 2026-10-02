@@ -35,6 +35,7 @@ jobs:
         run: npm run build
         env:
           GITHUB_PAGES: 'true'
+          VITE_SITE_URL: ${{ vars.VITE_SITE_URL || 'https://proexcellencenetwork-art.github.io/mojtama-al-saytara/' }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
       - name: Stage root files for branch-based Pages
@@ -43,7 +44,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- index.html assets favicon.svg manus-routes.json .nojekyll
+          git add --all
           if git diff --cached --quiet; then
             echo 'The root Pages output is already up to date.'
           else

@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://proexcellencenetwork-art.github.io/mojtama-al-saytara/sitemap.xml

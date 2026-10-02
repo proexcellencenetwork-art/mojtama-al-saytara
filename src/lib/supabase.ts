@@ -25,7 +25,7 @@ function validPublicKey(value: string): boolean {
 export const isSupabaseConfigured = validProjectUrl(url) && validPublicKey(anonKey)
 
 // The browser only receives an anon/publishable key. RLS remains the authorization boundary.
-// PKCE keeps the auth code in the query string, so Supabase and HashRouter do not compete for the URL fragment.
+// PKCE keeps the auth code in the query string while BrowserRouter owns the pathname.
 export const supabase = isSupabaseConfigured
   ? createClient(url, anonKey, {
       auth: {

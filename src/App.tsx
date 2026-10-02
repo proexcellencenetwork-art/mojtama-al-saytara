@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { RealtimeChannel, User } from '@supabase/supabase-js'
-import { HashRouter, Link, NavLink, Route, Routes, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, X } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from './lib/supabase'
 import type { Role } from './appTypes'
@@ -49,7 +49,128 @@ const publicCopy: Record<string, { title: string; eyebrow: string; intro: string
 function PublicPage({ page }: { page: keyof typeof publicCopy }) {
   if (isSupabaseConfigured && supabase && ['coaches', 'articles', 'events'].includes(page)) return <LivePublicPage page={page} />
   const item = publicCopy[page]
-  return <><main className="public-page wrap"><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div></main><Footer/></>
+  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>{item.eyebrow}</span></nav><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div><nav className="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b><Link to="/coaching">تعرّف على الكوتشنج المهني</Link><Link to="/articles">اقرأ مقالات المجتمع</Link><Link to="/faq">إجابات الأسئلة الشائعة</Link></nav></main><Footer/></>
+}
+
+const publicSeo: Record<string, { title: string; description: string }> = {
+  '/': { title: 'مجتمع السيطرة | مجتمع مهني صحي', description: 'مساحة مهنية آمنة للمهنيين الصحيين للتواصل والكوتشنج والتطور المهني المتوازن.' },
+  '/about': { title: 'عن مجتمع السيطرة | مساحة مهنية آمنة', description: 'تعرّف على مجتمع مهني للمهنيين الصحيين يجمع التواصل الهادف والكوتشنج والخصوصية.' },
+  '/coaching': { title: 'كوتشنج مهني للقطاع الصحي | مجتمع السيطرة', description: 'مساحة حوار مهني تساعد العاملين في الرعاية الصحية على توضيح أهدافهم وخياراتهم.' },
+  '/coaches': { title: 'دليل الكوتشات | مجتمع السيطرة', description: 'تعرّف على الكوتشات والملفات المهنية العامة المنشورة في مجتمع السيطرة.' },
+  '/articles': { title: 'مقالات التطور المهني الصحي | مجتمع السيطرة', description: 'اقرأ محتوى مجتمع السيطرة المنشور عن النمو المهني والتوازن والعمل في القطاع الصحي.' },
+  '/events': { title: 'الفعاليات المهنية الصحية | مجتمع السيطرة', description: 'تابع الفعاليات العامة القادمة للمهنيين الصحيين في مجتمع السيطرة.' },
+  '/faq': { title: 'الأسئلة الشائعة | مجتمع السيطرة', description: 'إجابات عن العضوية والتوثيق والكوتشنج والخصوصية في مجتمع السيطرة.' },
+  '/privacy': { title: 'سياسة الخصوصية | مجتمع السيطرة', description: 'اقرأ كيف يتعامل مجتمع السيطرة مع بيانات الحساب والخصوصية وطلبات التوثيق.' },
+  '/terms': { title: 'شروط الاستخدام | مجتمع السيطرة', description: 'الشروط المهنية لاستخدام مجتمع السيطرة واحترام خصوصية الأعضاء والمرضى.' },
+  '/charter': { title: 'ميثاق السلوك المهني | مجتمع السيطرة', description: 'مبادئ الاحترام والسرية والتواصل المسؤول في مجتمع السيطرة.' },
+  '/login': { title: 'تسجيل الدخول | مجتمع السيطرة', description: 'سجّل الدخول إلى مساحتك المهنية في مجتمع السيطرة.' },
+  '/register': { title: 'إنشاء حساب | مجتمع السيطرة', description: 'أنشئ حساباً للانضمام إلى مجتمع مهني للقطاع الصحي.' },
+  '/reset-password': { title: 'استعادة كلمة المرور | مجتمع السيطرة', description: 'استعد الوصول إلى حسابك في مجتمع السيطرة.' },
+}
+const privatePaths = new Set(['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings'])
+
+function RouteMetadata() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const path = pathname.replace(/\/$/, '') || '/'
+    const meta = publicSeo[path]
+    const detailRoute = /^\/(articles|events|coaches)\/[^/]+$/.test(path)
+    if (detailRoute) return
+    const privateRoute = privatePaths.has(path)
+    const siteRoot = import.meta.env.VITE_SITE_URL || `${window.location.origin}${import.meta.env.BASE_URL}`
+    const canonical = new URL(path === '/' ? '' : `${path.replace(/^\//, '')}/`, siteRoot.endsWith('/') ? siteRoot : `${siteRoot}/`).toString()
+    document.title = meta?.title || 'صفحة غير موجودة | مجتمع السيطرة'
+    const description = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+    if (description) description.content = meta?.description || 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.'
+    const socialTitle = meta?.title || 'صفحة غير موجودة | مجتمع السيطرة'
+    const socialDescription = meta?.description || 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.'
+    for (const [selector, content] of [
+      ['meta[property="og:title"]', socialTitle], ['meta[property="og:description"]', socialDescription],
+      ['meta[property="og:url"]', canonical], ['meta[name="twitter:title"]', socialTitle],
+      ['meta[name="twitter:description"]', socialDescription],
+    ] as const) {
+      const social = document.querySelector<HTMLMetaElement>(selector)
+      if (social) social.content = content
+    }
+    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    if (robots) robots.content = meta && !privateRoute ? 'index,follow,max-image-preview:large' : 'noindex,nofollow'
+    let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+    if (meta) {
+      if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.append(link) }
+      link.href = canonical
+    } else {
+      link?.remove()
+      document.querySelector('link[rel="alternate"][hreflang="ar"]')?.remove()
+    }
+  }, [pathname])
+  return null
+}
+
+function LivePublicDetailPage({ page }: { page: 'articles' | 'events' | 'coaches' }) {
+  const { id, slug } = useParams()
+  const key = slug || id || ''
+  const [row, setRow] = useState<Record<string, unknown> | null>(null)
+  const [loading, setLoading] = useState(true)
+  useEffect(() => {
+    let active = true
+    async function load() {
+      setLoading(true)
+      if (!supabase || !key) { setRow(null); setLoading(false); return }
+      const query = page === 'articles'
+        ? supabase.from('articles').select('id,title,slug,excerpt,body,published_at').eq('status', 'published').eq('slug', key).maybeSingle()
+        : page === 'events'
+          ? supabase.from('events').select('id,title,description,starts_at,ends_at,location').eq('is_private', false).eq('moderation_state', 'visible').eq('id', key).maybeSingle()
+          : supabase.from('public_coaches').select('user_id,display_name,headline,profession,specialty,city,public_bio,coaching_topics').eq('user_id', key).maybeSingle()
+      const result = await query
+      if (!active) return
+      const publicRow = result.error ? null : result.data as Record<string, unknown> | null
+      setRow(publicRow)
+      setLoading(false)
+      if (publicRow) {
+        const title = String(publicRow.title || publicRow.display_name || 'محتوى المجتمع')
+        const safeTitle = `${[...title].slice(0, 40).join('')} | مجتمع السيطرة`
+        document.title = safeTitle
+        const description = String(publicRow.excerpt || publicRow.public_bio || publicRow.description || 'محتوى عام منشور في مجتمع السيطرة.').slice(0, 155)
+        const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+        if (meta) meta.content = description
+        const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+        if (robots) robots.content = 'index,follow,max-image-preview:large'
+        const siteRoot = import.meta.env.VITE_SITE_URL || `${window.location.origin}${import.meta.env.BASE_URL}`
+        const canonical = new URL(`${page}/${encodeURIComponent(key)}/`, siteRoot.endsWith('/') ? siteRoot : `${siteRoot}/`).toString()
+        const canonicalTag = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+        if (canonicalTag) canonicalTag.href = canonical
+        for (const [selector, content] of [
+          ['meta[property="og:title"]', safeTitle], ['meta[property="og:description"]', description],
+          ['meta[property="og:url"]', canonical], ['meta[name="twitter:title"]', safeTitle],
+          ['meta[name="twitter:description"]', description],
+        ] as const) {
+          const social = document.querySelector<HTMLMetaElement>(selector)
+          if (social) social.content = content
+        }
+        const schemaType = page === 'articles' ? 'Article' : page === 'events' ? 'Event' : 'Person'
+        let schema = document.querySelector<HTMLScriptElement>(`script[data-detail-schema="${schemaType}"]`)
+        if (!schema) { schema = document.createElement('script'); schema.type = 'application/ld+json'; schema.dataset.detailSchema = schemaType; document.head.append(schema) }
+        const json = schemaType === 'Article'
+          ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description, datePublished: publicRow.published_at, inLanguage: 'ar', mainEntityOfPage: canonical, publisher: { '@type': 'Organization', name: 'مجتمع السيطرة', url: siteRoot } }
+          : schemaType === 'Event'
+            ? { '@context': 'https://schema.org', '@type': 'Event', name: title, description, startDate: publicRow.starts_at, endDate: publicRow.ends_at, eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode', location: { '@type': 'VirtualLocation', url: canonical }, inLanguage: 'ar' }
+            : { '@context': 'https://schema.org', '@type': 'Person', name: title, jobTitle: publicRow.headline || publicRow.profession, description, url: canonical, knowsAbout: publicRow.coaching_topics || [] }
+        schema.textContent = JSON.stringify(json)
+      } else {
+        const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+        if (robots) robots.content = 'noindex,nofollow'
+      }
+    }
+    void load()
+    return () => { active = false }
+  }, [key, page])
+  const title = String(row?.title || row?.display_name || '')
+  const body = String(row?.body || row?.public_bio || row?.description || '')
+  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span>/</span><Link to={`/${page}`}>{page === 'articles' ? 'المقالات' : page === 'events' ? 'الفعاليات' : 'الكوتشات'}</Link><span>/</span><span>{title || 'التفاصيل'}</span></nav>{loading ? <div className="live-state">جارٍ تحميل المحتوى العام…</div> : !row ? <div className="panel-card empty-state"><h1>هذا المحتوى غير متاح.</h1><Link to={`/${page}`} className="text-link">العودة إلى القائمة</Link></div> : <article className="public-article"><span className="eyebrow">{page === 'articles' ? 'مقال من مكتبة المجتمع' : page === 'events' ? 'فعالية عامة' : 'ملف كوتش مهني'}</span><h1>{title}</h1>{page === 'articles' && row.published_at ? <time dateTime={String(row.published_at)}>{new Date(String(row.published_at)).toLocaleDateString('ar')}</time> : null}{page === 'events' && row.starts_at ? <p className="hero-lead">{new Date(String(row.starts_at)).toLocaleString('ar', { dateStyle: 'long', timeStyle: 'short' })} · {String(row.location || 'افتراضي')}</p> : null}<p className="public-article-body">{body}</p>{Array.isArray(row.coaching_topics) && <p>محاور الكوتشنج: {row.coaching_topics.join(' · ')}</p>}</article>}<nav className="related-links" aria-label="صفحات مرتبطة"><b>اكتشف المزيد</b><Link to="/coaching">الكوتشنج المهني</Link><Link to="/articles">مقالات المجتمع</Link><Link to="/faq">الأسئلة الشائعة</Link></nav></main><Footer/></>
+}
+
+function NotFoundPage() {
+  return <main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>صفحة غير موجودة</span></nav><div className="public-page-copy"><span className="eyebrow">404</span><h1>لم نعثر على هذه الصفحة.</h1><p className="hero-lead">قد يكون الرابط قديماً أو كُتب بطريقة غير صحيحة.</p><Link className="btn btn-primary" to="/">العودة إلى الرئيسية <ArrowLeft size={16}/></Link></div><div className="related-links"><Link to="/coaching">الكوتشنج المهني</Link><Link to="/articles">مقالات المجتمع</Link><Link to="/faq">الأسئلة الشائعة</Link></div></main>
 }
 
 
@@ -197,7 +318,7 @@ function App() {
   const onSignOut = () => { if (supabase) void supabase.auth.signOut(); setUser(null); setSignedIn(false); setDemo(false); setRoleState('member'); setDisplayName('حسابي'); localStorage.removeItem('saytara-demo') }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <HashRouter><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''}/></AppShell>}/>)}</Routes></div></HashRouter>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles"/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events"/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches"/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></div></BrowserRouter>
 }
 
 export default App

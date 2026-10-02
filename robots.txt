@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Disallow: /mojtama-al-saytara/login
+Disallow: /mojtama-al-saytara/register
+Disallow: /mojtama-al-saytara/reset-password
+Disallow: /mojtama-al-saytara/feed
+Disallow: /mojtama-al-saytara/profile
+Disallow: /mojtama-al-saytara/connections
+Disallow: /mojtama-al-saytara/messages
+Disallow: /mojtama-al-saytara/notifications
+Disallow: /mojtama-al-saytara/groups
+Disallow: /mojtama-al-saytara/verification
+Disallow: /mojtama-al-saytara/moderation
+Disallow: /mojtama-al-saytara/admin
+Disallow: /mojtama-al-saytara/settings
+Sitemap: https://proexcellencenetwork-art.github.io/mojtama-al-saytara/sitemap.xml

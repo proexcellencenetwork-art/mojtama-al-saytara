@@ -77,7 +77,7 @@
    http://localhost:5173/?flow=oauth
    ```
 
-   التطبيق يستخدم `HashRouter` لمسارات الصفحات الداخلية، وPKCE لرمز العودة؛ رابط العودة هو جذر الموقع مع `flow` ثم يحوّل التطبيق المستخدم إلى الصفحة المناسبة.
+   التطبيق يستخدم `BrowserRouter` ومسارات نظيفة، مع `basename` مشتق من `VITE_SITE_URL` للتوافق مع GitHub Pages، ويستخدم PKCE لرمز العودة؛ رابط العودة هو جذر الموقع مع `flow` ثم يحوّل التطبيق المستخدم إلى الصفحة المناسبة.
 
 4. من **Authentication → Email Templates** خصّص **Confirm signup** و**Reset password** بالعربية. اترك `{{ .ConfirmationURL }}` كما هو حتى يحمل رابط التأكيد/الاستعادة رمز Supabase ووجهة العودة.
 
@@ -203,8 +203,17 @@ supabase functions deploy delete-account
 
 - الموقع: [https://proexcellencenetwork-art.github.io/mojtama-al-saytara/](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/)
 - المستودع: [proexcellencenetwork-art/mojtama-al-saytara](https://github.com/proexcellencenetwork-art/mojtama-al-saytara)
-- يستخدم Vite الأساس `/mojtama-al-saytara/` و`HashRouter` للصفحات الداخلية. مصدر HTML هو `src/index.html`، وملفات الجذر و`assets/` ملفات بناء يولدها workflow لإعداد Pages الحالي؛ لا تعدّلها يدوياً.
+- يستخدم Vite الأساس المستنتج من `VITE_SITE_URL` و`BrowserRouter` بمسارات نظيفة متوافقة مع GitHub Pages. مصدر HTML هو `src/index.html`؛ أما ملفات الجذر و`assets/` وصفحات المسارات فهي مخرجات بناء يولدها workflow؛ لا تعدّلها يدوياً.
 - عند غياب متغيرات Supabase أو عدم صلاحيتها، تظهر لافتة وضع التجربة ولا تنهار الصفحة. وضع التجربة يستخدم حالة متصفح محلية للعرض فقط ولا يكتب بياناتها إلى قاعدة حية.
+
+## صفحات البحث والمشاركة
+
+- بعد `vite build` ينشئ `scripts/prerender-pages.mjs` HTML عربياً كاملاً للصفحات العامة: الرئيسية، عن المجتمع، الكوتشنج، ملفات الكوتشات العامة، المقالات المنشورة، الفعاليات العامة القادمة، الأسئلة الشائعة، الخصوصية، الشروط، وميثاق السلوك.
+- تُجلب صفحات المقالات والكوتشات والفعاليات من الجداول/العرض العام المسموح به فقط؛ لا تُضمّن الرسائل أو الملفات الشخصية الخاصة أو طلبات التوثيق. كل صفحة داخلية/مصادقة تحمل `noindex`، ولا تُضاف إلى sitemap.
+- لكل صفحة عنوان ووصف وcanonical و`hreflang="ar"` وOpen Graph/Twitter وJSON-LD مناسب، مع روابط التنقل وBreadcrumbs مرئية للمستخدم. صور المشاركة والأيقونات أصلية مولّدة محلياً؛ لا تستخدم صور stock.
+- ينتج البناء `sitemap.xml` و`robots.txt` و`404.html` وصفحات المسارات الثابتة، ويتحقق منها `scripts/validate-seo-output.mjs` ضمن `npm run build`؛ يمكن إعادة الفحص بعد البناء عبر `npm run test:seo`.
+- يقرأ workflow متغير GitHub Actions اختياري `VITE_SITE_URL`؛ إن لم يكن موجوداً يستخدم رابط GitHub Pages الحالي. عند الانتقال لاحقاً إلى نطاق مخصص، حدّث هذا المتغير ليبدأ بـ`https://` ثم أعد النشر. سيُعاد اشتقاق أساس Vite والروابط القانونية وOpen Graph وsitemap، لكن يبقى إعداد DNS/نطاق GitHub Pages وإضافة Redirect URL الجديد في Supabase مطلوبين يدوياً.
+- خريطة الموقع بعد النشر: [sitemap.xml](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/sitemap.xml). أرسلها يدوياً في Google Search Console أو Bing Webmaster Tools عند امتلاك الحساب؛ لم يتم التحقق من ملكية النطاق أو طلب الفهرسة.
 
 ## حالة الربط الحالية
 

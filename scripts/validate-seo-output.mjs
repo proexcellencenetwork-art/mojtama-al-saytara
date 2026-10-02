@@ -1,0 +1,89 @@
+import { readFile, access } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
+const dist = resolve(root, 'dist')
+const fail = []
+const manifest = JSON.parse(await readFile(resolve(dist, 'manus-routes.json'), 'utf8'))
+const siteValue = process.env.VITE_SITE_URL?.trim() || 'https://proexcellencenetwork-art.github.io/mojtama-al-saytara/'
+const siteRoot = new URL(siteValue.endsWith('/') ? siteValue : `${siteValue}/`)
+const siteUrl = siteRoot.toString()
+const basePath = siteRoot.pathname
+if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'routes') throw new Error('Route manifest must contain only top-level routes.')
+for (const route of manifest.routes) {
+  if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
+}
+const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/'])
+const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/'])
+const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
+const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
+const publicTitles = new Set()
+const publicDescriptions = new Set()
+const urlsInSitemap = []
+const fileForRoute = route => resolve(dist, route.path === '/' ? 'index.html' : `${route.path.replace(/^\/+/, '')}index.html`)
+const safeJson = value => { try { return JSON.parse(value); } catch { return null } }
+
+for (const route of publicRoutes) {
+  const file = fileForRoute(route)
+  let html
+  try { html = await readFile(file, 'utf8') } catch { fail.push(`Missing rendered HTML for ${route.path}`); continue }
+  const title = html.match(/<title>([\s\S]*?)<\/title>/)?.[1]
+  const description = html.match(/<meta\s+name="description"\s+content="([^"]*)"/i)?.[1]
+  const canonical = html.match(/<link\s+rel="canonical"\s+href="([^"]*)"/i)?.[1]
+  if (!title || [...title].length >= 60) fail.push(`Title missing/too long: ${route.path}`)
+  if (!description || [...description].length >= 160) fail.push(`Description missing/too long: ${route.path}`)
+  if (title && publicTitles.has(title)) fail.push(`Duplicate public title: ${route.path}`)
+  if (description && publicDescriptions.has(description)) fail.push(`Duplicate public description: ${route.path}`)
+  if (title) publicTitles.add(title)
+  if (description) publicDescriptions.add(description)
+  if (!canonical?.startsWith(siteUrl)) fail.push(`Canonical URL does not match VITE_SITE_URL: ${route.path}`)
+  if (!html.includes('<html lang="ar" dir="rtl">')) fail.push(`Arabic RTL document attributes missing: ${route.path}`)
+  if (!html.includes('hreflang="ar"')) fail.push(`Arabic hreflang missing: ${route.path}`)
+  if (!html.includes('og:image') || !html.includes('twitter:card')) fail.push(`Social metadata missing: ${route.path}`)
+  if (!/<h1\b[^>]*>\s*[^<]/i.test(html)) fail.push(`Rendered H1 missing: ${route.path}`)
+  if (!html.includes('id="root">')) fail.push(`Rendered body content missing: ${route.path}`)
+  if (!html.includes('.css') || !html.includes('.js')) fail.push(`CSS/JS bundle references missing: ${route.path}`)
+  const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match => safeJson(match[1])).filter(Boolean)
+  if (!scripts.some(item => item['@type'] === 'Organization') || !scripts.some(item => item['@type'] === 'WebSite') || !scripts.some(item => item['@type'] === 'BreadcrumbList')) fail.push(`Required Organization/WebSite/BreadcrumbList schema missing: ${route.path}`)
+  if (route.path === '/faq/' && !scripts.some(item => item['@type'] === 'FAQPage')) fail.push('FAQPage schema missing.')
+  if (route.path === '/coaching/' && !scripts.some(item => item['@type'] === 'Service')) fail.push('Service schema missing.')
+  if (/^\/articles\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Article')) fail.push(`Article schema missing: ${route.path}`)
+  if (/^\/events\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Event')) fail.push(`Event schema missing: ${route.path}`)
+  if (/^\/coaches\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Person')) fail.push(`Person schema missing: ${route.path}`)
+  urlsInSitemap.push(canonical)
+}
+for (const route of privateRoutes) {
+  const file = fileForRoute(route)
+  try {
+    const html = await readFile(file, 'utf8')
+    if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
+    if (/<main[^>]*>\s*<(?:article|h1)[^>]*>[^<]{8,}/i.test(html) && !html.includes('هذه المساحة تتطلب الدخول')) fail.push(`Private content appears in static HTML: ${route.path}`)
+  } catch { fail.push(`Missing private SPA shell for ${route.path}`) }
+}
+const sitemapText = await readFile(resolve(dist, 'sitemap.xml'), 'utf8')
+const sitemapLocs = [...sitemapText.matchAll(/<loc>([\s\S]*?)<\/loc>/g)].map(match => match[1])
+if (sitemapLocs.some(url => !urlsInSitemap.includes(url)) || urlsInSitemap.some(url => !sitemapLocs.includes(url))) fail.push('Sitemap URLs do not exactly match public prerendered pages.')
+const notFoundHtml = await readFile(resolve(dist,'404.html'),'utf8')
+if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFoundHtml.includes('rel="canonical"')) fail.push('404 page must be noindex and must not declare a false canonical URL.')
+const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
+if (!robots.includes('Sitemap:') || !robots.includes(new URL('sitemap.xml', siteRoot).toString())) fail.push('robots.txt sitemap location is incorrect.')
+for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg']) {
+  try { await access(resolve(dist,file)) } catch { fail.push(`Required static asset missing: ${file}`) }
+}
+const index = await readFile(resolve(dist,'index.html'),'utf8')
+const assetRefs = [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css|png|svg|webmanifest))"/g)].map(m=>m[1])
+for (const ref of assetRefs) {
+  const url = new URL(ref, siteUrl)
+  let relative = decodeURIComponent(url.pathname)
+  if (basePath !== '/' && relative.startsWith(basePath)) relative = relative.slice(basePath.length)
+  relative = relative.replace(/^\/+/, '')
+  if (!relative || relative.includes('..')) continue
+  try { await access(resolve(dist, relative)) } catch { fail.push(`Broken built asset reference: ${ref}`) }
+}
+if (fail.length) {
+  console.error(`SEO output validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`)
+  process.exitCode = 1
+} else {
+  console.log(`SEO output validation passed: ${publicRoutes.length} public routes, ${privateRoutes.length} noindex shells, ${sitemapLocs.length} sitemap entries, valid JSON-LD and local assets.`)
+}
