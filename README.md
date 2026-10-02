@@ -215,6 +215,14 @@ supabase functions deploy delete-account
 - يقرأ workflow متغير GitHub Actions اختياري `VITE_SITE_URL`؛ إن لم يكن موجوداً يستخدم رابط GitHub Pages الحالي. عند الانتقال لاحقاً إلى نطاق مخصص، حدّث هذا المتغير ليبدأ بـ`https://` ثم أعد النشر. سيُعاد اشتقاق أساس Vite والروابط القانونية وOpen Graph وsitemap، لكن يبقى إعداد DNS/نطاق GitHub Pages وإضافة Redirect URL الجديد في Supabase مطلوبين يدوياً.
 - خريطة الموقع بعد النشر: [sitemap.xml](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/sitemap.xml). أرسلها يدوياً في Google Search Console أو Bing Webmaster Tools عند امتلاك الحساب؛ لم يتم التحقق من ملكية النطاق أو طلب الفهرسة.
 
+## الأداء (المرحلة الثانية)
+
+أُضيف Tajawal محلياً بمجموعتي Arabic/Latin وأوزان 400/500/700/800، وأُنشئت صور AVIF/WebP متجاوبة من الرسم الأصلي. صفحات SEO العامة تُقدّم HTML مسبق التوليد بلا React/Supabase، بينما تُحمّل صفحات الدخول والعضوية وحزمة Supabase عند الحاجة. تتضمن الصفحات العامة CSS نقدياً مضمّناً، مع تحميل ورقة الأنماط المحلية قبل الرسم لتجنب قفزات التخطيط. اختبارات بناء GitHub Pages ونطاق مخصص على الجذر نجحت.
+
+في اختبار Lighthouse 12.8.2 المختبري على الرئيسية و«عن المجتمع»، كانت النتائج: **الأداء 99/97، إمكانية الوصول 100/100، أفضل الممارسات 100/100، وSEO 100/100**؛ وكان CLS صفراً للصفحتين. القياس محلي قبل النشر ولا يمثل بيانات الزوار أو أداء مسارات Supabase الخاصة. التفاصيل والمنهجية في [تقرير أداء المرحلة الثانية](docs/performance-phase2.md)، ومصادر الخطوط والترخيص في [مراجع الأداء](docs/performance-sources.md).
+
+لإعادة تجهيز الأصول: `npm run fonts:vendor` و`npm run images:optimize`؛ ثم استخدم `npm run build` و`npm run test:seo-fixtures` و`npm run lint` للتحقق. يتطلب توليد الصور FFmpeg.
+
 ## حالة الربط الحالية
 
 - **مكتمل:** متغيرا GitHub Actions، نشر GitHub Pages، تطبيق `setup.sql`، عنوان الموقع وروابط العودة، وتحقق حي من الجداول والـ bucket والـ trigger وRLS الأساسي.

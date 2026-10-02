@@ -5,6 +5,8 @@ import App from './App.tsx'
 import './design.css'
 import './backend.css'
 import './seo.css'
+import './fonts.css'
+import './performance.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

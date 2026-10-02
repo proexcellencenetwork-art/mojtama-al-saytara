@@ -1,4 +1,4 @@
-import { readFile, access } from 'node:fs/promises'
+import { readFile, access, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -43,7 +43,14 @@ for (const route of publicRoutes) {
   if (!html.includes('og:image') || !html.includes('twitter:card')) fail.push(`Social metadata missing: ${route.path}`)
   if (!/<h1\b[^>]*>\s*[^<]/i.test(html)) fail.push(`Rendered H1 missing: ${route.path}`)
   if (!html.includes('id="root">')) fail.push(`Rendered body content missing: ${route.path}`)
-  if (!html.includes('.css') || !html.includes('.js')) fail.push(`CSS/JS bundle references missing: ${route.path}`)
+  if (!html.includes('.css') || !html.includes('public-site.js')) fail.push(`Public page CSS or lightweight behavior script is missing: ${route.path}`)
+  if (/<script\b[^>]*\btype="module"/i.test(html) || /rel="modulepreload"/i.test(html)) fail.push(`Public route unexpectedly loads the React/Supabase module bundle: ${route.path}`)
+  if (/fonts\.googleapis\.com|fonts\.gstatic\.com|supabase\.co/i.test(html)) fail.push(`Public route has an external font or Supabase network dependency: ${route.path}`)
+  if (!html.includes('critical-public-css') || !/<link\b[^>]*rel="stylesheet"/i.test(html) || html.includes('data-deferred-style')) fail.push(`Public route is missing inline critical CSS or its render-blocking stylesheet: ${route.path}`)
+  if (route.path === '/about/') {
+    const picture = html.match(/<picture>[\s\S]*?<\/picture>/i)?.[0] || ''
+    if (!picture.includes('image/avif') || !picture.includes('image/webp') || !picture.includes('srcset=') || !picture.includes('sizes=') || !/loading="lazy"/.test(picture) || !/decoding="async"/.test(picture) || !/width="1200"/.test(picture) || !/height="630"/.test(picture)) fail.push('About-page illustration must have AVIF/WebP srcset, sizes, dimensions, and lazy/async loading.')
+  }
   const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match => safeJson(match[1])).filter(Boolean)
   if (!scripts.some(item => item['@type'] === 'Organization') || !scripts.some(item => item['@type'] === 'WebSite') || !scripts.some(item => item['@type'] === 'BreadcrumbList')) fail.push(`Required Organization/WebSite/BreadcrumbList schema missing: ${route.path}`)
   if (route.path === '/faq/' && !scripts.some(item => item['@type'] === 'FAQPage')) fail.push('FAQPage schema missing.')
@@ -68,11 +75,11 @@ const notFoundHtml = await readFile(resolve(dist,'404.html'),'utf8')
 if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFoundHtml.includes('rel="canonical"')) fail.push('404 page must be noindex and must not declare a false canonical URL.')
 const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
 if (!robots.includes('Sitemap:') || !robots.includes(new URL('sitemap.xml', siteRoot).toString())) fail.push('robots.txt sitemap location is incorrect.')
-for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg']) {
+for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg','public-site.js','images/brand-community-480.avif','images/brand-community-480.webp','images/brand-community-1200.avif','images/brand-community-1200.webp','fonts/OFL.txt']) {
   try { await access(resolve(dist,file)) } catch { fail.push(`Required static asset missing: ${file}`) }
 }
 const index = await readFile(resolve(dist,'index.html'),'utf8')
-const assetRefs = [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css|png|svg|webmanifest))"/g)].map(m=>m[1])
+const assetRefs = [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css|png|svg|webmanifest|woff2|webp|avif))"/g)].map(m=>m[1])
 for (const ref of assetRefs) {
   const url = new URL(ref, siteUrl)
   let relative = decodeURIComponent(url.pathname)
@@ -80,6 +87,21 @@ for (const ref of assetRefs) {
   relative = relative.replace(/^\/+/, '')
   if (!relative || relative.includes('..')) continue
   try { await access(resolve(dist, relative)) } catch { fail.push(`Broken built asset reference: ${ref}`) }
+}
+const builtFiles = await readdir(resolve(dist,'assets'))
+const builtCssName = builtFiles.find(file => /^index-.*\.css$/.test(file))
+if (!builtCssName) fail.push('Built application stylesheet missing.')
+else {
+  const css = await readFile(resolve(dist,'assets',builtCssName),'utf8')
+  const fontRefs = [...css.matchAll(/url\(([^)]+\.woff2)\)/g)].map(match=>match[1])
+  if (fontRefs.length !== 8) fail.push(`Expected 8 self-hosted WOFF2 subset URLs in the built CSS; found ${fontRefs.length}.`)
+  for (const ref of fontRefs) {
+    const url = new URL(ref,siteUrl)
+    let relative = decodeURIComponent(url.pathname)
+    if (basePath !== '/' && relative.startsWith(basePath)) relative = relative.slice(basePath.length)
+    relative = relative.replace(/^\/+/, '')
+    try { await access(resolve(dist,relative)) } catch { fail.push(`Broken base-aware WOFF2 asset reference: ${ref}`) }
+  }
 }
 if (fail.length) {
   console.error(`SEO output validation failed with ${fail.length} issue(s):\n- ${fail.join('\n- ')}`)

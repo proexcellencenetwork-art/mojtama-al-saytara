@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
-import type { RealtimeChannel, User } from '@supabase/supabase-js'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-js'
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, X } from 'lucide-react'
-import { supabase, isSupabaseConfigured } from './lib/supabase'
+import { isSupabaseConfigured } from './lib/supabase-config'
 import type { Role } from './appTypes'
-import { LoginPage, ResetPasswordPage } from './components/AuthPages'
-import { LiveDashboardPage } from './components/LiveDashboardPage'
-import { LiveFeedPage } from './components/LiveFeedPage'
-import { LivePublicPage } from './components/LivePublicPage'
 import './App.css'
+
+const LoginPage = lazy(() => import('./components/AuthPages').then(module => ({ default: module.LoginPage })))
+const ResetPasswordPage = lazy(() => import('./components/AuthPages').then(module => ({ default: module.ResetPasswordPage })))
+const LiveDashboardPage = lazy(() => import('./components/LiveDashboardPage').then(module => ({ default: module.LiveDashboardPage })))
+const LiveFeedPage = lazy(() => import('./components/LiveFeedPage').then(module => ({ default: module.LiveFeedPage })))
+const LivePublicPage = lazy(() => import('./components/LivePublicPage').then(module => ({ default: module.LivePublicPage })))
 
 const roleNames: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير' }
 const demoPosts = [
@@ -47,9 +49,9 @@ const publicCopy: Record<string, { title: string; eyebrow: string; intro: string
   charter: { eyebrow: 'ميثاق السلوك', title: 'الاحترام ليس خياراً إضافياً.', intro: 'نحافظ معاً على مساحة مهنية تحترم الإنسان والخصوصية وتفسح المجال للاختلاف.', points: [['احترام متبادل', 'نختلف في الرأي دون إساءة أو تحرش.'], ['سرية مهنية', 'لا تعيد نشر محتوى الأعضاء خارج سياقه.'], ['لا إزعاج ولا ترويج', 'لا رسائل مزعجة، ولا ادعاءات أو ترويج مضلل.']] },
 }
 function PublicPage({ page }: { page: keyof typeof publicCopy }) {
-  if (isSupabaseConfigured && supabase && ['coaches', 'articles', 'events'].includes(page)) return <LivePublicPage page={page} />
+  if (isSupabaseConfigured && ['coaches', 'articles', 'events'].includes(page)) return <LivePublicPage page={page} />
   const item = publicCopy[page]
-  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>{item.eyebrow}</span></nav><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h3>{title}</h3><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div><nav className="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b><Link to="/coaching">تعرّف على الكوتشنج المهني</Link><Link to="/articles">اقرأ مقالات المجتمع</Link><Link to="/faq">إجابات الأسئلة الشائعة</Link></nav></main><Footer/></>
+  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>{item.eyebrow}</span></nav><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h2>{title}</h2><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div><div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div><nav className="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b><Link to="/coaching">تعرّف على الكوتشنج المهني</Link><Link to="/articles">اقرأ مقالات المجتمع</Link><Link to="/faq">إجابات الأسئلة الشائعة</Link></nav></main><Footer/></>
 }
 
 const publicSeo: Record<string, { title: string; description: string }> = {
@@ -106,7 +108,7 @@ function RouteMetadata() {
   return null
 }
 
-function LivePublicDetailPage({ page }: { page: 'articles' | 'events' | 'coaches' }) {
+function LivePublicDetailPage({ page, client }: { page: 'articles' | 'events' | 'coaches'; client: SupabaseClient | null }) {
   const { id, slug } = useParams()
   const key = slug || id || ''
   const [row, setRow] = useState<Record<string, unknown> | null>(null)
@@ -115,12 +117,12 @@ function LivePublicDetailPage({ page }: { page: 'articles' | 'events' | 'coaches
     let active = true
     async function load() {
       setLoading(true)
-      if (!supabase || !key) { setRow(null); setLoading(false); return }
+      if (!client || !key) { setRow(null); setLoading(false); return }
       const query = page === 'articles'
-        ? supabase.from('articles').select('id,title,slug,excerpt,body,published_at').eq('status', 'published').eq('slug', key).maybeSingle()
+        ? client.from('articles').select('id,title,slug,excerpt,body,published_at').eq('status', 'published').eq('slug', key).maybeSingle()
         : page === 'events'
-          ? supabase.from('events').select('id,title,description,starts_at,ends_at,location').eq('is_private', false).eq('moderation_state', 'visible').eq('id', key).maybeSingle()
-          : supabase.from('public_coaches').select('user_id,display_name,headline,profession,specialty,city,public_bio,coaching_topics').eq('user_id', key).maybeSingle()
+          ? client.from('events').select('id,title,description,starts_at,ends_at,location').eq('is_private', false).eq('moderation_state', 'visible').eq('id', key).maybeSingle()
+          : client.from('public_coaches').select('user_id,display_name,headline,profession,specialty,city,public_bio,coaching_topics').eq('user_id', key).maybeSingle()
       const result = await query
       if (!active) return
       const publicRow = result.error ? null : result.data as Record<string, unknown> | null
@@ -163,7 +165,7 @@ function LivePublicDetailPage({ page }: { page: 'articles' | 'events' | 'coaches
     }
     void load()
     return () => { active = false }
-  }, [key, page])
+  }, [key, page, client])
   const title = String(row?.title || row?.display_name || '')
   const body = String(row?.body || row?.public_bio || row?.description || '')
   return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span>/</span><Link to={`/${page}`}>{page === 'articles' ? 'المقالات' : page === 'events' ? 'الفعاليات' : 'الكوتشات'}</Link><span>/</span><span>{title || 'التفاصيل'}</span></nav>{loading ? <div className="live-state">جارٍ تحميل المحتوى العام…</div> : !row ? <div className="panel-card empty-state"><h1>هذا المحتوى غير متاح.</h1><Link to={`/${page}`} className="text-link">العودة إلى القائمة</Link></div> : <article className="public-article"><span className="eyebrow">{page === 'articles' ? 'مقال من مكتبة المجتمع' : page === 'events' ? 'فعالية عامة' : 'ملف كوتش مهني'}</span><h1>{title}</h1>{page === 'articles' && row.published_at ? <time dateTime={String(row.published_at)}>{new Date(String(row.published_at)).toLocaleDateString('ar')}</time> : null}{page === 'events' && row.starts_at ? <p className="hero-lead">{new Date(String(row.starts_at)).toLocaleString('ar', { dateStyle: 'long', timeStyle: 'short' })} · {String(row.location || 'افتراضي')}</p> : null}<p className="public-article-body">{body}</p>{Array.isArray(row.coaching_topics) && <p>محاور الكوتشنج: {row.coaching_topics.join(' · ')}</p>}</article>}<nav className="related-links" aria-label="صفحات مرتبطة"><b>اكتشف المزيد</b><Link to="/coaching">الكوتشنج المهني</Link><Link to="/articles">مقالات المجتمع</Link><Link to="/faq">الأسئلة الشائعة</Link></nav></main><Footer/></>
@@ -184,15 +186,15 @@ function DemoFeedPage({ role }: { role: Role }) { const [posts, setPosts] = useS
   return <main className="app-main wrap"><div className="feed-top"><div><span className="eyebrow">مساحتك المهنية</span><h1>الخلاصة</h1></div><div className="feed-search"><Search size={17}/><input placeholder="ابحث عن أشخاص أو موضوعات"/><kbd>/</kbd></div></div><div className="feed-layout"><SideCard role={role}/><section className="feed-stream"><div className="feed-tabs"><button className={filter==='الأحدث'?'selected':''} onClick={()=>setFilter('الأحدث')}>الأحدث</button><button className={filter==='المتابَعون'?'selected':''} onClick={()=>setFilter('المتابَعون')}>المتابَعون</button><span className="tab-note"><Activity size={14}/> مساحة مهنية هادئة</span></div><div className="composer"><div className="composer-top"><Avatar letter="ن"/><button onClick={()=>{if(!canPost)setNotice(true)}} className="composer-input">{canPost ? 'ما الفكرة المهنية التي تود مشاركتها؟' : 'اكتب منشوراً مهنياً — متاح للأعضاء الموثّقين'}</button></div>{!canPost && notice ? <div className="inline-message">ميزة النشر متاحة للمهنيين الموثّقين. يمكنك التقدم بطلب التوثيق من ملفك.</div> : null}<div className="composer-bottom"><span className="patient-warning compact"><Shield size={14}/> لا تنشر معلومات أو صور مرضى</span>{canPost ? <button className="btn btn-primary btn-small" onClick={()=>setNotice(true)}><Plus size={15}/> اكتب منشوراً</button> : <Link to="/verification" className="text-link">طلب التوثيق <ArrowLeft size={14}/></Link>}</div>{notice && canPost && <form className="composer-expanded" onSubmit={e=>{e.preventDefault();if(text.trim()){setPosts([{id:Date.now(),name:'نورة العبدالله',title:'ممرضة · صحة المجتمع',role, time:'الآن',text,tags:['مجتمع السيطرة'],likes:0,comments:0,avatar:'ن'},...posts]);setText('');setNotice(false)}}}><textarea value={text} onChange={e=>setText(e.target.value)} placeholder="شارك فكرة مهنية عامة، من دون معلومات أو صور تخص المرضى."/><button className="btn btn-primary btn-small" disabled={!text.trim()}>نشر</button></form>}</div>{posts.map(p=><PostCard key={p.id} post={p} role={role}/>)}</section><aside className="feed-right"><div className="trending-box"><span className="eyebrow">في مجتمعنا</span><h3>موضوعات للنقاش</h3>{[['#تطوير_مهني','١٢٤ مشاركة'],['#التوازن_الحياتي','٨٦ مشاركة'],['#تمريض','٧٢ مشاركة'],['#إدارة_الضغط','٥٨ مشاركة']].map(([a,b])=><Link to="/feed" className="trend" key={a}><b>{a}</b><small>{b}</small></Link>)}<Link to="/groups" className="text-link">اكتشف المزيد <ArrowLeft size={14}/></Link></div><div className="event-teaser"><CalendarDays size={20}/><span><b>لقاء هذا الأسبوع</b><small>جلسة وضوح المسار المهني</small></span><Link to="/events">سجّل</Link></div></aside></div></main>
 }
 function FeedPage({ role, demoMode, userId, displayName }: { role: Role; demoMode: boolean; userId: string; displayName: string }) {
-  if (!demoMode && supabase && userId) return <LiveFeedPage userId={userId} role={role} displayName={displayName} />
+  if (!demoMode && userId) return <LiveFeedPage userId={userId} role={role} displayName={displayName} />
   return <DemoFeedPage role={role} />
 }
 
-function DashboardPage(props: { page: string; role: Role; setRole: (role: Role) => void; demoMode: boolean; userId: string }) {
-  if (!props.demoMode && props.page !== 'settings' && supabase && props.userId) return <LiveDashboardPage page={props.page} role={props.role} userId={props.userId} />
-  return <DemoDashboardPage page={props.page} role={props.role} setRole={props.setRole} demoMode={props.demoMode} />
+function DashboardPage(props: { page: string; role: Role; setRole: (role: Role) => void; demoMode: boolean; userId: string; client: SupabaseClient | null }) {
+  if (!props.demoMode && props.page !== 'settings' && props.userId) return <LiveDashboardPage page={props.page} role={props.role} userId={props.userId} />
+  return <DemoDashboardPage page={props.page} role={props.role} setRole={props.setRole} demoMode={props.demoMode} client={props.client} />
 }
-function DemoDashboardPage({ page, role, setRole, demoMode }: { page: string; role: Role; setRole: (role:Role)=>void; demoMode: boolean }) {
+function DemoDashboardPage({ page, role, setRole, demoMode, client }: { page: string; role: Role; setRole: (role:Role)=>void; demoMode: boolean; client: SupabaseClient | null }) {
  const [tab, setTab] = useState('نشاطي'), [success,setSuccess]=useState('')
  const title = ({profile:'الملف الشخصي',connections:'الاتصالات',messages:'الرسائل',notifications:'الإشعارات',groups:'المجموعات',verification:'طلب التوثيق',moderation:'لوحة الإشراف',admin:'لوحة المدير',settings:'الإعدادات'} as Record<string,string>)[page] || page
  const staff = ['moderator','manager'].includes(role)
@@ -200,7 +202,7 @@ function DemoDashboardPage({ page, role, setRole, demoMode }: { page: string; ro
  : page==='verification' ? <div className="panel-card"><div className="panel-icon gold"><BadgeCheck/></div><h2>وثّق خبرتك المهنية</h2><p>تتم مراجعة الطلبات من فريق مختص. تبقى مستنداتك في مساحة خاصة ولا يطّلع عليها إلا المشرفون والمدير.</p><form className="verification-form" onSubmit={e=>{e.preventDefault();setSuccess('وصل طلبك التجريبي. عند ربط Supabase ستُحفظ الطلبات في قاعدة البيانات.')}}><div className="form-grid"><label>الاسم الكامل<input required placeholder="الاسم كما في البطاقة المهنية"/></label><label>المهنة<input required placeholder="مثال: طبيب / ممرض / صيدلي"/></label><label>التخصص<input placeholder="التخصص المهني"/></label><label>جهة العمل<input placeholder="جهة العمل الحالية"/></label><label className="full-field">رقم التصنيف المهني<input placeholder="رقم التسجيل أو التصنيف"/></label><label className="file-field full-field">صورة الرخصة أو بطاقة العمل<input type="file" accept="image/*,.pdf"/><small>ملف خاص للمراجعة فقط. لا ترفع أي صورة أو بيانات تخص المرضى.</small></label></div><button className="btn btn-primary">إرسال للمراجعة <ArrowLeft size={15}/></button></form></div>
  : page==='moderation' ? <div className="panel-card"><div className="panel-icon"><ShieldCheck/></div><h2>مركز الإشراف</h2><p>مراجعة البلاغات وطلبات التوثيق، والتعامل مع المحتوى المخالف.</p>{staff ? <><div className="moderation-tabs"><button className="selected" onClick={()=>setTab('بلاغات')}>البلاغات <b>٣</b></button><button onClick={()=>setTab('توثيق')}>طلبات التوثيق <b>٢</b></button></div>{(tab==='بلاغات' ? [['منشور · مشاركة معلومات مرضى','مخالفة الخصوصية','قبل ١٢ دقيقة'],['حساب · رسائل مزعجة','إزعاج / ترويج','قبل ساعة'],['تعليق · سلوك غير مهني','إساءة','أمس']] : [['د. هدى منصور','طب الأسرة · الرياض','قيد المراجعة'],['أ. خالد الشهري','صيدلة إكلينيكية · جدة','قيد المراجعة']]).map((r,i)=><div className="review-row" key={i}><span className="review-dot"/><div><b>{r[0]}</b><small>{r[1]} · {r[2]}</small></div><button className="btn btn-small btn-outline" onClick={()=>setSuccess('سُجل قرار المراجعة في وضع التجربة.')}>مراجعة</button></div>)}</> : <div className="inline-message">تظهر أدوات الإشراف بعد تسجيل الدخول بدور مشرف أو مدير.</div>}</div>
  : page==='admin' ? <div className="panel-card"><div className="panel-icon"><Settings/></div><h2>إدارة مجتمع السيطرة</h2><p>إدارة أدوار الأعضاء وخيارات المنصة والعضويات.</p>{role==='manager' ? <><div className="admin-stats"><div><b>١٬٢٨٤</b><small>عضواً</small></div><div><b>٤٨</b><small>موثّقاً</small></div><div><b>١٢</b><small>كوتشاً</small></div></div><div className="review-row"><div><b>إدارة الأدوار</b><small>تُطبّق الصلاحيات الحقيقية من سياسات قاعدة البيانات.</small></div><button className="btn btn-small btn-outline" onClick={()=>setSuccess('وضع الإدارة هنا تجريبي فقط؛ غيّر الأدوار الحقيقية عبر SQL الآمن الموضح في README.')}>إعداد</button></div><div className="premium-callout"><Sparkles size={18}/><span><b>العضوية المميزة</b><small>هيكل جاهز. المدفوعات غير مفعّلة حتى اختيار مزود الدفع.</small></span><span className="status-pill">قريباً</span></div></> : <div className="inline-message">صفحة المدير متاحة لمدير المنصة فقط.</div>}</div>
- : page==='settings' ? <div className="panel-card"><div className="panel-icon"><LockKeyhole/></div><h2>إعداداتك وبياناتك</h2><p>أنت تتحكم في بيانات حسابك. يمكنك تنزيل نسخة أو حذف حسابك.</p><div className="review-row"><div><b>تصدير بياناتي</b><small>تنزيل نسخة من بيانات الحساب والمنشورات.</small></div><button className="btn btn-small btn-outline" onClick={async()=>{let payload:unknown={profile:'نورة العبدالله',role,posts:demoPosts};if(isSupabaseConfigured&&supabase){const {data:{user},error}=await supabase.auth.getUser();if(error||!user){setSuccess('سجّل الدخول أولاً لتصدير بيانات حسابك.');return}const tasks=[supabase.from('profiles').select('*').eq('user_id',user.id).maybeSingle(),supabase.from('posts').select('*').eq('author_id',user.id),supabase.from('comments').select('*').eq('author_id',user.id),supabase.from('connections').select('*').or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`),supabase.from('messages').select('*').or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`),supabase.from('notifications').select('*').eq('recipient_id',user.id),supabase.from('verification_requests').select('id,full_name,profession,specialty,workplace,professional_registration_no,status,decision_reason,requested_at,reviewed_at').eq('user_id',user.id),supabase.from('user_roles').select('*').eq('user_id',user.id),supabase.from('post_likes').select('*').eq('user_id',user.id),supabase.from('saved_posts').select('*').eq('user_id',user.id),supabase.from('user_blocks').select('*').or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`),supabase.from('group_memberships').select('*').eq('user_id',user.id),supabase.from('groups').select('*').eq('owner_id',user.id),supabase.from('event_rsvps').select('*').eq('user_id',user.id),supabase.from('events').select('*').eq('organizer_id',user.id),supabase.from('articles').select('*').eq('author_id',user.id),supabase.from('coaching_bookings').select('*').or(`member_id.eq.${user.id},coach_id.eq.${user.id}`),supabase.from('coach_availability').select('*').eq('coach_id',user.id),supabase.from('memberships').select('*').eq('user_id',user.id),supabase.from('reports').select('*').eq('reporter_id',user.id)];const results=await Promise.all(tasks);const failed=results.find(r=>r.error);if(failed?.error){setSuccess('تعذر تصدير جميع البيانات؛ تحقق من إعدادات Supabase وحاول لاحقاً.');return}payload={email:user.email,exported_at:new Date().toISOString(),profile:results[0].data,posts:results[1].data,comments:results[2].data,connections:results[3].data,messages:results[4].data,notifications:results[5].data,verification_requests:results[6].data,roles:results[7].data,likes:results[8].data,saved_posts:results[9].data,blocks:results[10].data,group_memberships:results[11].data,groups_created:results[12].data,event_rsvps:results[13].data,events_created:results[14].data,articles:results[15].data,coaching_bookings:results[16].data,coach_availability:results[17].data,memberships:results[18].data,reports:results[19].data}}const data=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download='saytara-data.json';a.click();URL.revokeObjectURL(a.href);setSuccess('تم تجهيز ملف بياناتك للتنزيل.')}}>تصدير</button></div><div className="review-row"><div><b>حذف الحساب</b><small>يُحذف الحساب وبياناته وفق سياسة الاحتفاظ.</small></div><button className="btn btn-small btn-danger" onClick={async()=>{if(!window.confirm('سيؤدي هذا إلى حذف حسابك وبياناته نهائياً. هل تريد المتابعة؟'))return;if(!isSupabaseConfigured||!supabase){setSuccess('حذف الحساب الحقيقي يتطلب إعداد Supabase ووظيفة delete-account.');return}const {error}=await supabase.functions.invoke('delete-account',{body:{confirm:true}});if(error){setSuccess('تعذر حذف الحساب. تحقق من تسجيل الدخول وإعداد الوظيفة ثم أعد المحاولة.');return}await supabase.auth.signOut();localStorage.removeItem('saytara-demo');setSuccess('تم حذف الحساب بنجاح.')}}>حذف الحساب</button></div><div className="coaching-note"><ShieldCheck size={18}/><p>لا ترفع بيانات صحية حساسة، ولا تشارك أي معلومات أو صور تخص المرضى.</p></div></div>
+ : page==='settings' ? <div className="panel-card"><div className="panel-icon"><LockKeyhole/></div><h2>إعداداتك وبياناتك</h2><p>أنت تتحكم في بيانات حسابك. يمكنك تنزيل نسخة أو حذف حسابك.</p><div className="review-row"><div><b>تصدير بياناتي</b><small>تنزيل نسخة من بيانات الحساب والمنشورات.</small></div><button className="btn btn-small btn-outline" onClick={async()=>{let payload:unknown={profile:'نورة العبدالله',role,posts:demoPosts};if(isSupabaseConfigured&&client){const {data:{user},error}=await client.auth.getUser();if(error||!user){setSuccess('سجّل الدخول أولاً لتصدير بيانات حسابك.');return}const tasks=[client.from('profiles').select('*').eq('user_id',user.id).maybeSingle(),client.from('posts').select('*').eq('author_id',user.id),client.from('comments').select('*').eq('author_id',user.id),client.from('connections').select('*').or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`),client.from('messages').select('*').or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`),client.from('notifications').select('*').eq('recipient_id',user.id),client.from('verification_requests').select('id,full_name,profession,specialty,workplace,professional_registration_no,status,decision_reason,requested_at,reviewed_at').eq('user_id',user.id),client.from('user_roles').select('*').eq('user_id',user.id),client.from('post_likes').select('*').eq('user_id',user.id),client.from('saved_posts').select('*').eq('user_id',user.id),client.from('user_blocks').select('*').or(`blocker_id.eq.${user.id},blocked_id.eq.${user.id}`),client.from('group_memberships').select('*').eq('user_id',user.id),client.from('groups').select('*').eq('owner_id',user.id),client.from('event_rsvps').select('*').eq('user_id',user.id),client.from('events').select('*').eq('organizer_id',user.id),client.from('articles').select('*').eq('author_id',user.id),client.from('coaching_bookings').select('*').or(`member_id.eq.${user.id},coach_id.eq.${user.id}`),client.from('coach_availability').select('*').eq('coach_id',user.id),client.from('memberships').select('*').eq('user_id',user.id),client.from('reports').select('*').eq('reporter_id',user.id)];const results=await Promise.all(tasks);const failed=results.find(r=>r.error);if(failed?.error){setSuccess('تعذر تصدير جميع البيانات؛ تحقق من إعدادات Supabase وحاول لاحقاً.');return}payload={email:user.email,exported_at:new Date().toISOString(),profile:results[0].data,posts:results[1].data,comments:results[2].data,connections:results[3].data,messages:results[4].data,notifications:results[5].data,verification_requests:results[6].data,roles:results[7].data,likes:results[8].data,saved_posts:results[9].data,blocks:results[10].data,group_memberships:results[11].data,groups_created:results[12].data,event_rsvps:results[13].data,events_created:results[14].data,articles:results[15].data,coaching_bookings:results[16].data,coach_availability:results[17].data,memberships:results[18].data,reports:results[19].data}}const data=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download='saytara-data.json';a.click();URL.revokeObjectURL(a.href);setSuccess('تم تجهيز ملف بياناتك للتنزيل.')}}>تصدير</button></div><div className="review-row"><div><b>حذف الحساب</b><small>يُحذف الحساب وبياناته وفق سياسة الاحتفاظ.</small></div><button className="btn btn-small btn-danger" onClick={async()=>{if(!window.confirm('سيؤدي هذا إلى حذف حسابك وبياناته نهائياً. هل تريد المتابعة؟'))return;if(!isSupabaseConfigured||!client){setSuccess('حذف الحساب الحقيقي يتطلب إعداد Supabase ووظيفة delete-account.');return}const {error}=await client.functions.invoke('delete-account',{body:{confirm:true}});if(error){setSuccess('تعذر حذف الحساب. تحقق من تسجيل الدخول وإعداد الوظيفة ثم أعد المحاولة.');return}await client.auth.signOut();localStorage.removeItem('saytara-demo');setSuccess('تم حذف الحساب بنجاح.')}}>حذف الحساب</button></div><div className="coaching-note"><ShieldCheck size={18}/><p>لا ترفع بيانات صحية حساسة، ولا تشارك أي معلومات أو صور تخص المرضى.</p></div></div>
  : page==='messages' ? <div className="panel-card"><div className="panel-icon"><MessageCircle/></div><h2>رسائلك الخاصة</h2><p>الرسائل خاصة بين المتصلين. يمكن للمهنيين الموثّقين بدء رسالة مباشرة مع حد يومي.</p>{[['د. ليان الحربي','شكراً على مشاركة تجربتك.'],['أ. عمر السبيعي','نلتقي في اللقاء القادم بإذن الله.']].map((x,i)=><div className="message-thread" key={x[0]}><Avatar letter={x[0][3]} tone={i}/><span><b>{x[0]} <Verified role={i===0?'verified':'coach'}/></b><small>{x[1]}</small></span><small>١٢:٤٥</small></div>)}<form className="message-compose" onSubmit={e=>{e.preventDefault();setSuccess('أُرسلت الرسالة التجريبية.')}}><input placeholder="اكتب رسالة مهنية..."/><button className="btn btn-primary btn-small"><Send size={15}/></button></form></div>
  : page==='notifications' ? <div className="panel-card"><div className="panel-icon"><Bell/></div><h2>إشعارات المجتمع</h2>{[['د. ليان الحربي','أعجبت بمنشورك','قبل ٢٠ دقيقة'],['أ. عمر السبيعي','أرسل طلب اتصال','قبل ساعتين'],['فريق التوثيق','تم استلام طلب التوثيق','أمس']].map((x,i)=><div className="review-row" key={i}><Avatar letter={x[0][3]} tone={i}/><div><b>{x[0]}</b><small>{x[1]} · {x[2]}</small></div>{i===1 && <button className="btn btn-small btn-outline" onClick={()=>setSuccess('قُبل طلب الاتصال التجريبي.')}>قبول</button>}</div>)}</div>
  : page==='connections' ? <div className="panel-card"><div className="panel-icon"><Users/></div><h2>اتصالاتك المهنية</h2><p>زملاء ومهنيون يشاركونك الاهتمامات.</p>{[['د. ليان الحربي','طب الأسرة · الرياض'],['أ. عمر السبيعي','صيدلة إكلينيكية · جدة'],['مها القحطاني','تمريض عناية حرجة · الدمام']].map((x,i)=><div className="review-row" key={x[0]}><Avatar letter={x[0][3]} tone={i}/><div><b>{x[0]} <Verified role={i===1?'coach':'verified'}/></b><small>{x[1]}</small></div><button className="btn btn-small btn-outline" onClick={()=>setSuccess('أُرسل طلب اتصال تجريبي.')}>اتصال <UserPlus size={13}/></button></div>)}</div>
@@ -217,23 +219,25 @@ function AppShell({ role, children, authenticated, authReady, demoMode, unread, 
 function SupabaseCallbackRouter() {
   const navigate = useNavigate()
   useEffect(() => {
-    const client = supabase
-    if (!client) return
     const flow = new URLSearchParams(window.location.search).get('flow')
     if (flow !== 'confirm' && flow !== 'recovery' && flow !== 'oauth') return
     let active = true
-    void client.auth.getSession().then(({ data, error }) => {
+    void import('./lib/supabase').then(({ supabase: client }) => {
       if (!active) return
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-      const searchParams = new URLSearchParams(window.location.search)
-      const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
-      const failed = Boolean(error || !data.session || callbackError)
-      const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
-      const callbackUrl = new URL(window.location.href)
-      for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
-      window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
-      navigate(target, { replace: true, state: failed ? { authError: callbackError || 'تعذر إكمال تسجيل الدخول. تأكد من تفعيل Google وروابط العودة في إعدادات Supabase.' } : null })
-    }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر إكمال تسجيل الدخول. حاول مرة أخرى.' } }) })
+      if (!client) { navigate('/login', { replace: true }); return }
+      void client.auth.getSession().then(({ data, error }) => {
+        if (!active) return
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+        const searchParams = new URLSearchParams(window.location.search)
+        const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
+        const failed = Boolean(error || !data.session || callbackError)
+        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
+        const callbackUrl = new URL(window.location.href)
+        for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
+        window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
+        navigate(target, { replace: true, state: failed ? { authError: callbackError || 'تعذر إكمال تسجيل الدخول. تأكد من تفعيل Google وروابط العودة في إعدادات Supabase.' } : null })
+      }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر إكمال تسجيل الدخول. حاول مرة أخرى.' } }) })
+    }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر تحميل خدمة تسجيل الدخول. حاول مرة أخرى.' } }) })
     return () => { active = false }
   }, [navigate])
   return null
@@ -250,35 +254,43 @@ function App() {
   const [dark, setDark] = useState(localStorage.getItem('saytara-dark') === 'true')
   const [unread, setUnread] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null)
 
   useEffect(() => {
-    if (!supabase) return
+    if (!isSupabaseConfigured) return
     let active = true
-    void supabase.auth.getSession().then(({ data, error }) => {
+    let subscription: { unsubscribe: () => void } | null = null
+    void import('./lib/supabase').then(({ supabase: client }) => {
       if (!active) return
-      const session = error ? null : data.session
-      setUser(session?.user ?? null)
-      setSignedIn(Boolean(session))
-      setDemo(false)
-      localStorage.removeItem('saytara-demo')
-      setAuthReady(true)
+      setSupabaseClient(client)
+      if (!client) { setAuthReady(true); return }
+      void client.auth.getSession().then(({ data, error }) => {
+        if (!active) return
+        const session = error ? null : data.session
+        setUser(session?.user ?? null)
+        setSignedIn(Boolean(session))
+        setDemo(false)
+        localStorage.removeItem('saytara-demo')
+        setAuthReady(true)
+      }).catch(() => { if (active) setAuthReady(true) })
+      const { data: { subscription: authSubscription } } = client.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null)
+        setSignedIn(Boolean(session))
+        setAuthReady(true)
+        if (session) { setDemo(false); localStorage.removeItem('saytara-demo') }
+        else if (isSupabaseConfigured) { setDemo(false); setRoleState('member'); setDisplayName('حسابي') }
+      })
+      subscription = authSubscription
     }).catch(() => { if (active) setAuthReady(true) })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setSignedIn(Boolean(session))
-      setAuthReady(true)
-      if (session) { setDemo(false); localStorage.removeItem('saytara-demo') }
-      else if (isSupabaseConfigured) { setDemo(false); setRoleState('member'); setDisplayName('حسابي') }
-    })
-    return () => { active = false; subscription.unsubscribe() }
+    return () => { active = false; subscription?.unsubscribe() }
   }, [])
 
   useEffect(() => {
-    if (demo || !supabase || !user) return
+    if (demo || !supabaseClient || !user) return
     let active = true
     void Promise.all([
-      supabase.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
-      supabase.from('user_roles').select('role').eq('user_id', user.id),
+      supabaseClient.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
+      supabaseClient.from('user_roles').select('role').eq('user_id', user.id),
     ]).then(([profileResult, roleResult]) => {
       if (!active) return
       const metadataName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : ''
@@ -288,10 +300,10 @@ function App() {
       setRoleState(rank.find(candidate => roles.includes(candidate)) || 'member')
     }).catch(() => { if (active) { setRoleState('member'); setDisplayName(user.email?.split('@')[0] || 'حسابي') } })
     return () => { active = false }
-  }, [demo, user])
+  }, [demo, user, supabaseClient])
 
   useEffect(() => {
-    const client = supabase
+    const client = supabaseClient
     if (!client || !signedIn || !user) return
     let live = true
     let channel: RealtimeChannel | null = null
@@ -309,16 +321,16 @@ function App() {
     }
     void connect()
     return () => { live = false; if (channel) void client.removeChannel(channel) }
-  }, [signedIn, user])
+  }, [signedIn, user, supabaseClient])
 
   const setRole = (next: Role) => { if (demo) { setRoleState(next); localStorage.setItem('saytara-role', next) } }
   const toggleTheme = () => { setDark(value => { localStorage.setItem('saytara-dark', String(!value)); return !value }) }
   const onDemo = () => { if (!demoMode) return; setDemo(true); setSignedIn(true); setRoleState((localStorage.getItem('saytara-role') as Role) || 'member'); setDisplayName('نورة العبدالله'); localStorage.setItem('saytara-demo', 'true') }
   const onSignedIn = () => { setSignedIn(true); setDemo(false); localStorage.removeItem('saytara-demo') }
-  const onSignOut = () => { if (supabase) void supabase.auth.signOut(); setUser(null); setSignedIn(false); setDemo(false); setRoleState('member'); setDisplayName('حسابي'); localStorage.removeItem('saytara-demo') }
+  const onSignOut = () => { if (supabaseClient) void supabaseClient.auth.signOut(); setUser(null); setSignedIn(false); setDemo(false); setRoleState('member'); setDisplayName('حسابي'); localStorage.removeItem('saytara-demo') }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles"/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events"/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches"/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></div></BrowserRouter>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
 }
 
 export default App

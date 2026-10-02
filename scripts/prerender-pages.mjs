@@ -13,6 +13,7 @@ const basePath = siteRoot.pathname
 const appName = 'مجتمع السيطرة'
 const ogImage = new URL(`${basePath.replace(/\/$/, '')}/og-social.png`, site.origin).toString()
 const builtIndex = await readFile(resolve(distDir, 'index.html'), 'utf8')
+const criticalCss = await readFile(resolve(projectRoot, 'scripts/public-critical.css'), 'utf8')
 const publishedAt = new Date()
 
 const pages = {
@@ -32,6 +33,7 @@ const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/pr
 const routes = []
 const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 const urlFor = route => new URL(route === '/' ? '' : `${route.replace(/^\/+|\/+$/g, '')}/`, siteRoot).toString()
+const assetUrl = path => new URL(path.replace(/^\/+/, ''), siteRoot).toString()
 const normalizeRoute = route => route === '/' ? '/' : `/${route.split('/').filter(Boolean).join('/')}/`
 const ensureMetadataLimits = page => {
   if ([...page.title].length >= 60) throw new Error(`SEO title must remain under 60 characters: ${page.title}`)
@@ -64,10 +66,16 @@ function schemaFor(route, page, record = null) {
   return list
 }
 function htmlLink(path, label, className = '') { return `<a${className ? ` class="${className}"` : ''} href="${safeText(urlFor(path))}">${safeText(label)}</a>` }
-function header() { return `<header class="topbar"><div class="topbar-inner wrap"><a class="brand" href="${safeText(urlFor('/'))}" aria-label="مجتمع السيطرة - الرئيسية"><span class="brand-mark">♡</span><span class="brand-word">مجتمع <b>السيطرة</b><small>مساحة مهنية آمنة</small></span></a><nav class="public-nav" aria-label="التنقل الرئيسي">${[['/about','عن المجتمع'],['/coaching','الكوتشنج'],['/coaches','الكوتشات'],['/articles','المقالات'],['/events','الفعاليات']].map(([path,label])=>htmlLink(path,label)).join('')}</nav><div class="header-actions">${htmlLink('/login','تسجيل الدخول','login-link')}${htmlLink('/register','انضم للمجتمع','btn btn-primary btn-small')}</div></div></header>` }
+function header() { return `<header class="topbar"><div class="topbar-inner wrap"><a class="brand" href="${safeText(urlFor('/'))}" aria-label="مجتمع السيطرة - الرئيسية"><span class="brand-mark">♡</span><span class="brand-word">مجتمع <b>السيطرة</b><small>مساحة مهنية آمنة</small></span></a><button class="icon-btn menu-btn" id="menu-toggle" type="button" aria-label="فتح قائمة التنقل" aria-expanded="false" aria-controls="public-nav"><span aria-hidden="true">☰</span></button><nav id="public-nav" class="public-nav" aria-label="التنقل الرئيسي">${[['/about','عن المجتمع'],['/coaching','الكوتشنج'],['/coaches','الكوتشات'],['/articles','المقالات'],['/events','الفعاليات']].map(([path,label])=>htmlLink(path,label)).join('')}</nav><div class="header-actions"><button class="public-theme-toggle" id="theme-toggle" type="button" aria-label="تفعيل الوضع الداكن" aria-pressed="false"><span aria-hidden="true">◐</span></button>${htmlLink('/login','تسجيل الدخول','login-link')}${htmlLink('/register','انضم للمجتمع','btn btn-primary btn-small')}</div></div></header>` }
 function footer() { return `<footer class="site-footer"><div class="wrap footer-inner"><a href="${safeText(urlFor('/'))}">مجتمع السيطرة</a><span>مجتمع مهني يضع الإنسان في قلب التطور.</span><div class="footer-links">${[['/privacy','الخصوصية'],['/terms','الشروط'],['/charter','ميثاق السلوك']].map(([path,label])=>htmlLink(path,label)).join('')}</div><small>© ٢٠٢٦ مجتمع السيطرة</small></div></footer>` }
-function pointCards(points = []) { return `<div class="public-points">${points.map(([title, text], i) => `<article class="public-point"><span class="point-number">0${i+1}</span><div><h3>${safeText(title)}</h3><p>${safeText(text)}</p></div></article>`).join('')}</div>` }
+function pointCards(points = []) { return `<div class="public-points">${points.map(([title, text], i) => `<article class="public-point"><span class="point-number">0${i+1}</span><div><h2>${safeText(title)}</h2><p>${safeText(text)}</p></div></article>`).join('')}</div>` }
 function breadcrumb(route, page) { const label = route === '/' ? 'الرئيسية' : page.heading; return route === '/' ? '' : `<nav class="breadcrumbs" aria-label="مسار التنقل">${htmlLink('/','الرئيسية')}<span aria-hidden="true">/</span><span>${safeText(label)}</span></nav>` }
+function brandIllustration() {
+  const sizes = '(max-width: 720px) calc(100vw - 68px), 500px'
+  const avif = `<source type="image/avif" srcset="${assetUrl('images/brand-community-480.avif')} 480w, ${assetUrl('images/brand-community-1200.avif')} 1200w" sizes="${sizes}">`
+  const webp = `<source type="image/webp" srcset="${assetUrl('images/brand-community-480.webp')} 480w, ${assetUrl('images/brand-community-1200.webp')} 1200w" sizes="${sizes}">`
+  return `<section class="brand-visual"><div><span class="eyebrow">مساحة تجمعنا</span><h2>مهنية، إنسانية، ومتّصلة.</h2><p>نؤمن أن النمو المهني يصبح أعمق حين يجد الإنسان حوله مجتمعاً يحترم خبرته وحدوده ويشجّع التواصل الهادف.</p></div><picture>${avif}${webp}<img src="${ogImage}" srcset="${assetUrl('images/brand-community-480.webp')} 480w, ${assetUrl('images/brand-community-1200.webp')} 1200w" sizes="${sizes}" width="1200" height="630" loading="lazy" decoding="async" alt="دوائر مترابطة وقلوب تعبّر عن التعاون والنمو المهني"></picture></section>`
+}
 function staticBody(route, page, records = []) {
   if (page.type === 'home') return `<main><section class="hero wrap"><div class="hero-copy"><div class="eyebrow">مساحة مهنية للقطاع الصحي</div><h1>مسارك المهني،<br><em>بإيقاعك أنت.</em></h1><p class="hero-lead">${safeText(page.intro)}</p><div class="hero-actions">${htmlLink('/register','اكتشف مساحتك','btn btn-primary')}${htmlLink('/coaching','تعرّف على الكوتشنج','btn btn-quiet')}</div></div><div class="hero-art" role="img" aria-label="رمز بصري للتواصل والنمو المهني"></div></section><section class="section wrap"><div class="section-heading"><div><span class="eyebrow">مساحتك، بطريقتك</span><h2>ما تحتاجه في رحلتك المهنية</h2></div>${htmlLink('/about','اكتشف المجتمع','text-link')}</div>${pointCards([['كوتشنج فردي','حوار مهني يساعدك على رؤية خياراتك بوضوح.'],['زمالة حقيقية','تواصل مع مهنيين يشاركونك المجال والطموح.'],['خبرة موثقة','تعرّف على الملفات المهنية العامة بعد مراجعتها.']])}</section><section class="quote-section"><div class="wrap quote-inner"><div><p>حين نمنح أنفسنا مساحة للتفكير، نصبح أقرب إلى الطريق الذي نختاره بوعي.</p><small>مجتمع السيطرة · مساحتك المهنية الآمنة</small></div>${htmlLink('/charter','ميثاقنا المهني','btn btn-outline')}</div></section><section class="section wrap join-section"><div><span class="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>أنت أكثر من مسماك المهني.</h2><p>انضم إلى مساحة ترى خبرتك، وتحترم حدودك، وتدعم نموّك.</p></div>${htmlLink('/register','انضم إلى مجتمع السيطرة','btn btn-primary')}</section></main>`
   if (page.type === 'faq') return `<main class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">الأسئلة الشائعة</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div><div class="public-points">${questions.map(([question,answer])=>`<article class="public-point"><div><h2>${safeText(question)}</h2><p>${safeText(answer)}</p></div></article>`).join('')}</div><nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/privacy','سياسة الخصوصية')}${htmlLink('/register','إنشاء حساب')}</nav></main>`
@@ -80,7 +88,7 @@ function staticBody(route, page, records = []) {
     }).join('')
     return `<main class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">${page.type === 'coaches' ? 'دليل مهني' : page.type === 'articles' ? 'مكتبة المجتمع' : 'تقويم المجتمع'}</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div>${records.length ? `<div class="public-points">${cards}</div>` : `<div class="panel-card empty-state"><h2>${page.type === 'articles' ? 'لا توجد مقالات منشورة حتى الآن' : page.type === 'coaches' ? 'لا توجد ملفات كوتش عامة منشورة بعد' : 'لا توجد فعاليات عامة قادمة حالياً'}</h2><p>ستظهر المعلومات العامة المنشورة هنا بعد مراجعتها. لا نعرض بيانات تجريبية.</p></div>`}<nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/faq','الأسئلة الشائعة')}${htmlLink('/register','انضم إلى المجتمع')}</nav></main>`
   }
-  return `<main class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">${safeText(route === '/about' ? 'عن مجتمعنا' : route === '/coaching' ? 'الكوتشنج المهني' : route === '/privacy' ? 'الخصوصية' : route === '/terms' ? 'الشروط' : 'ميثاق السلوك')}</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div>${pointCards(page.points)}${route === '/coaching' ? '<div class="coaching-note">الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</div>' : ''}<nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/articles','مقالات المجتمع')}${htmlLink('/faq','الأسئلة الشائعة')}${htmlLink('/privacy','الخصوصية')}</nav></main>`
+  return `<main class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">${safeText(route === '/about' ? 'عن مجتمعنا' : route === '/coaching' ? 'الكوتشنج المهني' : route === '/privacy' ? 'الخصوصية' : route === '/terms' ? 'الشروط' : 'ميثاق السلوك')}</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div>${pointCards(page.points)}${route === '/about' ? brandIllustration() : ''}${route === '/coaching' ? '<div class="coaching-note">الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</div>' : ''}<nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/articles','مقالات المجتمع')}${htmlLink('/faq','الأسئلة الشائعة')}${htmlLink('/privacy','الخصوصية')}</nav></main>`
 }
 function metadata(route, page, record = null) {
   const recordTitle = record ? String(record.title || record.display_name || 'محتوى المجتمع') : ''
@@ -101,19 +109,29 @@ function metadata(route, page, record = null) {
   const localeLinks = `<link rel="canonical" href="${safeText(canonical)}"><link rel="alternate" hreflang="ar" href="${safeText(canonical)}">`
   return `<title>${safeText(title)}</title><meta name="description" content="${safeText(description)}"><meta name="robots" content="index,follow,max-image-preview:large"><meta property="og:type" content="${type}"><meta property="og:locale" content="ar_SA"><meta property="og:site_name" content="${appName}"><meta property="og:title" content="${safeText(title)}"><meta property="og:description" content="${safeText(description)}"><meta property="og:url" content="${safeText(canonical)}"><meta property="og:image" content="${safeText(imageUrl)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${safeText(title)}"><meta name="twitter:description" content="${safeText(description)}"><meta name="twitter:image" content="${safeText(imageUrl)}">${localeLinks}${jsonld}`
 }
-function shell(route, page, body, record = null, noindex = false) {
+function shell(route, page, body, record = null, noindex = false, interactive = false) {
   const head = route === '/404'
     ? '<title>صفحة غير موجودة | مجتمع السيطرة</title><meta name="description" content="الصفحة المطلوبة غير متاحة في مجتمع السيطرة."><meta name="robots" content="noindex,nofollow">'
     : metadata(route,page,record).replace('index,follow,max-image-preview:large', noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large')
-  const html = builtIndex
+  let html = builtIndex
     .replace(/<html lang="[^"]*" dir="[^"]*">/, '<html lang="ar" dir="rtl">')
     .replace(/<title>[\s\S]*?<\/title>/, '')
     .replace(/<meta\s+name="(?:description|robots|twitter:[^"]+)"[^>]*>/g, '')
     .replace(/<meta\s+property="og:[^"]+"[^>]*>/g, '')
     .replace(/<link\s+rel="(?:canonical|alternate)"[^>]*>/g, '')
     .replace('</head>', `${head}</head>`)
-    .replace('<div id="root"></div>', `<div id="root">${body}</div>`)
-  if (!html.includes(`<div id="root">${body}</div>`)) throw new Error(`Failed to create prerender shell for ${route}`)
+  if (!interactive) {
+    html = html
+      .replace(/<script\b[^>]*\btype="module"[^>]*>\s*<\/script>/gi, '')
+      .replace(/<link\b(?=[^>]*\brel="modulepreload")[^>]*>/gi, '')
+    const stylesheet = html.match(/<link\b[^>]*\brel="stylesheet"[^>]*>/i)?.[0]
+    if (!stylesheet) throw new Error(`Missing built stylesheet for static route ${route}`)
+    html = html.replace('</head>', `<style id="critical-public-css">${criticalCss}</style></head>`)
+    html = html.replace('</body>', `<script defer src="${safeText(assetUrl('public-site.js'))}"></script></body>`)
+  }
+  const renderedBody = interactive ? body : `<div class="app" id="site-app">${body}</div>`
+  html = html.replace('<div id="root"></div>', `<div id="root">${renderedBody}</div>`)
+  if (!html.includes(`<div id="root">${renderedBody}</div>`)) throw new Error(`Failed to create prerender shell for ${route}`)
   return html.replace(/^[\t ]+$/gm, '')
 }
 async function writeRoute(route, html) {
@@ -183,7 +201,7 @@ for (const [collection,records] of Object.entries(recordsByPage)) {
 }
 for (const route of protectedRoutes) {
   const page = { title: `${route === '/login' ? 'تسجيل الدخول' : route === '/register' ? 'إنشاء حساب' : route === '/reset-password' ? 'استعادة كلمة المرور' : 'مساحة الأعضاء'} | مجتمع السيطرة`, description: 'صفحة خاصة بأعضاء مجتمع السيطرة.' }
-  await writeRoute(route,shell(route,page,`${header()}<main class="public-page wrap"><h1>هذه المساحة تتطلب الدخول.</h1><p>سيحوّلك التطبيق إلى صفحة تسجيل الدخول.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`,null,true))
+  await writeRoute(route,shell(route,page,`${header()}<main class="public-page wrap"><h1>هذه المساحة تتطلب الدخول.</h1><p>سيحوّلك التطبيق إلى صفحة تسجيل الدخول.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`,null,true,true))
   routes.push({ path: normalizeRoute(route) })
 }
 const notFoundPage = { title: 'صفحة غير موجودة | مجتمع السيطرة', description: 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.' }
