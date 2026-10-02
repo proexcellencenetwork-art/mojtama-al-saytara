@@ -1,14 +1,14 @@
 -- DEVELOPMENT / LOCAL ONLY. Never apply demo passwords/accounts to a production project.
--- These accounts all use password: SaytaraDemo!2026
+-- Each seeded Auth account receives an unpredictable development-only password hash; do not run this on a production project.
 -- Create them using Supabase local Auth (SQL editor inserts are for local testing only).
 begin;
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values
- ('d0000000-0000-4000-8000-000000000001','authenticated','authenticated','member.demo@saytara.local',crypt('SaytaraDemo!2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"نورة العبدالله"}',now(),now()),
- ('d0000000-0000-4000-8000-000000000002','authenticated','authenticated','verified.demo@saytara.local',crypt('SaytaraDemo!2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"د. ليان الحربي"}',now(),now()),
- ('d0000000-0000-4000-8000-000000000003','authenticated','authenticated','coach.demo@saytara.local',crypt('SaytaraDemo!2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"أ. عمر السبيعي"}',now(),now()),
- ('d0000000-0000-4000-8000-000000000004','authenticated','authenticated','moderator.demo@saytara.local',crypt('SaytaraDemo!2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"مشرف تجريبي"}',now(),now()),
- ('d0000000-0000-4000-8000-000000000005','authenticated','authenticated','manager.demo@saytara.local',crypt('SaytaraDemo!2026',gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"مدير تجريبي"}',now(),now())
+ ('d0000000-0000-4000-8000-000000000001','authenticated','authenticated','member.demo@saytara.local',crypt(encode(gen_random_bytes(32),'hex'),gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"نورة العبدالله"}',now(),now()),
+ ('d0000000-0000-4000-8000-000000000002','authenticated','authenticated','verified.demo@saytara.local',crypt(encode(gen_random_bytes(32),'hex'),gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"د. ليان الحربي"}',now(),now()),
+ ('d0000000-0000-4000-8000-000000000003','authenticated','authenticated','coach.demo@saytara.local',crypt(encode(gen_random_bytes(32),'hex'),gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"أ. عمر السبيعي"}',now(),now()),
+ ('d0000000-0000-4000-8000-000000000004','authenticated','authenticated','moderator.demo@saytara.local',crypt(encode(gen_random_bytes(32),'hex'),gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"مشرف تجريبي"}',now(),now()),
+ ('d0000000-0000-4000-8000-000000000005','authenticated','authenticated','manager.demo@saytara.local',crypt(encode(gen_random_bytes(32),'hex'),gen_salt('bf')),now(),'{"provider":"email","providers":["email"]}','{"display_name":"مدير تجريبي"}',now(),now())
 on conflict (id) do nothing;
 
 insert into public.profiles(user_id,display_name,headline,profession,specialty,workplace,bio,experience_years,interests,goals,city)

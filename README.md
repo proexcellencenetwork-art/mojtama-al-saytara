@@ -25,6 +25,7 @@
    - `supabase/migrations/202610020001_initial_schema.sql`
    - `supabase/migrations/202610020002_policy_hardening.sql`
    - `supabase/migrations/202610020003_guest_scope_and_atomic_limits.sql`
+   - `supabase/migrations/202610020004_integrity_and_storage_scope.sql`
    - (اختياري، للتطوير المحلي فقط) `supabase/seed/seed.sql`
 4. اضبط **Authentication → URL Configuration** بحيث يشمل رابط GitHub Pages، مثلاً `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/`، وأضف عنوان إعادة التوجيه `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/#/login` وعنوان المعاينة المحلية عند الحاجة.
 5. محلياً ضع القيم في `.env.local`؛ الملف مستثنى من Git.
@@ -47,12 +48,12 @@ on conflict (user_id, role) do nothing;
 
 ### حذف مستندات التوثيق بعد القرار
 
-التغيير إلى `approved` أو `rejected` يضيف مسار المستند إلى `verification_cleanup_queue`. لتفعيل الحذف الفعلي من Storage:
+استبدال المستند أو تغييره إلى `approved` أو `rejected` يضيف المسار السابق إلى `verification_cleanup_queue`. لتفعيل الحذف الفعلي من Storage:
 
 1. ثبّت Supabase CLI واربط المشروع، ثم عيّن الأسرار **على الخادم فقط**:
    `supabase secrets set SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... CLEANUP_WEBHOOK_SECRET=<قيمة عشوائية طويلة>`.
 2. انشر: `supabase functions deploy cleanup-verification-files --no-verify-jwt`.
-3. في لوحة Supabase أنشئ Database Webhook على `public.verification_requests` عند `UPDATE` إلى `approved` أو `rejected`، موجّه إلى `https://<PROJECT_REF>.supabase.co/functions/v1/cleanup-verification-files`، وأرسل الترويسة `x-cleanup-secret` بالقيمة نفسها. لا تضع السر في الواجهة أو GitHub Pages.
+3. في لوحة Supabase أنشئ Database Webhook على `public.verification_requests` عند كل `UPDATE` (تتجاهل الوظيفة التحديثات غير ذات الصلة، وتتعامل مع استبدال المستند والقرارات النهائية)، موجّه إلى `https://<PROJECT_REF>.supabase.co/functions/v1/cleanup-verification-files`، وأرسل الترويسة `x-cleanup-secret` بالقيمة نفسها. لا تضع السر في الواجهة أو GitHub Pages.
 4. اختبر دورة رفع مستند تجريبي ثم قرار قبول/رفض وتحقق من اختفاء الكائن وظهور `processed_at` في صف التنظيف. عند فشل الوظيفة يبقى الصف دون `processed_at` ليُراجع ويُعاد تشغيل التنظيف يدوياً.
 
 تُستدعى وظيفة التنظيف بواسطة Database Webhook عند تغيير مستند أو إنهاء الطلب. لا يمكن تشغيل هذه الوظيفة من GitHub Pages؛ الملفات تبقى في bucket خاص، وسياسات Storage لا تسمح للعضو بقراءة الملف بعد حسم الطلب.
@@ -73,7 +74,7 @@ on conflict (user_id, role) do nothing;
 
 | الدور | أساس الصلاحيات في قاعدة البيانات |
 | --- | --- |
-| زائر (دون حساب) | يمثله دور Postgres `anon`؛ يتصفح الصفحات العامة والمقالات المنشورة فقط، ولا يُنشأ له سجل مستخدم. لا تمنحه RLS قراءة ملفات الأعضاء أو المجموعات.
+| زائر (دون حساب) | يمثله دور Postgres `anon`؛ يتصفح الصفحات العامة والمقالات المنشورة فقط، ولا يُنشأ له سجل مستخدم. لا تمنحه RLS قراءة ملفات الأعضاء أو المجموعات أو جدول ملفات الكوتشين؛ دليل الكوتش العام يمر عبر عرض محدود الحقول.
 | عضو | الملف، القراءة للأعضاء، التعليقات والإعجابات والاتصالات؛ مراسلة الاتصالات المقبولة فقط |
 | موثّق | صلاحيات العضو، النشر/المقالات/الفعاليات، ورسائل مباشرة مع حد يومي |
 | كوتش | شارة الكوتش وصفحة عامة ومواعيد وحجوزات، إضافة إلى التوثيق |
@@ -88,7 +89,7 @@ on conflict (user_id, role) do nothing;
 - يتضمن نموذج البلاغ سبباً مخصصاً لمخالفة معلومات المرضى.
 - الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.
 - مستندات التوثيق في bucket خاص مع سياسات Storage، ويُحذف الملف بعد قرار القبول/الرفض عند إعداد webhook والوظيفة أعلاه.
-- أزرار التصدير/الحذف في وضع العرض التجريبي تشرح السلوك ولا تنفذ حذفاً حقيقياً لحساب Supabase. قبل فتح التسجيل للعامة اربطها بوظيفة خادمية موثوقة؛ لا تضع مفتاح الخدمة في المتصفح.
+- أزرار التصدير/الحذف في وضع العرض التجريبي تشرح السلوك ولا تنفذ حذفاً حقيقياً لحساب Supabase. زر التصدير يستعلم عن السجلات التي يملكها الحساب عبر RLS، لكن بيانات وضع التجربة محلية فقط. حذف الحساب الحقيقي يتطلب نشر وظيفة `delete-account`؛ لا تضع مفتاح الخدمة في المتصفح.
 - هذه الشيفرة بداية تقنية وليست مراجعة امتثال أو استشارة قانونية؛ أضف سياسة نهائية متوافقة مع الأنظمة المحلية قبل جمع بيانات الأعضاء.
 
 ## تخصيص الهوية
@@ -102,9 +103,9 @@ on conflict (user_id, role) do nothing;
 - `src/App.tsx` و`src/design.css`: الواجهة العربية ومسارات الصفحات والوضع التجريبي.
 - `src/lib/supabase.ts`: عميل متصفح اختياري باستخدام URL ومفتاح anon فقط.
 - `supabase/migrations/`: الجداول والعلاقات والمشغلات وسياسات RLS وStorage.
-- `supabase/seed/seed.sql`: حسابات وأمثلة تطوير فقط (كلمة المرور التجريبية: `SaytaraDemo!2026`). **لا تشغّلها على الإنتاج.**
+- `supabase/seed/seed.sql`: حسابات وأمثلة تطوير فقط؛ كلمات مرور Auth تُولّد عشوائياً ولا تُطبع في المستودع. استخدم وضع التجربة أو عيّن كلمات مرور محلية في بيئة التطوير. **لا تشغّلها على الإنتاج.**
 - `supabase/functions/cleanup-verification-files/`: حذف ملفات التوثيق بعد القرار أو استبدال الملف.
-- `supabase/functions/delete-account/`: حذف الحساب بعد تأكيد صريح وتنظيف ملفات Storage الخاصة.
+- `supabase/functions/delete-account/`: حذف الحساب بعد تأكيد صريح وتنظيف جميع ملفات Storage الخاصة قبل حذف Auth.
 - `.env.example`: أسماء الإعدادات المطلوبة من دون أي قيمة سرية.
 
 ## قرارات التنفيذ

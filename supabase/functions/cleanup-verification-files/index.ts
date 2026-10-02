@@ -22,7 +22,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: true }), { status: 200, headers: { ...cors, 'content-type': 'application/json' } })
     }
     const path = replacedPath ? oldRow.document_path : (oldRow.document_path ?? newRow.document_path)
-    if (!path) return new Response('Missing document path', { status: 400, headers: cors })
+    const ownerId = oldRow.user_id ?? newRow.user_id
+    if (!path || !ownerId) return new Response('Missing document owner or path', { status: 400, headers: cors })
+    const segments = path.split('/')
+    if (segments.length !== 2 || segments[0] !== ownerId) return new Response('Invalid owner-scoped storage path', { status: 403, headers: cors })
+    const { data: queued, error: lookupError } = await admin.from('verification_cleanup_queue').select('id')
+      .eq('bucket_id', 'verification-private').eq('object_path', path).is('processed_at', null).limit(1).maybeSingle()
+    if (lookupError) throw lookupError
+    if (!queued) return new Response('Path is not queued for cleanup', { status: 403, headers: cors })
     const { error: removeError } = await admin.storage.from('verification-private').remove([path])
     if (removeError) throw removeError
     const { error: queueError } = await admin.from('verification_cleanup_queue')
