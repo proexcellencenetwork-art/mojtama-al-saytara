@@ -3,7 +3,7 @@
 -- قبل التشغيل: أنشئ 5 حسابات مخصصة وأكّد البريد: member-a, member-b, verified, moderator, manager.
 -- سجّل الدخول كـ member-b وارفع ملف PDF وهمياً غير حساس وأرسل طلب توثيق معلقاً؛ لا ترفع وثيقة حقيقية.
 -- استبدل عناوين البريد أدناه بعناوين حسابات الاختبار الخمسة. لا تستخدم بيانات مرضى.
--- هذا يضبط دور PostgreSQL وclaims محلية لاختبار سياسات DB، لكنه لا يغني عن اختبار الموقع/API بجلسات JWT حقيقية.
+-- هذا يضبط دور PostgreSQL وclaims محلية لاختبار سياسات DB، ويحاول تزوير وقت الرسائل عمداً؛ لكنه لا يغني عن اختبار الموقع/API بجلسات JWT حقيقية.
 
 begin;
 
@@ -23,6 +23,8 @@ declare
   v_conversation_ab uuid;
   v_conversation_bv uuid;
   v_own_request uuid;
+  v_moderator_request uuid;
+  v_test_message_id uuid;
   v_doc_path text;
 begin
   select id into v_a from auth.users where lower(email)=lower(current_setting('saytara.test.member_a_email')) limit 1;
@@ -80,11 +82,14 @@ begin
 
   insert into public.messages(conversation_id,sender_id,recipient_id,body)
   values(v_conversation_bv,v_b,v_verified,'رسالة اختبار خصوصية مؤقتة')
-  on conflict do nothing;
+  returning id into v_test_message_id;
 
   insert into public.verification_requests(user_id,full_name,profession,professional_registration_no,document_path)
   values(v_a,'حساب اختبار','مهنة اختبار','RLS-SMOKE-'||substr(v_a::text,1,8),v_a::text||'/rls-smoke-metadata-only.pdf')
   returning id into v_own_request;
+  insert into public.verification_requests(user_id,full_name,profession,professional_registration_no,document_path)
+  values(v_moderator,'مشرف اختبار','مهنة اختبار','RLS-SMOKE-MOD-'||substr(v_moderator::text,1,8),v_moderator::text||'/rls-smoke-moderator-metadata.pdf')
+  returning id into v_moderator_request;
   perform set_config('saytara.test.member_a_id',v_a::text,true);
   perform set_config('saytara.test.member_b_id',v_b::text,true);
   perform set_config('saytara.test.verified_id',v_verified::text,true);
@@ -93,6 +98,8 @@ begin
   perform set_config('saytara.test.conversation_ab',v_conversation_ab::text,true);
   perform set_config('saytara.test.conversation_bv',v_conversation_bv::text,true);
   perform set_config('saytara.test.own_request',v_own_request::text,true);
+  perform set_config('saytara.test.moderator_request',v_moderator_request::text,true);
+  perform set_config('saytara.test.message_id',v_test_message_id::text,true);
   perform set_config('saytara.test.document_path',v_doc_path,true);
 end;
 $$;
@@ -109,6 +116,8 @@ declare
   v_conversation_ab uuid := current_setting('saytara.test.conversation_ab')::uuid;
   v_conversation_bv uuid := current_setting('saytara.test.conversation_bv')::uuid;
   v_own_request uuid := current_setting('saytara.test.own_request')::uuid;
+  v_moderator_request uuid := current_setting('saytara.test.moderator_request')::uuid;
+  v_test_message_id uuid := current_setting('saytara.test.message_id')::uuid;
   v_doc_path text := current_setting('saytara.test.document_path');
   v_count integer;
   v_rows integer;
@@ -166,17 +175,49 @@ begin
   select count(*) into v_count from storage.objects where bucket_id='verification-private' and name=v_doc_path;
   if v_count<>1 then raise exception 'FAIL: المدير لا يرى وثيقة الاختبار الخاصة.'; end if;
 
+  -- A verified recipient can mark a message read once; the database chooses the timestamp and blocks later rewrites.
+  perform set_config('request.jwt.claim.sub',v_verified::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',v_verified::text,'role','authenticated')::text,true);
+  update public.messages set read_at=now()-interval '2 days' where id=v_test_message_id;
+  select count(*) into v_count from public.messages where id=v_test_message_id and read_at>now()-interval '1 minute' and read_at<=clock_timestamp();
+  if v_count<>1 then raise exception 'FAIL: قراءة الرسالة لم تُسجّل بوقت الخادم.'; end if;
+  v_denied := false;
+  begin
+    update public.messages set read_at=now()+interval '30 days' where id=v_test_message_id;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied then raise exception 'FAIL: المستلم أعاد كتابة وقت القراءة.'; end if;
+  v_denied := false;
+  begin
+    update public.messages set body='تعديل غير مسموح' where id=v_test_message_id;
+  exception when others then v_denied := true;
+  end;
+  if not v_denied then raise exception 'FAIL: المستلم عدّل محتوى رسالة غيره.'; end if;
+
+  -- A moderator must not approve their own professional verification request.
+  perform set_config('request.jwt.claim.sub',v_moderator::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',v_moderator::text,'role','authenticated')::text,true);
+  v_denied := false;
+  begin
+    perform public.review_verification_request(v_moderator_request,'approved',null);
+  exception when others then v_denied := true;
+  end;
+  if not v_denied or exists(select 1 from public.user_roles where user_id=v_moderator and role='verified')
+     or exists(select 1 from public.verification_requests where id=v_moderator_request and status<>'pending') then
+    raise exception 'FAIL: المشرف اعتمد طلب توثيقه بنفسه.';
+  end if;
+
   -- Verify the rolling 24-hour limit on a fresh ordinary member: 15 allowed, the 16th denied.
   perform set_config('request.jwt.claim.sub',v_a::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_a::text,'role','authenticated')::text,true);
   for v_i in 1..15 loop
-    insert into public.messages(conversation_id,sender_id,recipient_id,body)
-    values(v_conversation_ab,v_a,v_b,'رسالة اختبار حد المعدل '||v_i::text);
+    insert into public.messages(conversation_id,sender_id,recipient_id,body,created_at)
+    values(v_conversation_ab,v_a,v_b,'رسالة اختبار حد المعدل '||v_i::text,now()-interval '2 days');
   end loop;
   v_denied := false;
   begin
-    insert into public.messages(conversation_id,sender_id,recipient_id,body)
-    values(v_conversation_ab,v_a,v_b,'الرسالة السادسة عشرة للاختبار');
+    insert into public.messages(conversation_id,sender_id,recipient_id,body,created_at)
+    values(v_conversation_ab,v_a,v_b,'الرسالة السادسة عشرة للاختبار',now()-interval '2 days');
   exception when others then
     v_denied := true;
   end;
@@ -186,4 +227,4 @@ $$;
 
 reset role;
 rollback;
-select 'نجاح: لم يستطع العضو النشر العام أو قراءة بيانات خاصة أو تغيير الأدوار/التوثيق، ونجح حد 15 رسالة؛ أُلغيت كل بيانات الاختبار.' as نتيجة;
+select 'نجاح: عُزلت البيانات الخاصة، ومُنع النشر/تصعيد الدور/التوثيق الذاتي، ونجح حد الرسائل والتوقيت الخادمي وإشارة القراءة؛ أُلغيت كل بيانات الاختبار.' as نتيجة;
