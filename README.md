@@ -1,71 +1,87 @@
-# مجتمع السيطرة
+# مجتمع السيطرة — دليل الإعداد من الصفر
 
-مجتمع مهني عربي للمهنيين الصحيين، بواجهة RTL مبنية بـ React وVite وTypeScript. يستخدم المشروع Supabase Auth وPostgres مع RLS وStorage وRealtime، ويمكن نشر الواجهة الثابتة على GitHub Pages.
+مجتمع مهني عربي للمهنيين الصحيين. الواجهة مبنية بـ React وVite وTypeScript، وتدعم Supabase Auth وPostgreSQL مع RLS وStorage وRealtime. الموقع المنشور على GitHub Pages يعمل حالياً بوضع التجربة إلى أن تضيف أنت إعدادات مشروعك.
 
-> **الحالة:** جهّزت الشيفرة لتتصل بمشروع Supabase تملكه أنت. الموقع المنشور يعمل الآن من دون إعدادات Supabase في **وضع التجربة**؛ لا توجد قاعدة بيانات حيّة أو مفاتيح مشروعك في هذا المستودع، ولذلك لم أطبّق الترحيلات على مشروعك ولم أختبرها أمام خدمة Supabase حيّة. نفذت البناء وفحص SQL، وشغّلت الترحيلات محلياً على PostgreSQL 16 مع محاكاة مخططي Auth وStorage. اختبارات RLS المحلية أكدت منع العضو من النشر واعتماد طلبه ورفع ملف شخص آخر، وعزل الرسائل وطلبات/ملفات التوثيق، والسماح برفع المالك ونشر الموثّق وقراءة المشرف للمستند، وحد العضو البالغ 15 رسالة. هذا لا يغني عن قائمة الاختبار على مشروعك الحي.
+> **حدود الاختبار بوضوح:** بنيت الواجهة مع GitHub Pages path `/mojtama-al-saytara/`، واجتزت فحوص lint والبناء. شغّلت ملف `setup.sql` على PostgreSQL 16 محلي مع مخططين محليين مبسطين يحاكيان Supabase Auth وStorage؛ واختبرت مشغّل إنشاء الحساب وسياسات RLS وحد الرسائل بسجلات اصطناعية. **لم يُطبّق هذا على مشروع Supabase حي، ولم أختبر إرسال بريد حقيقي أو Google OAuth أو خدمة Storage الحية.** يلزم إكمال الإعداد والاختبار أدناه قبل فتح التسجيل للعامة.
 
-## 1. المتطلبات
+## 1. ما تحتاجه
 
-- Node.js 22 أو أحدث، وحساب GitHub.
-- حساب Supabase ومشروع جديد؛ لا ترسل مفاتيح المشروع إلى Manus أو تضعها في المستودع.
-- للنشر الخادمي الاختياري: Supabase CLI.
+1. حساب GitHub لديه صلاحية تعديل مستودع [`proexcellencenetwork-art/mojtama-al-saytara`](https://github.com/proexcellencenetwork-art/mojtama-al-saytara).
+2. حساب Supabase ومشروع جديد. اختر منطقة قريبة من جمهورك؛ اختر المنطقة نفسها التي ستضع فيها بيانات المجتمع، لأن تغييرها لاحقاً يتطلب ترحيلاً منفصلاً.
+3. احفظ كلمة مرور قاعدة البيانات التي تختارها في مدير كلمات مرور خاص بك. **لا ترسلها لي، ولا تحتاج إلى وضعها في الموقع أو GitHub.**
+4. لتسجيل Google، ستحتاج أيضاً حساب Google Cloud تستطيع منه إنشاء OAuth Client.
 
-## 2. التشغيل المحلي
+## 2. إنشاء مشروع Supabase
 
-من مجلد المشروع:
+1. افتح [لوحة Supabase](https://supabase.com/dashboard) واضغط **New project**.
+2. اختر المؤسسة، واكتب اسماً للمشروع، واختر المنطقة الأقرب لمستخدميك. أنشئ كلمة مرور قوية لقاعدة البيانات واحفظها بنفسك في مدير كلمات المرور.
+3. انتظر حتى تظهر حالة المشروع **Healthy/Active**.
+4. افتح **Project Settings → API** أو صفحة **API Keys**، وانسخ فقط:
+   - **Project URL**: عنوان ينتهي عادةً بـ `.supabase.co`.
+   - **anon public key** القديم أو **publishable key** العام الجديد.
 
-```bash
-npm ci
-cp .env.example .env.local
-npm run dev
-```
+> **لا تشارك أبداً** كلمة مرور قاعدة البيانات، أو `service_role`، أو أي `secret key`، أو كلمة مرور Google. المطلوب للموقع هو Project URL والمفتاح العام فقط.
 
-إن لم تضع قيماً صالحة في `.env.local`، تظهر لافتة واضحة بأن الموقع في وضع تجربة. اختر **استكشف نسخة التجربة** من صفحة الدخول؛ البيانات التجريبية تبقى في المتصفح ولا تُكتب في قاعدة بيانات. لا تمنح قائمة تبديل الأدوار التجريبية صلاحيات حقيقية.
+**علامة النجاح:** ترى صفحة مشروع Supabase بحالة نشطة، ومعك القيمتان محفوظتان محلياً دون إرسالهما لأحد.
 
-ملف `.env.example` يشرح المتغيرين المطلوبين للمتصفح:
+## 3. إنشاء الجداول والسياسات
 
-- `VITE_SUPABASE_URL`: عنوان مشروع Supabase.
-- `VITE_SUPABASE_ANON_KEY`: مفتاح `anon` القديم أو مفتاح `publishable` العام الحالي. لا تضع هنا مفتاح `service_role` أو أي مفتاح `secret`.
+1. افتح الملف [`supabase/setup.sql`](supabase/setup.sql) من المستودع، وانسخ محتواه كاملاً.
+2. في Supabase افتح **SQL Editor → New query**، الصق النص كاملاً، ثم اضغط **Run**.
+3. شغّل الملف مرة واحدة فقط على المشروع الجديد والفارغ. هو يجمع الترحيلات `001` إلى `007` بترتيبها داخل معاملة واحدة. **لا تشغّل seed معه ولا تلصقه مرة ثانية على مخطط مطبّق.**
+4. رسالة النجاح المتوقعة: انتهاء التشغيل من دون سطر `ERROR` (قد تظهر رسائل `NOTICE` عادية أثناء إنشاء المشغّلات). إذا ظهر خطأ، سجّل نص الخطأ ورقم السطر؛ لا ترسل أي مفاتيح أو كلمات مرور.
+5. الملف [`supabase/seed/seed.sql`](supabase/seed/seed.sql) منفصل ومكتوب عليه **للتجربة فقط**. لا تشغّله على مشروع حي أو إنتاجي.
 
-`.env` و`.env.*` مستثنيان من Git، مع استثناء ملفات الأمثلة فقط. لا تحفظ ملف `.env.local` في المستودع.
+ينشئ الإعداد `pgcrypto` إذا لزم، والجداول والفهارس والدوال والمشغّلات وسياسات RLS، ثم ينشئ bucket باسم `verification-private` و`public=false` داخل SQL. الرفع محصور بمالك الحساب داخل مجلده؛ وقراءة ملفات التوثيق محصورة بالمشرف والمدير. يتحقق مشغّل Auth من بيانات الحساب الوصفية، ويُنشئ ملفاً شخصياً ويمنح كل حساب جديد دور `member` فقط. عند التسجيل عبر Google يستخدم الاسم والصورة إن وُجدا (`full_name`/`name` و`avatar_url`/`picture`)، ولا يعتمد أي دور قادم من بيانات المزود.
 
-## 3. إنشاء Supabase وتشغيل قاعدة البيانات
+**علامة النجاح:** ينتهي SQL Editor بلا أخطاء. في **Storage → Buckets** يظهر `verification-private` على أنه **Private**. الملف لا يحتوي بيانات تجريبية للمستخدمين.
 
-1. أنشئ مشروعاً جديداً من [لوحة Supabase](https://supabase.com/dashboard)، واختر كلمة مرور قوية لقاعدة البيانات واحتفظ بها في مدير كلمات المرور لديك.
-2. من **Project Settings → API Keys** أو صفحة واجهة API انسخ **Project URL** ومفتاح `anon`/`publishable` العام فقط. لا نحتاج مفتاح الخدمة في الواجهة، ولا أطلبه منك.
-3. شغّل المخطط مرة واحدة على قاعدة بيانات جديدة بإحدى الطريقتين، **ولا تشغّل الطريقتين معاً**:
-   - الموصى بها: افتح **SQL Editor → New query**، والصق محتوى [`supabase/setup.sql`](supabase/setup.sql)، ثم نفّذه كاملاً. الملف مجمّع بترتيب الترحيلات داخل معاملة واحدة.
-   - أو استخدم Supabase CLI على مشروع جديد: `supabase login` ثم `supabase link --project-ref <PROJECT_REF>` ثم `supabase db push`.
-4. عند استخدام الملفات المنفصلة، نفّذها بهذا الترتيب: `202610020001_initial_schema.sql`، ثم `202610020002_policy_hardening.sql`، ثم `202610020003_guest_scope_and_atomic_limits.sql`، ثم `202610020004_integrity_and_storage_scope.sql`، ثم `202610020005_least_privilege_and_booking_rules.sql`، ثم `202610020006_coach_schedule_completion.sql`.
-5. الملف `supabase/seed/seed.sql` **للتطوير المحلي فقط**؛ لا تشغّله على الإنتاج. لا تحتاجه لتفعيل حسابات البريد.
+## 4. ربط GitHub Pages بإعدادات Supabase العامة
 
-الترحيلات تنشئ امتداد `pgcrypto` إذا لزم، وأنواع الأدوار والجداول والفهارس والمشغّلات. وينشئ المشغّل على `auth.users` صفاً تلقائياً في `profiles` ودور `member` لكل حساب جديد.
+في GitHub افتح المستودع ثم **Settings → Secrets and variables → Actions → Variables → New repository variable**. أضف المتغيرين التاليين بالاسمين حرفياً:
 
-ينشئ SQL bucket باسم `verification-private` بحد 10 MiB وبأنواع JPG/PNG/WebP/PDF. الـ bucket غير عام؛ يستطيع العضو رفع مستند داخل مجلده ذي المستوى الواحد فقط، بينما تقتصر قراءة الكائنات المرفوعة على المشرف والمدير. يسمح الحذف للمالك من مجلده أو لفريق الإشراف، وتُنظّف الملفات بعد قرار التوثيق عند إعداد Edge Function والـ webhook. لا ترفع بيانات مرضى أو وثائق أشخاص آخرين.
+| الاسم | القيمة التي تضعها |
+| --- | --- |
+| `VITE_SUPABASE_URL` | Project URL الذي نسخته من Supabase |
+| `VITE_SUPABASE_ANON_KEY` | مفتاح `anon public` أو `publishable` العام |
 
-## 4. تفعيل البريد وإعداد روابط العودة
+ثم افتح **Actions → Deploy to GitHub Pages → Run workflow → Run workflow**، وانتظر اكتمال التشغيل.
+
+الـ workflow يقرأ من GitHub **Variables** (`vars`) فقط؛ لا يحتاج إلى Secrets لهذين المتغيرين. قيم `VITE_*` تظهر في JavaScript المنشور للمتصفح، وهذا طبيعي للمفتاح العام؛ الحماية تكون بسياسات RLS، وليس بإخفاء المفتاح العام. **لا تضف `service_role` أو `secret key` إلى هذه المتغيرات أو إلى الموقع.**
+
+إن غابت إحدى القيمتين أو كانت غير صالحة، لا ينهار الموقع: يبقى في وضع التجربة وتظهر لافتة واضحة. بعد البناء الصحيح تختفي لافتة التجربة وتتحول صفحات البيانات إلى Supabase.
+
+**علامة النجاح:** تشغيل Actions أخضر، وعند إعادة فتح [الموقع](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/) تختفي لافتة «وضع التجربة».
+
+للتشغيل المحلي فقط: انسخ `.env.example` إلى `.env.local` وضع القيمتين فيه. الملفات `.env` و`.env.*` مستثناة من Git، مع إبقاء ملف المثال فقط متاحاً.
+
+## 5. تفعيل البريد، العودة من الروابط، وقوالب البريد
 
 في لوحة Supabase:
 
-1. افتح **Authentication → Providers → Email**، وتأكد من تفعيل البريد وكلمة المرور. اترك **Confirm email** مفعّلاً للإنتاج. يمكن إيقاف التأكيد مؤقتاً للاختبار فقط؛ عندها يُنشأ تسجيل الدخول فوراً. اضبط حداً مناسباً لكلمة المرور؛ الواجهة تشترط 8 أحرف على الأقل.
-2. افتح **Authentication → URL Configuration** واضبط **Site URL** على:
+1. افتح **Authentication → Providers → Email**، وتأكد من تفعيل البريد وكلمة المرور. اترك **Confirm email** مفعّلاً للإنتاج.
+2. افتح **Authentication → URL Configuration** واضبط **Site URL** على الرابط التالي بالضبط:
 
-   `https://proexcellencenetwork-art.github.io/mojtama-al-saytara/`
+   ```text
+   https://proexcellencenetwork-art.github.io/mojtama-al-saytara/
+   ```
 
-3. أضف عناوين العودة التالية إلى **Redirect URLs**. يستخدم التطبيق query parameter آمناً لتوجيه رابط البريد بعد العودة إلى المسار الثابت، ثم ينتقل داخلياً عبر HashRouter:
+3. أضف هذه العناوين إلى **Redirect URLs**؛ كل سطر عنوان مستقل:
 
    ```text
    https://proexcellencenetwork-art.github.io/mojtama-al-saytara/?flow=confirm
    https://proexcellencenetwork-art.github.io/mojtama-al-saytara/?flow=recovery
+   https://proexcellencenetwork-art.github.io/mojtama-al-saytara/?flow=oauth
    http://localhost:5173/?flow=confirm
    http://localhost:5173/?flow=recovery
+   http://localhost:5173/?flow=oauth
    ```
 
-   يستخدم GitHub Pages المسار `/mojtama-al-saytara/`، ويتعامل التطبيق مع المسارات عبر `HashRouter`؛ لا حاجة إلى إعداد fallback على الخادم. بعد الحفظ اختبر رسالة التأكيد ورابط استعادة كلمة المرور من المتصفح.
-4. في **Authentication → Email Templates** خصّص قوالب **Confirm signup** و**Reset password** بالعربية. أمثلة بسيطة (اترك رابط Supabase كما هو، ولا تضع مفتاحاً في القالب):
+   التطبيق يستخدم `HashRouter` لمسارات الصفحات الداخلية، وPKCE لرمز العودة؛ رابط العودة هو جذر الموقع مع `flow` ثم يحوّل التطبيق المستخدم إلى الصفحة المناسبة.
 
-   **تأكيد البريد:**
+4. من **Authentication → Email Templates** خصّص **Confirm signup** و**Reset password** بالعربية. اترك `{{ .ConfirmationURL }}` كما هو حتى يحمل رابط التأكيد/الاستعادة رمز Supabase ووجهة العودة.
 
+   **قالب تأكيد مقترح:**
    ```html
    <h2>أهلاً بك في مجتمع السيطرة</h2>
    <p>اضغط الرابط لتأكيد بريدك الإلكتروني ومتابعة التسجيل:</p>
@@ -73,8 +89,7 @@ npm run dev
    <p>إذا لم تنشئ هذا الحساب، فتجاهل الرسالة.</p>
    ```
 
-   **استعادة كلمة المرور:**
-
+   **قالب استعادة مقترح:**
    ```html
    <h2>إعادة تعيين كلمة المرور</h2>
    <p>اضغط الرابط الآمن لاختيار كلمة مرور جديدة:</p>
@@ -82,56 +97,83 @@ npm run dev
    <p>إذا لم تطلب ذلك، فتجاهل الرسالة.</p>
    ```
 
-5. أرسل رسائل حقيقية عبر SMTP موثوق عند الإطلاق؛ الإرسال الافتراضي في Supabase مخصص للتطوير ومحدود المعدل. لا تطلق دعوات عامة قبل اختبار التأكيد والاستعادة على بريد تملكه.
+5. أرسل اختباراً إلى بريد تملكه. خدمة البريد الافتراضية محدودة ومناسبة للتجربة فقط؛ اضبط SMTP موثوقاً قبل فتح التسجيل.
 
-يدعم التطبيق التسجيل والدخول والخروج واستعادة كلمة المرور. إذا كانت إعدادات Supabase غائبة أو غير صالحة، لا ينهار التطبيق: يبقى الموقع عاماً ويعرض لافتة وضع التجربة. المسارات الخاصة تنتظر استعادة جلسة Auth ثم تعيد غير المسجل إلى الدخول. بعد ضبط Supabase تُحمّل الخلاصة والملفات والاتصالات والرسائل والمجموعات والإشعارات وطلبات التوثيق والبلاغات من قاعدة البيانات، وتطبق RLS على الخادم. بيانات التجربة لا تُعرض على صفحات المحتوى العامة المتصلة.
+**علامة النجاح:** يصل رابط التأكيد، وبعد الضغط يعود إلى الموقع ويسجّل الدخول؛ رابط الاستعادة يفتح نموذج كلمة مرور جديدة.
 
-## 5. متغيرات بناء GitHub Pages
+## 6. إعداد زر المتابعة بحساب Google
 
-في مستودع GitHub افتح **Settings → Secrets and variables → Actions → Variables → New repository variable**، وأضف هذين الاسمين حرفياً:
+الشيفرة تعرض زر **المتابعة بحساب Google** في صفحتي الدخول والتسجيل عند ربط Supabase. تحتاج تفعيل المزود يدوياً في حسابيك Google وSupabase:
 
-| الاسم | القيمة |
-| --- | --- |
-| `VITE_SUPABASE_URL` | Project URL لمشروع Supabase |
-| `VITE_SUPABASE_ANON_KEY` | مفتاح `anon` أو `publishable` العام فقط |
+1. افتح [Google Cloud Console](https://console.cloud.google.com/)، واختر أو أنشئ مشروعاً، ثم جهّز شاشة الموافقة من **Google Auth Platform → Branding** وأضف بيانات التطبيق المطلوبة. أثناء الاختبار، أضف حسابات الاختبار إلى **Test users** إذا كان التطبيق بحالة Testing.
+2. افتح **Google Auth Platform → Clients → Create client → Web application**.
+3. في **Authorized JavaScript origins** أضف:
+   ```text
+   https://proexcellencenetwork-art.github.io
+   http://localhost:5173
+   ```
+4. في **Authorized redirect URIs** الصق **Callback URL الذي تعرضه صفحة مزود Google في Supabase**. شكله غالباً:
+   ```text
+   https://<PROJECT_REF>.supabase.co/auth/v1/callback
+   ```
+   استخدم القيمة المعروضة من مشروعك؛ لا تضع رابط GitHub Pages في خانة redirect URI الخاصة بـ Google.
+5. انسخ **Client ID** و**Client Secret** من Google Cloud إلى **Supabase → Authentication → Providers → Google**، فعّل Google، ثم احفظ. احتفظ بالسر داخل Google/Supabase فقط؛ لا تضعه في GitHub Variables ولا ترسله لي.
+6. تأكد من وجود رابط `?flow=oauth` الخاص بالإنتاج وlocalhost في قائمة Redirect URLs في Supabase (القائمة في الخطوة السابقة).
 
-يمكن وضعهما في **Secrets** بدلاً من **Variables**؛ ملف GitHub Actions يقرأ `vars` أولاً ثم `secrets`. أعد نشر workflow بعد إضافتهما: **Actions → Deploy to GitHub Pages → Run workflow**، أو ادفع تغييراً إلى `main`. هذه القيم عامة بطبيعتها داخل JavaScript المنشور، ولذلك تعتمد الحماية على RLS.
+**علامة النجاح:** الضغط على زر Google يفتح شاشة Google، وبعد الموافقة يعود للموقع وتُفتح الصفحة بعد تسجيل الدخول. لم أختبر هذا التدفق على مزود حي بعد.
 
-**لا تنشئ متغير GitHub اسمه `SUPABASE_SERVICE_ROLE_KEY` ولا تنشر مفتاحاً مميزاً/سرياً.** لا يلزم أن ترسل أي مفتاح إلى Manus.
+## 7. تعيين أول مدير
 
-## 6. تعيين أول مدير
-
-1. سجّل حسابك من الموقع وأكمل تأكيد البريد.
-2. من لوحة Supabase → **SQL Editor** نفّذ الاستعلام التالي بعد استبدال البريد ببريد حسابك:
+1. سجّل حسابك عبر البريد أو Google من الموقع، وأكّد البريد إن طُلب ذلك.
+2. افتح **Supabase → SQL Editor → New query**. استبدل البريد التالي بالبريد المطابق لحسابك، ثم شغّل:
 
    ```sql
    insert into public.user_roles (user_id, role, granted_by)
-   select id, 'manager'::public.app_role, id
+   select id, 'manager'::public.app_role, null
    from auth.users
-   where lower(email) = lower('admin@example.com')
+   where lower(email) = lower('you@example.com')
    on conflict (user_id, role) do nothing;
    ```
 
-3. سجّل الخروج ثم الدخول مجدداً لتحديث الجلسة والواجهة. يمكن تطبيق الاستعلام نفسه على بريد منفصل واحد لتعيين مدير ثانٍ.
+3. تحقق من النتيجة:
 
-لا توجد ترقية ذاتية من واجهة الموقع. تمنع سياسات RLS الأعضاء العاديين من إدراج أدوار لأنفسهم أو تعديل أدوار الآخرين؛ إضافة المدير الأول إجراء مالك قاعدة البيانات أعلاه.
+   ```sql
+   select u.email, r.role
+   from auth.users u
+   join public.user_roles r on r.user_id = u.id
+   where lower(u.email) = lower('you@example.com');
+   ```
 
-## 7. اختبار RLS وحدود المعدل
+4. سجّل الخروج ثم ادخل مجدداً لتحديث الدور في الموقع.
 
-نفّذ قائمة الاختبارات المفصلة في [`supabase/SECURITY_TEST_CHECKLIST.md`](supabase/SECURITY_TEST_CHECKLIST.md). جهّز حسابين عاديين مختلفين، وحساباً موثّقاً، ومشرفاً، ومديراً. تتحقق القائمة من منع العضو من النشر، وعزل الرسائل وطلبات/ملفات التوثيق، ومنع تعديل دوره أو حالة توثيقه، وحد الرسائل اليومي (15 للعضو و40 للموثّق/الكوتش/الإشراف). اختبر طلبات API بمستخدم مصادق فعلي؛ لا تستخدم SQL Editor كبديل لاختبار RLS، لأن دور مالك قاعدة البيانات يتجاوز سياسات الصفوف.
+العضو العادي لا يستطيع إدراج دور أو تغيير دوره أو حالة طلب توثيقه بنفسه؛ تعيين أول مدير بهذا الاستعلام يتم بصلاحية مالك المشروع في SQL Editor.
 
-## 8. وظائف Edge الاختيارية
+**علامة النجاح:** يظهر `manager` بجوار بريدك في نتيجة الاستعلام وتظهر لك صفحة لوحة المدير بعد تسجيل الدخول مرة أخرى.
 
-تستخدم الوظائف مفاتيح المنصة المضافة تلقائياً إلى بيئة Edge Function، مع دعم `SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` القديمة وخريطة المفاتيح الحالية. **لا حاجة إلى أن تنسخ مفتاح خدمة أو ترسله أو تضعه في الواجهة.** تبقى أي صلاحية مميزة على الخادم فقط.
+## 8. اختبار الأمان قبل استقبال أعضاء
 
-لربط CLI بمشروعك:
+اقرأ القائمة الكاملة [`supabase/SECURITY_TEST_CHECKLIST.md`](supabase/SECURITY_TEST_CHECKLIST.md). لملخص الاختبار:
+
+1. أنشئ حسابات اختبار منفصلة: `member-a` و`member-b` عاديان، و`verified`، و`moderator`، و`manager`. لا تستخدم بيانات أشخاص حقيقيين.
+2. سجّل بـ`member-b` وارفع ملف PDF أو صورة **وهمية** وأرسل طلب توثيق معلقاً. هذا يتيح لسكربت الاختبار التحقق من خصوصية ملف فعلي.
+3. افتح [`supabase/tests/rls_security_smoke.sql`](supabase/tests/rls_security_smoke.sql)، واستبدل عناوين البريد التجريبية الخمسة بعناوين حساباتك، ثم الصق الملف كاملاً في SQL Editor واضغط **Run**. يعمل داخل معاملة ثم ينفذ `ROLLBACK`؛ لا يحفظ رسائل أو حسابات الاختبار التي ينشئها.
+4. المتوقع في النهاية ظهور رسالة نجاح عربية تؤكد أن العضو لم يستطع النشر العام أو قراءة بيانات خاصة أو تعديل الأدوار/التوثيق، وأن الرسالة رقم 16 رُفضت بعد 15 رسالة خلال 24 ساعة.
+5. أكمل اختبارات الموقع/REST في القائمة: جلسة العضو لا ترى رسائل غيرها، ولا تقرأ طلبات أو وثائق الآخرين؛ المالك يرفع داخل مساره فقط؛ المشرف والمدير يقرآن الوثيقة؛ والمستخدم الموثق يستطيع النشر وفق الحد المقرر.
+
+السكربت يبدّل PostgreSQL مؤقتاً إلى دور `authenticated` مع claims محلية اصطناعية، ويختبر السياسات على PostgreSQL. **ليس اختباراً لاتصال JWT/HTTP الفعلي ولا بديلاً عن إعادة الاختبار على مشروع Supabase الحي.** يجب إيقاف الإطلاق إذا قبل المشروع الحي عملية يفترض منعها.
+
+**علامة النجاح:** رسالة النجاح في SQL، ثم نجاح سيناريوهات القائمة من الموقع أو REST بجلسات الحسابات المنفصلة. لا تسجّل JWT أو مفاتيح الدخول في Git أو رسائل.
+
+## 9. وظائف Edge الاختيارية
+
+تستخدم الوظائف مفاتيح Supabase المميزة على الخادم عبر مفاتيح المنصة المحقونة؛ لا تحتاج إلى نسخ أو طلب `service_role` يدوياً. من جهازك ثبّت Supabase CLI وسجّل الدخول، ثم نفّذ:
 
 ```bash
 supabase login
 supabase link --project-ref <PROJECT_REF>
 ```
 
-لحذف مستند التوثيق آلياً بعد استبداله أو قبول/رفض الطلب:
+لحذف ملف التوثيق آلياً بعد استبداله أو قبول/رفض الطلب، ولّد السر المخصص، واحفظه محلياً ثم اضبطه على مشروع Supabase:
 
 ```bash
 export CLEANUP_WEBHOOK_SECRET="$(openssl rand -hex 32)"
@@ -139,52 +181,45 @@ supabase secrets set CLEANUP_WEBHOOK_SECRET="$CLEANUP_WEBHOOK_SECRET"
 supabase functions deploy cleanup-verification-files --no-verify-jwt
 ```
 
-من لوحة Supabase أنشئ **Database Webhook** على `public.verification_requests` لحدث `UPDATE`، إلى:
+بعد ذلك أنشئ **Database Webhook** لجدول `public.verification_requests` عند حدث `UPDATE`، على رابط:
 
-`https://<PROJECT_REF>.supabase.co/functions/v1/cleanup-verification-files`
+```text
+https://<PROJECT_REF>.supabase.co/functions/v1/cleanup-verification-files
+```
 
-وأضف HTTP Header اسمه `x-cleanup-secret` بالقيمة نفسها التي ولّدتها أعلاه (تحقق محلياً بـ `printf '%s\n' "$CLEANUP_WEBHOOK_SECRET"` لنسخها إلى إعداد الـ webhook). هذا هو **السر المخصص الوحيد** المطلوب لهذه الوظيفة؛ لا تضف مفتاح خدمة أو `SUPABASE_URL` يدوياً. الوظيفة تتحقق أيضاً أن مسار الكائن مسجل مسبقاً في `verification_cleanup_queue` ومملوك لصاحب الطلب.
+وأضف header بالاسم `x-cleanup-secret` والقيمة التي ولّدتها محلياً. لا ترسل هذه القيمة لأي شخص. تتأكد الوظيفة أن الملف موجود في طابور التنظيف ومساره مسجل لصاحبه قبل إزالته.
 
-لحذف الحساب بطلب صريح من المستخدم، انشر الوظيفة الثانية:
+لنشر حذف الحساب بطلب صريح من المستخدم:
 
 ```bash
 supabase functions deploy delete-account
 ```
 
-تتطلب JWT للمستخدم المسجل وطلباً يتضمن `confirm: true`، وتحذف كائنات Storage الخاصة بالطرف نفسه وصفوف طابور التنظيف ثم حساب Auth. **لا تضف أسراراً يدوية لهذه الوظيفة**؛ تستخدم المفاتيح التي تحقنها المنصة. اختبر الحذف على حساب تطوير أولاً؛ فهو غير قابل للاسترجاع من الواجهة.
+تتحقق هذه الوظيفة من JWT المستخدم وطلب التأكيد، وتحذف ملفات الحساب ثم الحساب نفسه. لا تضف مفاتيح مميزة يدوياً. اختبرها على حساب تطوير فقط لأن الحذف غير قابل للاسترجاع من الواجهة.
 
-للتطوير المحلي للوظائف، انسخ `supabase/functions/.env.example` إلى `supabase/functions/.env`، وأضف فقط `CLEANUP_WEBHOOK_SECRET` الاختباري هناك. كلا الملفين المحليين مستثنيان من Git.
+**علامة نجاح التنظيف:** اختبار تبديل/اعتماد طلب تجريبي مع webhook يحذف الملف من bucket بعد قرار المشرف. لا تُفعّل الحذف قبل اختباره على حساب تجريبي.
 
-## 9. النشر
+## 10. الموقع والنشر
 
-المستودع هو [proexcellencenetwork-art/mojtama-al-saytara](https://github.com/proexcellencenetwork-art/mojtama-al-saytara)، والموقع:
+- الموقع: [https://proexcellencenetwork-art.github.io/mojtama-al-saytara/](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/)
+- المستودع: [proexcellencenetwork-art/mojtama-al-saytara](https://github.com/proexcellencenetwork-art/mojtama-al-saytara)
+- يستخدم Vite الأساس `/mojtama-al-saytara/` و`HashRouter` للصفحات الداخلية. مصدر HTML هو `src/index.html`، وملفات الجذر و`assets/` ملفات بناء يولدها workflow لإعداد Pages الحالي؛ لا تعدّلها يدوياً.
+- عند غياب متغيرات Supabase أو عدم صلاحيتها، تظهر لافتة وضع التجربة ولا تنهار الصفحة. وضع التجربة يستخدم حالة متصفح محلية للعرض فقط ولا يكتب بياناتها إلى قاعدة حية.
 
-**https://proexcellencenetwork-art.github.io/mojtama-al-saytara/**
+## قائمة ما تبقى قبل فتح التسجيل للجمهور
 
-يبني workflow في GitHub Actions الموقع إلى `dist` بمسار `/mojtama-al-saytara/`، ثم يرفع الـ artifact ويحدّث كذلك نسخة ثابتة مولّدة في جذر `main`. هذه النسخة الجذرية مطلوبة لأن إعداد المستودع الحالي هو **Deploy from a branch → `main` / root**؛ وهي تمنع GitHub Pages من عرض ملفات React/Vite الخام. لا تعدّل `index.html` أو `assets/` في الجذر يدوياً؛ مصدر HTML هو `src/index.html`، ومصدر الصور والمسارات العامة هو `public/`. يمرر الـ workflow متغيرات Supabase العامة عند إضافتها. يعمل `HashRouter` للصفحات الداخلية سواء كان مصدر Pages هو الفرع أو GitHub Actions.
+1. أنشئ مشروع Supabase وشغّل `setup.sql` مرة واحدة.
+2. أضف متغيري GitHub Actions `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY`، ثم أعد النشر وتأكد من اختفاء لافتة التجربة.
+3. فعّل البريد واضبط Site URL وروابط العودة، ثم اختبر التأكيد والاستعادة مع SMTP موثوق.
+4. اضبط Google Cloud وفعّل المزود في Supabase، ثم اختبر تسجيل Google فعلياً.
+5. عيّن أول مدير وشغّل SQL smoke test واختبارات الموقع/REST على حسابات اختبار.
+6. انشر Edge Functions فقط عند الحاجة، واضبط webhook وسر التنظيف واختبر الحذف على حساب تطوير.
+7. جهّز سياسة خصوصية وشروط استخدام، وتدفق الإبلاغ والإشراف، وخطة الاستجابة لطلبات حذف/تصدير البيانات. لا ترفع بيانات مرضى أو وثائق حقيقية إلى بيئة الاختبار.
 
-## ما يلزمك أنت لإكمال الربط
+## مراجع Supabase الرسمية
 
-1. أنشئ مشروع Supabase جديداً، وشغّل `supabase/setup.sql` مرة واحدة على المشروع الجديد.
-2. انسخ **Project URL** ومفتاح `anon`/`publishable` العام إلى متغيري GitHub Actions `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY`؛ لا ترسل القيم لي ولا تضع مفتاحاً سرياً في الواجهة.
-3. اضبط **Authentication → URL Configuration** وموفر البريد وقوالب التأكيد/الاستعادة حسب القسم 4، ثم أعد نشر GitHub Pages من Actions.
-4. أنشئ حسابك وأكّد البريد، ثم عيّن أول مدير باستعلام SQL أعلاه.
-5. أكمل قائمة [`SECURITY_TEST_CHECKLIST.md`](supabase/SECURITY_TEST_CHECKLIST.md) بحسابات اختبار قبل استقبال أعضاء.
-6. اختيارياً فقط، انشر Edge Functions؛ وظيفة تنظيف المستندات تحتاج السر المخصص `CLEANUP_WEBHOOK_SECRET` وإعداد Database Webhook. لا تحتاج أنت إلى تزويدي بمفتاح خدمة.
-
-## 10. الخصوصية والحدود الحالية
-
-- RLS والمشغّلات في Postgres هي حد الصلاحية الحقيقي؛ الواجهة لا تمنح دوراً أو تتجاوز السياسات.
-- رسائل الأعضاء لا تظهر إلا لأطراف المحادثة؛ يعتمد الإرسال على الاتصال المقبول أو الدور المخوّل، وتنفذ قاعدة البيانات حدود المعدل.
-- المستندات المهنية في bucket خاص، ولا تُقرأ عبر واجهة العضو؛ قراءة التنزيل مخصصة للمشرف/المدير.
-- لا تضع معلومات أو صور المرضى، حتى بعد إزالة الأسماء. الكوتشنج لا يستبدل الرعاية أو الاستشارة الطبية أو النفسية.
-- لم أختبر الترحيلات أو Auth أو RLS على مشروع Supabase حي لأنك لم تنشئ/تربط مشروعك بعد. يمكن فحص بناء الواجهة وSQL محلياً، لكن يجب إكمال قائمة اختبار الأمان قبل استقبال أعضاء حقيقيين.
-- هذه الشيفرة ليست مراجعة امتثال أو استشارة قانونية. جهّز سياسة خصوصية وشروطاً نهائية مناسبة للأنظمة المحلية قبل الإطلاق.
-
-## مرجع التنفيذ
-
-- الواجهة والموجّه: `src/App.tsx`, `src/components/`, `src/design.css`, `src/backend.css`.
-- إعداد Supabase الاختياري: `src/lib/supabase.ts`, `.env.example`.
-- ستة ترحيلات مرتبة: `supabase/migrations/`؛ نسخة لصق موحدة: `supabase/setup.sql`.
-- حسابات وأمثلة محلية: `supabase/seed/seed.sql` (**تطوير فقط**).
-- تنظيف المستندات وحذف الحساب: `supabase/functions/`.
+- [Google sign-in](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
+- [Auth email templates](https://supabase.com/docs/guides/auth/auth-email-templates)
+- [Edge Functions deployment](https://supabase.com/docs/guides/functions/deploy)
+- [Storage access control](https://supabase.com/docs/guides/storage/security/access-control)

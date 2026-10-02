@@ -15,6 +15,7 @@ function authMessage(message: string) {
   if (text.includes('invalid login credentials')) return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
   if (text.includes('email not confirmed')) return 'أكّد بريدك الإلكتروني أولاً ثم سجّل الدخول.'
   if (text.includes('user already registered')) return 'يوجد حساب بهذا البريد. جرّب تسجيل الدخول أو استعادة كلمة المرور.'
+  if (text.includes('unsupported provider') || (text.includes('provider') && (text.includes('disabled') || text.includes('not enabled')))) return 'تسجيل الدخول عبر Google غير مفعّل في إعدادات Supabase بعد.'
   if (text.includes('password') && text.includes('least')) return 'كلمة المرور لا تحقق الحد الأدنى المطلوب.'
   if (text.includes('rate limit') || text.includes('too many requests')) return 'محاولات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجدداً.'
   if (text.includes('network') || text.includes('fetch')) return 'تعذر الاتصال بالخدمة الآن. تحقق من الإنترنت وحاول مجدداً.'
@@ -24,14 +25,15 @@ function authMessage(message: string) {
 export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const callbackError = (location.state as { authError?: unknown } | null)?.authError
   const mode = location.pathname === '/register' ? 'register' : 'login'
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [forgot, setForgot] = useState(false)
-  const [message, setMessage] = useState('')
-  const [isError, setIsError] = useState(false)
+  const [message, setMessage] = useState(typeof callbackError === 'string' ? callbackError : '')
+  const [isError, setIsError] = useState(typeof callbackError === 'string' && callbackError.length > 0)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -81,6 +83,29 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
     }
   }
 
+  async function signInWithGoogle() {
+    setMessage('')
+    setIsError(false)
+    if (!isSupabaseConfigured || !supabase) {
+      setIsError(true)
+      setMessage('أضف إعدادات Supabase أولاً لتفعيل تسجيل الدخول عبر Google.')
+      return
+    }
+    setBusy(true)
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${getAppBaseUrl()}?flow=oauth` },
+      })
+      if (error) throw error
+    } catch (error) {
+      setIsError(true)
+      setMessage(authMessage(error instanceof Error ? error.message : 'oauth error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const heading = forgot ? 'استعادة كلمة المرور' : mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'
   return <main className="auth-wrap"><div className="auth-card">
     <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div>
@@ -91,6 +116,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       {!forgot && mode === 'login' && <button className="auth-inline-link" type="button" onClick={() => { setForgot(true); setMessage('') }}>نسيت كلمة المرور؟</button>}
       <button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الإرسال…' : forgot ? 'إرسال رابط الاستعادة' : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'} <ArrowLeft size={16}/></button>
     </form>
+    {isSupabaseConfigured && !forgot && <><div className="auth-separator"><span>أو</span></div><button className="btn btn-outline btn-full auth-google-button" type="button" onClick={() => void signInWithGoogle()} disabled={busy} aria-label="المتابعة بحساب Google"><span className="google-mark" aria-hidden="true">G</span><span>{busy ? 'جارٍ فتح Google…' : 'المتابعة بحساب Google'}</span></button></>}
     {message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}
     {(!isSupabaseConfigured || forgot) && <div className="auth-separator"><span>{forgot ? 'أو' : 'نسخة استعراض'}</span></div>}
     {!isSupabaseConfigured && <button className="btn btn-outline btn-full" onClick={() => { onDemo(); navigate('/feed') }}><Sparkles size={16}/> استكشف نسخة التجربة</button>}

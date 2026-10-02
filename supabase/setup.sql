@@ -1,7 +1,8 @@
--- مجتمع السيطرة: consolidated fresh-project setup. Development seed is intentionally excluded.
--- Apply once to a NEW Supabase project from SQL Editor, or use supabase db push; do not do both.
--- Source order: migrations/202610020001 through 202610020006.
--- All six migrations are wrapped in one transaction.
+-- مجتمع السيطرة — ملف إعداد موحّد لمشروع Supabase جديد.
+-- انسخ الملف كاملاً إلى SQL Editor وشغّله مرة واحدة فقط.
+-- يضم migrations 001–007 بترتيبها داخل معاملة واحدة؛ لا يتضمن seed.sql.
+-- يجب تطبيقه على مشروع Supabase فارغ، لا فوق مخطط سابق.
+
 BEGIN;
 
 -- ===== Source: supabase/migrations/202610020001_initial_schema.sql =====
@@ -487,6 +488,7 @@ create policy "Staff reads verification documents" on storage.objects for select
 create policy "Owner or staff removes own pending document" on storage.objects for delete to authenticated using (bucket_id='verification-private' and array_length(storage.foldername(name),1)=1 and (public.is_staff() or (storage.foldername(name))[1]=auth.uid()::text));
 
 
+
 -- ===== Source: supabase/migrations/202610020002_policy_hardening.sql =====
 -- Security hardening and transition rules for the initial schema.
 
@@ -611,6 +613,7 @@ begin
 end $$;
 
 
+
 -- ===== Source: supabase/migrations/202610020003_guest_scope_and_atomic_limits.sql =====
 -- Restrict visitor data access and serialize rate-limit checks.
 
@@ -672,6 +675,7 @@ begin
   if n >= lim then raise exception 'تم الوصول إلى الحد اليومي للرسائل'; end if;
   return new;
 end $$;
+
 
 
 -- ===== Source: supabase/migrations/202610020004_integrity_and_storage_scope.sql =====
@@ -824,6 +828,7 @@ drop trigger if exists reports_transition_guard on public.reports;
 create trigger reports_transition_guard before update on public.reports for each row execute procedure public.guard_report_transition();
 
 
+
 -- ===== Source: supabase/migrations/202610020005_least_privilege_and_booking_rules.sql =====
 -- Least-privilege execution grants and authoritative booking/read-receipt transitions.
 
@@ -920,6 +925,7 @@ begin
 end $$;
 
 
+
 -- ===== Source: supabase/migrations/202610020006_coach_schedule_completion.sql =====
 -- Final least-privilege and coaching-schedule lifecycle fixes.
 
@@ -981,6 +987,59 @@ begin
   if auth.uid()=old.member_id and old.status in ('requested','accepted') and new.status='cancelled' then return new; end if;
   raise exception 'Only the coach can accept, decline, or complete after the session; the member can cancel.';
 end $$;
+
+
+
+-- ===== Source: supabase/migrations/202610020007_google_profile_provisioning.sql =====
+-- مجتمع السيطرة — map verified Supabase Auth metadata into a safe default member profile.
+-- Additive migration: keep migrations 001–006 immutable for projects that already applied them.
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  metadata jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
+  profile_name text;
+  profile_photo text;
+begin
+  profile_name := coalesce(
+    nullif(btrim(metadata->>'display_name'), ''),
+    nullif(btrim(metadata->>'full_name'), ''),
+    nullif(btrim(metadata->>'name'), ''),
+    nullif(btrim(split_part(coalesce(new.email, ''), '@', 1)), ''),
+    'عضو جديد'
+  );
+  profile_name := left(profile_name, 100);
+
+  profile_photo := coalesce(
+    nullif(btrim(metadata->>'avatar_url'), ''),
+    nullif(btrim(metadata->>'picture'), '')
+  );
+  if profile_photo is not null and (length(profile_photo) > 2048 or profile_photo !~ '^https://') then
+    profile_photo := null;
+  end if;
+
+  insert into public.profiles(user_id, display_name, photo_url)
+  values (new.id, profile_name, profile_photo)
+  on conflict (user_id) do nothing;
+
+  -- Auth metadata (including Google claims) is never trusted for authorization.
+  -- All new accounts begin as ordinary members; staff grants roles separately.
+  insert into public.user_roles(user_id, role)
+  values (new.id, 'member')
+  on conflict (user_id, role) do nothing;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.handle_new_user();
 
 
 COMMIT;

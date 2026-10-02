@@ -99,16 +99,20 @@ function SupabaseCallbackRouter() {
     const client = supabase
     if (!client) return
     const flow = new URLSearchParams(window.location.search).get('flow')
-    if (flow !== 'confirm' && flow !== 'recovery') return
+    if (flow !== 'confirm' && flow !== 'recovery' && flow !== 'oauth') return
     let active = true
     void client.auth.getSession().then(({ data, error }) => {
       if (!active) return
-      const target = error || !data.session ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+      const searchParams = new URLSearchParams(window.location.search)
+      const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
+      const failed = Boolean(error || !data.session || callbackError)
+      const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
       const callbackUrl = new URL(window.location.href)
       for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
       window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
-      navigate(target, { replace: true })
-    }).catch(() => { if (active) navigate('/login', { replace: true }) })
+      navigate(target, { replace: true, state: failed ? { authError: callbackError || 'تعذر إكمال تسجيل الدخول. تأكد من تفعيل Google وروابط العودة في إعدادات Supabase.' } : null })
+    }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر إكمال تسجيل الدخول. حاول مرة أخرى.' } }) })
     return () => { active = false }
   }, [navigate])
   return null

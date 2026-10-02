@@ -1,6 +1,6 @@
--- DEVELOPMENT / LOCAL ONLY. Never apply demo passwords/accounts to a production project.
--- Each seeded Auth account receives an unpredictable development-only password hash; do not run this on a production project.
--- Create them using Supabase local Auth (SQL editor inserts are for local testing only).
+-- للتجربة فقط — بيانات وحسابات اصطناعية للتطوير المحلي، ولا تُشغّل هذا الملف على مشروع إنتاج.
+-- كل كلمة مرور عشوائية ولا تصلح لتسجيل الدخول؛ الغرض اختبار السياسات والواجهات فقط.
+-- لا يحتوي الملف على بيانات مستخدمين حقيقيين ولا يندمج في supabase/setup.sql.
 begin;
 insert into auth.users(id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at)
 values
