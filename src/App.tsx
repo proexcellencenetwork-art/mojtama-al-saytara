@@ -13,6 +13,13 @@ const LiveFeedPage = lazy(() => import('./components/LiveFeedPage').then(module 
 const LivePublicPage = lazy(() => import('./components/LivePublicPage').then(module => ({ default: module.LivePublicPage })))
 
 const roleNames: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير' }
+type AccountStatus = 'pending' | 'approved' | 'rejected' | 'unknown'
+function hasConfirmedEmail(user: User | null | undefined) {
+  return Boolean(user?.email_confirmed_at || user?.confirmed_at)
+}
+function isPasswordRecoveryRoute() {
+  return window.location.pathname.endsWith('/reset-password') || new URLSearchParams(window.location.search).get('flow') === 'recovery'
+}
 const demoPosts = [
   { id: 1, name: 'د. ليان الحربي', title: 'طبيبة أسرة · الرياض', role: 'verified' as Role, time: 'منذ ٣ ساعات', text: 'في نهاية المناوبة، أحياناً يكون ألطف قرار مهني هو أن نمنح أنفسنا استراحة قصيرة قبل أن نجيب عن كل شيء. ما الطقس الصغير الذي يساعدكم على استعادة تركيزكم؟', tags: ['التوازن المهني', 'العناية بالذات'], likes: 28, comments: 6, avatar: 'ل' },
   { id: 2, name: 'أ. عمر السبيعي', title: 'صيدلي إكلينيكي · جدة', role: 'coach' as Role, time: 'أمس', text: 'أطلقنا هذا الأسبوع دائرة حوار صغيرة حول اتخاذ القرار في المراحل المهنية المبكرة. شكراً لكل من شارك بصراحة واحترام. التسجيل للقاء القادم متاح الآن.', tags: ['تطوير مهني', 'لقاء مجتمعي'], likes: 41, comments: 9, avatar: 'ع' },
@@ -209,11 +216,35 @@ function DemoDashboardPage({ page, role, setRole, demoMode, client }: { page: st
  : page==='groups' ? <div className="panel-card"><div className="panel-icon"><Compass/></div><h2>مجموعات قريبة من اهتماماتك</h2><p>مجتمعات تخصصية ومساحات حوار مهنية.</p>{[['توازن الممارس الصحي','١٬٢٤٠ عضواً · عامة'],['بدايات مهنية','٨٣٦ عضواً · عامة'],['تمريض الرعاية الحرجة','٤٥٠ عضواً · طلب انضمام']].map((x)=><div className="review-row" key={x[0]}><span className="group-icon">◈</span><div><b>{x[0]}</b><small>{x[1]}</small></div><button className="btn btn-small btn-outline" onClick={()=>setSuccess('تم إرسال طلب الانضمام التجريبي.')}>انضمام <Plus size={13}/></button></div>)}</div>
  : <div className="panel-card"><div className="panel-icon"><FileText/></div><h2>{title}</h2><p>تعرّف على أعضاء المجتمع، وشارك في النقاشات والفعاليات المهنية.</p><div className="feature-grid compact-grid">{[['توازن الممارس الصحي','مجموعة مجتمعية مفتوحة'],['وضوح المسار المهني','لقاء افتراضي · هذا الأسبوع'],['تطوير مهني','مقالات وأدوات للنمو']].map(x=><article className="feature-card" key={x[0]}><h3>{x[0]}</h3><p>{x[1]}</p><button className="text-link" onClick={()=>setSuccess('هذه الخاصية تعمل في وضع التجربة.')}>استكشف <ArrowLeft size={14}/></button></article>)}</div></div>}</section></div></main>
 }
-function AppShell({ role, children, authenticated, authReady, demoMode, unread, unreadMessages, displayName, onSignOut }: { role: Role; children: React.ReactNode; authenticated: boolean; authReady: boolean; demoMode: boolean; unread: number; unreadMessages: number; displayName: string; onSignOut: () => void }) {
+function AppShell({ role, children, authenticated, authReady, demoMode, accountStatus, unread, unreadMessages, displayName, onSignOut }: { role: Role; children: React.ReactNode; authenticated: boolean; authReady: boolean; demoMode: boolean; accountStatus: AccountStatus | null; unread: number; unreadMessages: number; displayName: string; onSignOut: () => Promise<void> }) {
   const navigate = useNavigate()
-  useEffect(() => { if (authReady && !authenticated) navigate('/login', { replace: true }) }, [authReady, authenticated, navigate])
-  if (!authReady || !authenticated) return null
-  return <div className="signed-shell"><div className="signed-top"><Brand/><div className="signed-top-actions"><span className="signed-user">{displayName} · {roleNames[role]}</span><button className="btn btn-outline btn-small" onClick={onSignOut}>تسجيل الخروج</button></div></div><nav className="signed-nav">{navItems.map(n => <NavLink to={n.to} key={n.to}>{<n.icon size={16}/>} {n.label}{n.to==='/notifications'&&unread>0&&<span className="nav-count">{unread}</span>}{n.to==='/messages'&&unreadMessages>0&&<span className="nav-count">{unreadMessages}</span>}</NavLink>)}<NavLink to="/profile"><Users size={16}/>ملفي</NavLink><span className="demo-label">{demoMode?'وضع تجريبي':'مساحة خاصة'}</span></nav>{children}<Footer/></div>
+  useEffect(() => {
+    if (!authReady) return
+    if (!authenticated) navigate('/login', { replace: true })
+    else if (!demoMode && accountStatus !== 'approved') navigate('/pending-review', { replace: true })
+  }, [authReady, authenticated, demoMode, accountStatus, navigate])
+  if (!authReady || !authenticated || (!demoMode && accountStatus !== 'approved')) return null
+  return <div className="signed-shell"><div className="signed-top"><Brand/><div className="signed-top-actions"><span className="signed-user">{displayName} · {roleNames[role]}</span><button className="btn btn-outline btn-small" onClick={() => void onSignOut()}>تسجيل الخروج</button></div></div><nav className="signed-nav">{navItems.map(n => <NavLink to={n.to} key={n.to}>{<n.icon size={16}/>} {n.label}{n.to==='/notifications'&&unread>0&&<span className="nav-count">{unread}</span>}{n.to==='/messages'&&unreadMessages>0&&<span className="nav-count">{unreadMessages}</span>}</NavLink>)}<NavLink to="/profile"><Users size={16}/>ملفي</NavLink><span className="demo-label">{demoMode?'وضع تجريبي':'مساحة خاصة'}</span></nav>{children}<Footer/></div>
+}
+
+function PendingReviewPage({ authReady, authenticated, demoMode, accountStatus, onSignOut, onRefreshStatus }: { authReady: boolean; authenticated: boolean; demoMode: boolean; accountStatus: AccountStatus | null; onSignOut: () => Promise<void>; onRefreshStatus: () => Promise<void> }) {
+  const navigate = useNavigate()
+  useEffect(() => {
+    if (!authReady) return
+    if (!authenticated) navigate('/login', { replace: true })
+    else if (demoMode || accountStatus === 'approved') navigate('/feed', { replace: true })
+  }, [authReady, authenticated, demoMode, accountStatus, navigate])
+  if (!authReady) return <main className="auth-wrap"><section className="auth-card"><p role="status">جارٍ التحقق من الجلسة…</p></section></main>
+  if (!authenticated || demoMode || accountStatus === 'approved') return null
+  const rejected = accountStatus === 'rejected'
+  const unknown = accountStatus === 'unknown'
+  const loadingStatus = accountStatus === null
+  return <main className="auth-wrap"><section className="auth-card account-review-card">
+    <div className="auth-intro"><span className="eyebrow">حماية مجتمعنا المهني</span><h1>{loadingStatus ? 'جارٍ التحقق من حالة الحساب…' : rejected ? 'لم يُعتمد طلب الانضمام.' : unknown ? 'تعذر التحقق من حالة الحساب.' : accountStatus === 'pending' ? 'حسابك قيد المراجعة.' : 'تحقق من بريدك أولاً.'}</h1>
+      <p>{loadingStatus ? 'لن نفتح ميزات العضوية حتى نتحقق من الحالة.' : rejected ? 'لا تتوفر صلاحيات العضوية لهذا الحساب. إذا كنت ترى أن القرار يحتاج مراجعة، تواصل مع إدارة المجتمع.' : unknown ? 'لن نفتح ميزات العضوية حتى نتأكد من حالة الحساب. أعد المحاولة بعد قليل.' : accountStatus === 'pending' ? 'تم تأكيد البريد الإلكتروني. سيُفعّل الوصول إلى مساحة الأعضاء بعد مراجعة المدير واعتماد الحساب.' : 'أكّد بريدك الإلكتروني ثم سجّل الدخول؛ بعد ذلك يراجع المدير طلب الانضمام.'}</p>
+    </div>
+    <div className="account-review-actions"><button className="btn btn-outline" type="button" onClick={() => void onRefreshStatus()} disabled={loadingStatus}>إعادة التحقق من الحالة</button><button className="btn btn-primary" type="button" onClick={() => void onSignOut()}>تسجيل الخروج</button></div>
+  </section></main>
 }
 
 function SupabaseCallbackRouter() {
@@ -230,12 +261,14 @@ function SupabaseCallbackRouter() {
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
         const searchParams = new URLSearchParams(window.location.search)
         const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
-        const failed = Boolean(error || !data.session || callbackError)
-        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/feed'
+        const unverified = Boolean(data.session && flow !== 'recovery' && !hasConfirmedEmail(data.session.user))
+        const failed = Boolean(error || !data.session || callbackError || unverified)
+        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/pending-review'
         const callbackUrl = new URL(window.location.href)
         for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
         window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
-        navigate(target, { replace: true, state: failed ? { authError: callbackError || 'تعذر إكمال تسجيل الدخول. تأكد من تفعيل Google وروابط العودة في إعدادات Supabase.' } : null })
+        const authError = callbackError || (unverified ? 'أكّد بريدك الإلكتروني قبل استخدام مساحة العضوية.' : 'تعذر إكمال المصادقة. تحقق من إعدادات البريد وروابط العودة في Supabase.')
+        navigate(target, { replace: true, state: failed ? { authError } : null })
       }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر إكمال تسجيل الدخول. حاول مرة أخرى.' } }) })
     }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر تحميل خدمة تسجيل الدخول. حاول مرة أخرى.' } }) })
     return () => { active = false }
@@ -249,6 +282,8 @@ function App() {
   const [signedIn, setSignedIn] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true')
   const [authReady, setAuthReady] = useState(() => !isSupabaseConfigured)
   const [user, setUser] = useState<User | null>(null)
+  const [accountStatusRecord, setAccountStatusRecord] = useState<{ userId: string | null; status: AccountStatus | null }>({ userId: null, status: null })
+  const accountStatus = user && accountStatusRecord.userId === user.id ? accountStatusRecord.status : null
   const [role, setRoleState] = useState<Role>(() => demoMode ? (localStorage.getItem('saytara-role') as Role || 'member') : 'member')
   const [displayName, setDisplayName] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true' ? 'نورة العبدالله' : 'حسابي')
   const [dark, setDark] = useState(localStorage.getItem('saytara-dark') === 'true')
@@ -267,17 +302,41 @@ function App() {
       void client.auth.getSession().then(({ data, error }) => {
         if (!active) return
         const session = error ? null : data.session
-        setUser(session?.user ?? null)
-        setSignedIn(Boolean(session))
+        const recoveryRoute = isPasswordRecoveryRoute()
+        const emailConfirmed = hasConfirmedEmail(session?.user)
+        const keepRecoverySession = Boolean(session && recoveryRoute && !emailConfirmed)
+        setUser(session && (emailConfirmed || keepRecoverySession) ? session.user : null)
+        setSignedIn(Boolean(session && emailConfirmed))
         setDemo(false)
         localStorage.removeItem('saytara-demo')
         setAuthReady(true)
+        if (session && !emailConfirmed && !recoveryRoute) void client.auth.signOut({ scope: 'local' })
       }).catch(() => { if (active) setAuthReady(true) })
       const { data: { subscription: authSubscription } } = client.auth.onAuthStateChange((_event, session) => {
+        const emailConfirmed = hasConfirmedEmail(session?.user)
+        const recoveryRoute = isPasswordRecoveryRoute()
+        if (session && !emailConfirmed && !recoveryRoute) {
+          const unverifiedUserId = session.user.id
+          setUser(null)
+          setSignedIn(false)
+          setDemo(false)
+          setRoleState('member')
+          setDisplayName('حسابي')
+          localStorage.removeItem('saytara-demo')
+          window.setTimeout(() => {
+            void client.auth.getSession().then(({ data }) => {
+              const currentUser = data.session?.user
+              if (currentUser?.id === unverifiedUserId && !hasConfirmedEmail(currentUser)) return client.auth.signOut({ scope: 'local' })
+              return undefined
+            }).catch(() => {})
+          }, 0)
+          setAuthReady(true)
+          return
+        }
         setUser(session?.user ?? null)
-        setSignedIn(Boolean(session))
+        setSignedIn(Boolean(session && emailConfirmed))
         setAuthReady(true)
-        if (session) { setDemo(false); localStorage.removeItem('saytara-demo') }
+        if (session && emailConfirmed) { setDemo(false); localStorage.removeItem('saytara-demo') }
         else if (isSupabaseConfigured) { setDemo(false); setRoleState('member'); setDisplayName('حسابي') }
       })
       subscription = authSubscription
@@ -286,25 +345,41 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (demo || !supabaseClient || !user) return
+    if (demo || !supabaseClient || !user || !hasConfirmedEmail(user)) {
+      return
+    }
     let active = true
-    void Promise.all([
-      supabaseClient.from('profiles').select('display_name').eq('user_id', user.id).maybeSingle(),
-      supabaseClient.from('user_roles').select('role').eq('user_id', user.id),
-    ]).then(([profileResult, roleResult]) => {
-      if (!active) return
-      const metadataName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : ''
-      setDisplayName(profileResult.data?.display_name || metadataName || user.email?.split('@')[0] || 'حسابي')
-      const roles = (roleResult.data ?? []).map(row => row.role as Role)
-      const rank: Role[] = ['manager', 'moderator', 'coach', 'verified', 'member']
-      setRoleState(rank.find(candidate => roles.includes(candidate)) || 'member')
-    }).catch(() => { if (active) { setRoleState('member'); setDisplayName(user.email?.split('@')[0] || 'حسابي') } })
+    void (async () => {
+      try {
+        const { data, error } = await supabaseClient.from('profiles').select('display_name,account_status').eq('user_id', user.id).maybeSingle()
+        if (!active) return
+        const metadataName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : ''
+        setDisplayName(data?.display_name || metadataName || user.email?.split('@')[0] || 'حسابي')
+        if (error || !data) {
+          setAccountStatusRecord({ userId: user.id, status: 'unknown' })
+          return
+        }
+        const status = data.account_status === 'approved' || data.account_status === 'rejected' || data.account_status === 'pending'
+          ? data.account_status as AccountStatus
+          : 'unknown'
+        if (status !== 'approved') { setAccountStatusRecord({ userId: user.id, status }); return }
+        const roleResult = await supabaseClient.from('user_roles').select('role').eq('user_id', user.id)
+        if (!active) return
+        if (roleResult.error) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
+        const roles = (roleResult.data ?? []).map(row => row.role as Role)
+        const rank: Role[] = ['manager', 'moderator', 'coach', 'verified', 'member']
+        setRoleState(rank.find(candidate => roles.includes(candidate)) || 'member')
+        setAccountStatusRecord({ userId: user.id, status: 'approved' })
+      } catch {
+        if (active) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); setRoleState('member') }
+      }
+    })()
     return () => { active = false }
   }, [demo, user, supabaseClient])
 
   useEffect(() => {
     const client = supabaseClient
-    if (!client || !signedIn || !user) return
+    if (!client || !signedIn || !user || !hasConfirmedEmail(user) || accountStatus !== 'approved') return
     let live = true
     let channel: RealtimeChannel | null = null
     const connect = async () => {
@@ -321,16 +396,48 @@ function App() {
     }
     void connect()
     return () => { live = false; if (channel) void client.removeChannel(channel) }
-  }, [signedIn, user, supabaseClient])
+  }, [signedIn, user, supabaseClient, accountStatus])
 
   const setRole = (next: Role) => { if (demo) { setRoleState(next); localStorage.setItem('saytara-role', next) } }
   const toggleTheme = () => { setDark(value => { localStorage.setItem('saytara-dark', String(!value)); return !value }) }
   const onDemo = () => { if (!demoMode) return; setDemo(true); setSignedIn(true); setRoleState((localStorage.getItem('saytara-role') as Role) || 'member'); setDisplayName('نورة العبدالله'); localStorage.setItem('saytara-demo', 'true') }
-  const onSignedIn = () => { setSignedIn(true); setDemo(false); localStorage.removeItem('saytara-demo') }
-  const onSignOut = () => { if (supabaseClient) void supabaseClient.auth.signOut(); setUser(null); setSignedIn(false); setDemo(false); setRoleState('member'); setDisplayName('حسابي'); localStorage.removeItem('saytara-demo') }
+  const onSignedIn = (signedInUser: User) => {
+    if (!hasConfirmedEmail(signedInUser)) { setSignedIn(false); return }
+    setUser(signedInUser)
+    setAccountStatusRecord({ userId: signedInUser.id, status: null })
+    setRoleState('member')
+    setSignedIn(true)
+    setDemo(false)
+    localStorage.removeItem('saytara-demo')
+  }
+  const refreshAccountStatus = async () => {
+    if (!supabaseClient || !user) { setAccountStatusRecord({ userId: user?.id ?? null, status: 'unknown' }); return }
+    const { data, error } = await supabaseClient.from('profiles').select('account_status').eq('user_id', user.id).maybeSingle()
+    if (error || !data) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
+    const status = data.account_status
+    setAccountStatusRecord({ userId: user.id, status: status === 'approved' || status === 'pending' || status === 'rejected' ? status : 'unknown' })
+  }
+  const onSignOut = async () => {
+    if (supabaseClient && !demo) {
+      try {
+        const { error } = await supabaseClient.auth.signOut({ scope: 'local' })
+        if (error) throw error
+      } catch {
+        window.alert('تعذر إنهاء الجلسة الآن. تحقق من الاتصال وحاول تسجيل الخروج مجدداً.')
+        return
+      }
+    }
+    setUser(null)
+    setAccountStatusRecord({ userId: null, status: null })
+    setSignedIn(false)
+    setDemo(false)
+    setRoleState('member')
+    setDisplayName('حسابي')
+    localStorage.removeItem('saytara-demo')
+  }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/pending-review" element={<PendingReviewPage authReady={authReady} authenticated={authenticated} demoMode={demo} accountStatus={accountStatus} onSignOut={onSignOut} onRefreshStatus={refreshAccountStatus}/>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
 }
 
 export default App

@@ -14,6 +14,7 @@ const canReview = (role: Role) => role === 'moderator' || role === 'manager'
 
 export function LiveDashboardPage({ page, role, userId }: { page: string; role: Role; userId: string }) {
   const [rows, setRows] = useState<Row[]>([])
+  const [pendingAccounts, setPendingAccounts] = useState<Row[]>([])
   const [reportRows, setReportRows] = useState<Row[]>([])
   const [recipients, setRecipients] = useState<{ id: string; name: string }[]>([])
   const [selectedRecipient, setSelectedRecipient] = useState('')
@@ -28,7 +29,7 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
 
   const load = useCallback(async () => {
     if (!supabase) return
-    setLoading(true); setError(''); setRows([])
+    setLoading(true); setError(''); setRows([]); setPendingAccounts([])
     try {
       if (page === 'profile') {
         const { data, error: queryError } = await supabase.from('profiles').select('display_name,headline,profession,specialty,city,bio').eq('user_id', userId).maybeSingle()
@@ -85,9 +86,14 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
         setReportRows((reports ?? []) as Row[])
       } else if (page === 'admin') {
         if (role !== 'manager') { setRows([]); return }
-        const { data, error: queryError } = await supabase.from('user_roles').select('user_id,role,granted_at').order('granted_at', { ascending: false }).limit(500)
-        if (queryError) throw queryError
-        setRows((data ?? []) as Row[])
+        const [rolesResult, accountResult] = await Promise.all([
+          supabase.from('user_roles').select('user_id,role,granted_at').order('granted_at', { ascending: false }).limit(500),
+          supabase.rpc('list_pending_account_reviews'),
+        ])
+        if (rolesResult.error) throw rolesResult.error
+        if (accountResult.error) throw accountResult.error
+        setRows((rolesResult.data ?? []) as Row[])
+        setPendingAccounts((accountResult.data ?? []) as Row[])
       }
     } catch {
       setError('تعذر تحميل هذه البيانات. تحقق من اتصال Supabase وسياسات RLS، ثم أعد المحاولة.')
@@ -186,6 +192,19 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
     if (rpcError) setError('تعذر تسجيل القرار.'); else { setNotice(decision === 'approved' ? 'اعتُمد الطلب وأُضيف دور التوثيق.' : 'سُجل الرفض ووُضع الملف في قائمة الحذف الآمن.'); await load() }
   }
 
+  async function reviewAccount(row: Row, decision: 'approved' | 'rejected') {
+    if (!supabase || role !== 'manager') return
+    const reason = decision === 'rejected' ? window.prompt('اكتب سبب رفض طلب الانضمام (مطلوب):', '') : null
+    if (decision === 'rejected' && !reason?.trim()) return
+    setBusy(true); setError(''); setNotice('')
+    const { error: rpcError } = await supabase.rpc('review_account_application', {
+      p_user_id: str(row.user_id), p_decision: decision, p_reason: reason,
+    })
+    setBusy(false)
+    if (rpcError) setError('تعذر تسجيل قرار مراجعة الحساب.')
+    else { setNotice(decision === 'approved' ? 'اعتُمد الحساب بعد تأكيد البريد.' : 'رُفض طلب الانضمام وسُجل السبب في سجل المراجعة.'); await load() }
+  }
+
   async function updateReport(row: Row, status: 'reviewing' | 'resolved' | 'dismissed') {
     if (!supabase || !canReview(role)) return
     setBusy(true); setError(''); setNotice('')
@@ -215,7 +234,7 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
         : page === 'groups' ? <div className="panel-card"><div className="panel-icon"><Users/></div><h2>مجموعات المجتمع</h2>{rows.length === 0 ? <p>لا توجد مجموعات عامة منشورة بعد.</p> : rows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.name)}</b><small>{str(row.topic)} · {row.is_public ? 'عامة' : 'خاصة'}</small><small>{str(row.description)}</small></div>{row.membership_status ? <span className="status-pill">{str(row.membership_status)}</span> : <button className="btn btn-small btn-outline" disabled={busy} onClick={() => void joinGroup(row)}>انضمام</button>}</div>)}</div>
         : page === 'moderation' ? !staff ? <div className="panel-card"><h2>صلاحية غير متاحة</h2><p>تظهر أدوات المراجعة للمشرفين والمدير فقط.</p></div> : <div className="panel-card"><div className="panel-icon"><Shield/></div><h2>مركز الإشراف</h2><h3>البلاغات المفتوحة</h3>{reportRows.length === 0 ? <p>لا توجد بلاغات مفتوحة.</p> : reportRows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.reason)} · {str(row.target_type)}</b><small>{str(row.details)} · {str(row.status)}</small><small>المعرف: {str(row.target_id)}</small></div><span className="live-actions"><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void updateReport(row, 'reviewing')}>قيد المراجعة</button><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void updateReport(row, 'resolved')}>حلّ</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void updateReport(row, 'dismissed')}>إغلاق</button></span></div>)}<h3>طلبات التوثيق</h3>{rows.length === 0 ? <p>لا توجد طلبات توثيق معلقة.</p> : rows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.full_name)} · {str(row.profession)}</b><small>{str(row.specialty)} · {new Date(str(row.requested_at)).toLocaleString('ar')}</small></div><span className="live-actions"><button className="btn btn-small btn-outline" onClick={() => void openPrivateDocument(row)}><FileText size={13}/> عرض المستند</button><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void reviewRequest(row, 'approved')}>اعتماد</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void reviewRequest(row, 'rejected')}>رفض</button></span></div>)}</div>
 
-        : page === 'admin' ? role !== 'manager' ? <div className="panel-card"><h2>صلاحية غير متاحة</h2><p>إدارة الأدوار محصورة بمدير المنصة.</p></div> : <div className="panel-card"><div className="panel-icon"><Shield/></div><h2>الأدوار المسجلة</h2><p>هذه قراءة لحالة الأدوار. تُمنح صلاحية المدير الأولى من SQL Editor فقط كما هو موضح في الدليل.</p>{rows.length === 0 ? <p>لا توجد أدوار بعد.</p> : rows.map((row, index) => <div className="review-row" key={`${str(row.user_id)}-${index}`}><div><b>{str(row.role)}</b><small>{str(row.user_id)} · {new Date(str(row.granted_at)).toLocaleDateString('ar')}</small></div></div>)}</div>
+        : page === 'admin' ? role !== 'manager' ? <div className="panel-card"><h2>صلاحية غير متاحة</h2><p>إدارة الأدوار محصورة بمدير المنصة.</p></div> : <div className="panel-card"><div className="panel-icon"><Shield/></div><h2>مراجعة الحسابات والأدوار</h2><p>لا يظهر في قائمة المراجعة إلا من أكّد بريده. الحسابات الجديدة لا تصل إلى بيانات الأعضاء حتى اعتماد المدير.</p><h3>طلبات الانضمام</h3>{pendingAccounts.length === 0 ? <p>لا توجد حسابات مؤكدة تنتظر المراجعة.</p> : pendingAccounts.map(row => <div className="review-row" key={str(row.user_id)}><div><b>{str(row.display_name, 'عضو جديد')}</b><small>{str(row.email)} · {str(row.profession, 'مهنة غير محددة')} · {str(row.specialty, 'دون تخصص')}</small><small>{new Date(str(row.created_at)).toLocaleDateString('ar')}</small></div><span className="live-actions"><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void reviewAccount(row, 'approved')}>اعتماد الحساب</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void reviewAccount(row, 'rejected')}>رفض</button></span></div>)}<h3>الأدوار المسجلة</h3><p>تُمنح صلاحية المدير الأولى من SQL Editor فقط كما هو موضح في الدليل.</p>{rows.length === 0 ? <p>لا توجد أدوار بعد.</p> : rows.map((row, index) => <div className="review-row" key={`${str(row.user_id)}-${index}`}><div><b>{str(row.role)}</b><small>{str(row.user_id)} · {new Date(str(row.granted_at)).toLocaleDateString('ar')}</small></div></div>)}</div>
         : <div className="panel-card"><h2>{title}</h2><p>هذه الصفحة تعرض بيانات قاعدة البيانات الفعلية فقط.</p></div>}
       </section>
     </div>

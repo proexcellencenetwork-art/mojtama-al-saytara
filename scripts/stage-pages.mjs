@@ -1,5 +1,6 @@
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
-import { dirname, resolve, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { dirname, join, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -18,12 +19,17 @@ try {
 let nextManifest = { routes: [] }
 try { nextManifest = JSON.parse(await readFile(resolve(distDir, 'manus-routes.json'), 'utf8')) } catch { throw new Error('The postbuild manifest is missing.') }
 const nextRoutePaths = new Set(nextManifest.routes.map(route => route.path))
+const removedRoutePaths = []
+const reservedRootEntries = new Set(['.git', '.github', 'docs', 'dist', 'node_modules', 'public', 'scripts', 'src', 'supabase'])
 for (const route of previousRoutes) {
   if (nextRoutePaths.has(route.path) || route.path === '/') continue
   const segments = route.path.split('/').filter(Boolean)
   if (segments.every(segment => /^[\p{L}\p{N}._-]+$/u.test(segment)) && !segments.includes('..')) {
     const target = resolve(projectRoot, ...segments)
-    if (target.startsWith(`${projectRoot}${sep}`)) await rm(target, { recursive: true, force: true })
+    if (target.startsWith(`${projectRoot}${sep}`) && !reservedRootEntries.has(segments[0]) && !segments[0].startsWith('.')) {
+      await rm(target, { recursive: true, force: true })
+      removedRoutePaths.push(segments.join('/'))
+    }
   }
 }
 
@@ -36,4 +42,7 @@ for (const entry of await readdir(distDir)) {
 }
 await mkdir(projectRoot, { recursive: true })
 await writeFile(resolve(projectRoot, '.nojekyll'), '')
+const stagedPaths = [...new Set(['.nojekyll', ...[...builtEntries].filter(entry => entry !== '.nojekyll'), ...removedRoutePaths])]
+const stageManifestPath = join(process.env.RUNNER_TEMP || tmpdir(), 'saytara-pages-stage-paths.json')
+await writeFile(stageManifestPath, JSON.stringify(stagedPaths))
 console.log(`Staged ${nextManifest.routes.length} route shells and all generated static/SEO assets at repository root.`)

@@ -1,13 +1,19 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
-type AuthPageProps = { onDemo: () => void; onSignedIn: () => void }
+type AuthPageProps = { onDemo: () => void; onSignedIn: (user: User) => void }
+const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
 
 function getAppBaseUrl() {
   return new URL(import.meta.env.BASE_URL, window.location.origin).toString()
+}
+
+function hasConfirmedEmail(user: User | null | undefined) {
+  return Boolean(user?.email_confirmed_at || user?.confirmed_at)
 }
 
 function authMessage(message: string) {
@@ -26,12 +32,16 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const callbackError = (location.state as { authError?: unknown } | null)?.authError
-  const mode = location.pathname === '/register' ? 'register' : 'login'
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/'
+  const mode = normalizedPath === '/register' ? 'register' : 'login'
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [forgot, setForgot] = useState(false)
+  const [canResendConfirmation, setCanResendConfirmation] = useState(
+    () => typeof callbackError === 'string' && /email|بريد|تأكيد/i.test(callbackError),
+  )
   const [message, setMessage] = useState(typeof callbackError === 'string' ? callbackError : '')
   const [isError, setIsError] = useState(typeof callbackError === 'string' && callbackError.length > 0)
 
@@ -48,14 +58,14 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
     try {
       if (forgot) {
         const redirectTo = `${getAppBaseUrl()}?flow=recovery`
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
         if (error) throw error
         setMessage('إذا كان البريد مرتبطاً بحساب، فستصلك رسالة لاستعادة كلمة المرور. تحقق من صندوق الوارد والرسائل غير المرغوب فيها.')
         return
       }
       if (mode === 'register') {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: email.trim(),
           password,
           options: {
             data: { display_name: displayName.trim() },
@@ -63,21 +73,63 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
           },
         })
         if (error) throw error
-        if (data.session) {
-          onSignedIn()
-          navigate('/feed', { replace: true })
+        if (data.session && data.user && hasConfirmedEmail(data.user)) {
+          setCanResendConfirmation(false)
+          onSignedIn(data.user)
+          navigate('/pending-review', { replace: true })
         } else {
-          setMessage('أُنشئ الحساب. افتح رسالة التأكيد؛ سيعيدك الرابط إلى مساحتك المهنية بعد التحقق.')
+          if (data.session) await supabase.auth.signOut({ scope: 'local' })
+          setCanResendConfirmation(true)
+          setMessage('أُنشئ الحساب. أكّد بريدك من الرسالة؛ بعد ذلك يبقى الوصول للعضوية محدوداً حتى مراجعة المدير واعتماد الحساب.')
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
         if (error) throw error
-        onSignedIn()
-        navigate('/feed', { replace: true })
+        if (!data.session || !data.user || !hasConfirmedEmail(data.user)) {
+          if (data.session) await supabase.auth.signOut({ scope: 'local' })
+          setCanResendConfirmation(Boolean(data.user && !hasConfirmedEmail(data.user)))
+          setIsError(true)
+          setMessage('يجب تأكيد بريدك الإلكتروني قبل استخدام حساب العضو. أعد إرسال رسالة التأكيد إذا لزم الأمر.')
+          return
+        }
+        setCanResendConfirmation(false)
+        onSignedIn(data.user)
+        navigate('/pending-review', { replace: true })
       }
     } catch (error) {
+      if (error instanceof Error && error.message.toLowerCase().includes('email not confirmed')) setCanResendConfirmation(true)
       setIsError(true)
       setMessage(authMessage(error instanceof Error ? error.message : 'auth error'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!isSupabaseConfigured || !supabase) {
+      setIsError(true)
+      setMessage('تعذر إرسال رسالة التأكيد لأن الاتصال بالخدمة غير مفعّل.')
+      return
+    }
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail) {
+      setIsError(true)
+      setMessage('أدخل بريدك الإلكتروني أولاً لإعادة إرسال رسالة التأكيد.')
+      return
+    }
+    setBusy(true)
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: normalizedEmail,
+        options: { emailRedirectTo: `${getAppBaseUrl()}?flow=confirm` },
+      })
+      if (error) throw error
+      setIsError(false)
+      setMessage('إذا كان الحساب مرتبطاً بهذا البريد ولم يُؤكّد بعد، فستصلك رسالة تأكيد. تحقق من الوارد والرسائل غير المرغوب فيها.')
+    } catch (error) {
+      setIsError(true)
+      setMessage(authMessage(error instanceof Error ? error.message : 'confirmation resend error'))
     } finally {
       setBusy(false)
     }
@@ -116,11 +168,12 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       {!forgot && mode === 'login' && <button className="auth-inline-link" type="button" onClick={() => { setForgot(true); setMessage('') }}>نسيت كلمة المرور؟</button>}
       <button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الإرسال…' : forgot ? 'إرسال رابط الاستعادة' : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'} <ArrowLeft size={16}/></button>
     </form>
-    {isSupabaseConfigured && !forgot && <><div className="auth-separator"><span>أو</span></div><button className="btn btn-outline btn-full auth-google-button" type="button" onClick={() => void signInWithGoogle()} disabled={busy} aria-label="المتابعة بحساب Google"><span className="google-mark" aria-hidden="true">G</span><span>{busy ? 'جارٍ فتح Google…' : 'المتابعة بحساب Google'}</span></button></>}
     {message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}
+    {canResendConfirmation && !forgot && <button className="auth-inline-link" type="button" onClick={() => void resendConfirmation()} disabled={busy || !email.trim()}>إعادة إرسال رسالة تأكيد البريد</button>}
+    {isSupabaseConfigured && googleAuthEnabled && !forgot && <><div className="auth-separator"><span>أو</span></div><button className="btn btn-outline btn-full auth-google-button" type="button" onClick={() => void signInWithGoogle()} disabled={busy} aria-label="المتابعة بحساب Google"><span className="google-mark" aria-hidden="true">G</span><span>{busy ? 'جارٍ فتح Google…' : 'المتابعة بحساب Google'}</span></button></>}
     {(!isSupabaseConfigured || forgot) && <div className="auth-separator"><span>{forgot ? 'أو' : 'نسخة استعراض'}</span></div>}
     {!isSupabaseConfigured && <button className="btn btn-outline btn-full" onClick={() => { onDemo(); navigate('/feed') }}><Sparkles size={16}/> استكشف نسخة التجربة</button>}
-    <p className="auth-switch">{forgot ? 'تذكرت كلمة المرور؟' : mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب؟'} <button type="button" onClick={() => { setForgot(false); setMessage(''); navigate(forgot ? '/login' : mode === 'login' ? '/register' : '/login') }}>{forgot ? 'العودة للدخول' : mode === 'login' ? 'أنشئ حساباً' : 'سجّل الدخول'}</button></p>
+    <p className="auth-switch">{forgot ? 'تذكرت كلمة المرور؟' : mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب؟'} <button type="button" onClick={() => { setForgot(false); setCanResendConfirmation(false); setMessage(''); navigate(forgot ? '/login' : mode === 'login' ? '/register' : '/login') }}>{forgot ? 'العودة للدخول' : mode === 'login' ? 'أنشئ حساباً' : 'سجّل الدخول'}</button></p>
     <small className="auth-privacy"><LockKeyhole size={13}/> لن نطلب بيانات صحية حساسة.</small>
   </div></main>
 }
@@ -149,11 +202,15 @@ export function ResetPasswordPage({ onSignedIn }: Pick<AuthPageProps, 'onSignedI
     }
     setBusy(true)
     try {
-      const { error } = await supabase.auth.updateUser({ password })
+      const { data, error } = await supabase.auth.updateUser({ password })
       if (error) throw error
-      onSignedIn()
+      if (!data.user || !hasConfirmedEmail(data.user)) {
+        setMessage('تم تحديث كلمة المرور. أكّد بريدك الإلكتروني قبل استخدام مساحة العضوية، ثم سجّل الدخول.')
+        return
+      }
+      onSignedIn(data.user)
       setMessage('تم تحديث كلمة المرور. يجري فتح حسابك…')
-      window.setTimeout(() => navigate('/feed', { replace: true }), 600)
+      window.setTimeout(() => navigate('/pending-review', { replace: true }), 600)
     } catch (error) {
       setIsError(true)
       setMessage(authMessage(error instanceof Error ? error.message : 'password reset error'))
