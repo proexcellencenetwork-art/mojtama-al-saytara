@@ -1,0 +1,18 @@
+{
+  "task_kind": "new-document",
+  "output": "pdf",
+  "signals": [],
+  "hard_constraints": [
+    "Arabic RTL",
+    "A4 portrait report",
+    "Use brand navy #0B2545 and red #D7263D",
+    "Distinguish verified production results from local simulations and untested flows",
+    "Use only repository-owned artwork or native vector shapes; no third-party stock imagery",
+    "Give a clear READY or NO-GO decision with concrete remaining launch gates"
+  ],
+  "content_features": {
+    "code_blocks": 0,
+    "defined_terms": 0,
+    "portrait_images": 0
+  }
+}

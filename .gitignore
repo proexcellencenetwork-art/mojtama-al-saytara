@@ -30,3 +30,9 @@ supabase/functions/.env.*
 *.njsproj
 *.sln
 *.sw?
+
+# Generated Typst review/build artifacts; source and final delivered PDF stay tracked.
+docs/readiness-report/.typst-document.json
+docs/readiness-report/main.pdf
+docs/readiness-report/*verification*.json
+docs/readiness-report/review/
