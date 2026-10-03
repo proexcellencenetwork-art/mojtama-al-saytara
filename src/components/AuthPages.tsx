@@ -148,16 +148,18 @@ export function ResetPasswordPage({ onSignedIn }: Pick<AuthPageProps, 'onSignedI
       return
     }
     setBusy(true)
-    const { error } = await supabase.auth.updateUser({ password })
-    setBusy(false)
-    if (error) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) throw error
+      onSignedIn()
+      setMessage('تم تحديث كلمة المرور. يجري فتح حسابك…')
+      window.setTimeout(() => navigate('/feed', { replace: true }), 600)
+    } catch (error) {
       setIsError(true)
-      setMessage(authMessage(error.message))
-      return
+      setMessage(authMessage(error instanceof Error ? error.message : 'password reset error'))
+    } finally {
+      setBusy(false)
     }
-    onSignedIn()
-    setMessage('تم تحديث كلمة المرور. يجري فتح حسابك…')
-    window.setTimeout(() => navigate('/feed', { replace: true }), 600)
   }
 
   return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">رابط استعادة آمن</span><h1>اختر كلمة مرور جديدة.</h1><p>استخدم كلمة مرور قوية لا تقل عن ٨ أحرف.</p></div><form onSubmit={submit} className="auth-form"><label>كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} dir="ltr"/></label><label>تأكيد كلمة المرور<input type="password" autoComplete="new-password" minLength={8} required value={confirm} onChange={event => setConfirm(event.target.value)} dir="ltr"/></label><button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الحفظ…' : 'تحديث كلمة المرور'} <ArrowLeft size={16}/></button></form>{message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}<p className="auth-switch"><Link to="/login">العودة إلى تسجيل الدخول</Link></p><small className="auth-privacy"><LockKeyhole size={13}/> إذا انتهت صلاحية الرابط، اطلب رسالة استعادة جديدة.</small></div></main>

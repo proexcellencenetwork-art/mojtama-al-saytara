@@ -30,9 +30,17 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await caller.auth.getUser()
   if (authError || !user) return new Response('Invalid session', { status: 401, headers: cors })
 
+  let body: unknown
   try {
-    const body = await req.json()
-    if (body?.confirm !== true) return new Response('Explicit confirmation required', { status: 400, headers: cors })
+    body = await req.json()
+  } catch {
+    return new Response('Invalid JSON body', { status: 400, headers: cors })
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body) || (body as Record<string, unknown>).confirm !== true) {
+    return new Response('Explicit confirmation required', { status: 400, headers: cors })
+  }
+
+  try {
     const admin = createClient(url, adminKey, { auth: { persistSession: false, autoRefreshToken: false } })
     const paths: string[] = []
     const pageSize = 100
@@ -56,8 +64,8 @@ Deno.serve(async (req) => {
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id)
     if (deleteError) throw deleteError
     return new Response(JSON.stringify({ deleted: true }), { status: 200, headers: { ...cors, 'content-type': 'application/json' } })
-  } catch (error) {
-    console.error('delete-account failed', error)
+  } catch {
+    console.error('delete-account operation failed')
     return new Response(JSON.stringify({ error: 'Account deletion failed. Contact the site administrator if this continues.' }), { status: 500, headers: { ...cors, 'content-type': 'application/json' } })
   }
 })
