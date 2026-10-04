@@ -29,7 +29,7 @@ const pages = {
   '/charter': { title: 'ميثاق السلوك المهني | مجتمع السيطرة', description: 'مبادئ الاحترام والسرية والتواصل المسؤول في مجتمع السيطرة.', heading: 'الاحترام ليس خياراً إضافياً.', intro: 'نحافظ معاً على مساحة مهنية تحترم الإنسان والخصوصية وتفسح المجال للاختلاف.', points: [['احترام متبادل', 'نختلف في الرأي دون إساءة أو تحرش.'], ['سرية مهنية', 'لا تعِد نشر محتوى الأعضاء خارج سياقه.'], ['تواصل مسؤول', 'لا رسائل مزعجة ولا ادعاءات مضللة.']] },
 }
 const questions = pages['/faq'].points
-const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings']
+const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner']
 const routes = []
 const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 const urlFor = route => new URL(route === '/' ? '' : `${route.replace(/^\/+|\/+$/g, '')}/`, siteRoot).toString()
