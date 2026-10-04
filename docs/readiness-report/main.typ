@@ -178,7 +178,7 @@
 #pagebreak()
 = تحديث التحقق الموسّع — 4 أكتوبر 2026
 
-#text(size: 9pt, fill: report-accent)[الفحص الحي عند 03:58 UTC؛ يحدّث هذا الملحق حالة Auth والوظائف والحماية الشبكية بعد فحص النشر السابق.]
+#text(size: 9pt, fill: report-accent)[فحص الإنتاج والـCI عند 04:08 UTC بعد commit `9905b21`؛ يحدّث هذا الملحق حالة Auth والوظائف والحماية الشبكية.]
 
 #v(0.45em)
 #text(size: 8.2pt)[
@@ -193,10 +193,11 @@
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[الحد أو المطلوب]],
   [Auth الحي], [HTTP `200` من إعدادات المشروع الصحيح؛ `disable_signup=true` و`mailer_autoconfirm=false`.], [لم يُكمل المالك الدخول أو الاستعادة؛ التسجيل العام يبقى مغلقاً.],
   [رفض Edge], [كل الوظائف السبع أعادت `401` لطلبات بلا JWT/سر webhook بالـmethod الصحيح.], [لم يُنفّذ بريد دعوة أو حذف أو تنظيف؛ سر التنظيف وDatabase Webhook غير متحقق منهما.],
-  [Turnstile], [أضيف دعم عميل اختياري يمرر `captchaToken` لعمليات Auth المدعومة.], [Sitekey وSecret غير مضبوطين؛ CAPTCHA غير مفعّلة/غير مختبرة في الإنتاج.],
+  [Turnstile], [دعم العميل منشور؛ فحص `/login` لم يجد widget أو script أو iframe.], [إعداد CAPTCHA/السر في Supabase غير ظاهر في الإعداد العام؛ لا إثبات لتحدٍ فعّال.],
   [Cloudflare], [الحساب المتصل يحوي صفر مناطق DNS؛ الموقع على مضيف GitHub Pages مشترك.], [لا WAF/DDoS عبر Cloudflare حتى اختيار نطاق مملوك وربطه والتحقق من HTTPS.],
-  [أمان GitHub], [Vulnerability alerts `204` وAutomated security fixes `200`; أضيفت ملفات Dependabot وCodeQL للمستودع.], [يلزم أول تشغيل CodeQL بعد دفع التغييرات؛ لا يثبت ذلك مراجعة جلسات المستخدمين أو حماية كل الإعدادات.],
-  [التحقق المحلي], [`typecheck`, `lint`, `test:seo-fixtures`, و`build` ناجحة.], [تحذيران lint معروفان وتحذير حجم bundle غير حاجب؛ اختبار نشر الواجهة ينتظر اكتمال النشر.],
+  [النشر الحي], [Pages run `37175894886` وCodeQL run `37175894849` نجحا على `9905b21`؛ الموارد العامة `200` والمسارات المحمية تعيد الزائر إلى login.], [صفحة التسجيل تعرض توقف الحسابات العامة؛ لم تحدث أخطاء Console أثناء فحص المتصفح.],
+  [أمان GitHub], [Vulnerability alerts وDependabot fixes وsecret scanning وpush protection مفعّلة؛ CodeQL workflow نجح.], [قائمة CodeQL alerts غير متاحة عبر API الحالي؛ لا أدعي أن عدد التنبيهات صفر.],
+  [التحقق المحلي], [`typecheck`, `lint`, `test:seo-fixtures`, `build` ناجحة؛ `npm audit` أعاد صفر ثغرات.], [تحذيران lint سابقان وتحذير حجم bundle غير حاجب.],
   [البث والتسجيل], [الواجهة والوظائف منشورة، لكن لم تُرسل بيانات أو موارد بث.], [100ms والأسرار غير مضبوطة؛ لا جلسة بث أو HLS/VOD أو اختبار صلاحية تشغيل حي.],
 )
 ]
@@ -205,8 +206,8 @@
 #block(fill: rgb("#FFF3F4"), stroke: 1pt + report-red, inset: 10pt, radius: 5pt)[
   #text(size: 12pt, weight: "bold", fill: report-red)[FINAL STATUS: NO-GO]
   #v(0.3em)
-  لا توجد جلسة مالك مؤكدة أو دورة اختبار مصادق عليها للمالك والمدير وحسابين مستقلين. كما لم يُتحقق من البريد أو webhook التنظيف أو الحذف الآمن، ولم يُعد 100ms أو Turnstile أو نطاق Cloudflare. لذلك لا يحقق الإنتاج معيار `READY`، ويظل التسجيل العام مغلقاً.
+  لا توجد جلسة مالك مؤكدة أو دورة اختبار مصادق عليها للمالك والمدير وحسابين مستقلين. كما لم يُتحقق من البريد أو webhook التنظيف أو الحذف الآمن، ولم يُختبر تحدي Turnstile أو إعداد 100ms أو نطاق Cloudflare. لذلك لا يحقق الإنتاج معيار `READY`، ويظل التسجيل العام مغلقاً.
 ]
 
 #v(0.4em)
-#text(size: 8.5pt, fill: report-accent)[مرجع الإعداد اليدوي للحماية: `docs/security-hardening-setup-ar.md`. لا تضع أي Secret في المتصفح أو GitHub Variables.]
+#text(size: 8.5pt, fill: report-accent)[مرجع الإعداد اليدوي: `docs/security-hardening-setup-ar.md`. Pages deployment run 37175894886؛ CodeQL run 37175894849. لا تضع أي Secret في المتصفح أو GitHub Variables.]

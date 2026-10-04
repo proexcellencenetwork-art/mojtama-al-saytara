@@ -8,7 +8,9 @@
 
 > **مركز التعلّم والورش الحيّة:** migration 017 مطبقة، وmigration 018 أزالت استدعاء `is_staff` المباشر من `anon`. الجداول وRLS مفحوصة؛ وظائف Edge الأربع منشورة وترد `401` عند الطلب غير المصادق. الواجهة منشورة كمسار خاص `noindex`؛ المركز [ومكتبة التسجيلات](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/learning/#library) في المسار نفسه، واختُبر تحويل `/learning/` وروابط الغرف الديناميكية إلى `/login` للزائر غير المسجل. 100ms غير مضبوط، لذلك لم يُختبر بث حي. اتبع [دليل الإعداد العربي](docs/learning-center-deployment-ar.md).
 
-> **Turnstile وWAF/DDoS:** أُضيف دعم اختياري لـTurnstile في صفحات Auth، لكنه غير مفعّل إنتاجياً حتى يُضاف Sitekey العام إلى GitHub Variables ويُحفظ Secret key داخل Supabase Auth. فحص Cloudflare أعاد صفر مناطق DNS؛ لذلك لم تُفعّل طبقة WAF/DDoS على `github.io` المشترك، ويستلزم ذلك نطاقاً مملوكاً تختاره وتربطه. اتبع [دليل الحماية العربي](docs/security-hardening-setup-ar.md). التسجيل العام يبقى مغلقاً.
+> **Turnstile وWAF/DDoS:** أُضيف دعم اختياري لـTurnstile إلى صفحات Auth ونُشر؛ لكن فحص `/login` الحي لم يجد widget أو script أو iframe، وإعداد CAPTCHA داخل Supabase لا يظهر في الإعداد العام، لذا لم يثبت أن التحدي فعّال. فحص Cloudflare أعاد صفر مناطق DNS؛ لذلك لم تُفعّل طبقة WAF/DDoS على `github.io` المشترك، ويستلزم ذلك نطاقاً مملوكاً تختاره وتربطه. اتبع [دليل الحماية العربي](docs/security-hardening-setup-ar.md). التسجيل العام يبقى مغلقاً.
+
+> **آخر النشر وفحوص GitHub (4 أكتوبر 2026):** نجح Pages run [37175894886](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37175894886) وCodeQL run [37175894849](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37175894849) على commit `9905b21`. تحققت استجابة الموقع وملفات JS/CSS بـ`200` وعدم وجود أخطاء Console، وتعرض `/register/` إيقاف التسجيل؛ يحوّل `/owner/` و`/learning/` الزائر غير المسجل إلى `/login`. Vulnerability alerts وDependabot fixes وsecret scanning وpush protection مفعّلة؛ لا أؤكد خلو CodeQL من التنبيهات لأن قائمة التنبيهات لم تكن متاحة عبر صلاحية API الحالية.
 
 ## 1. ما تحتاجه
 

@@ -99,10 +99,23 @@ Google OAuth اختياري ومؤجل، وليس مطلوباً لمسار ال
 
 - أعادت إعدادات Auth العامة من التطبيق المنشور HTTP `200` للمشروع الصحيح، مع `disable_signup=true` و`mailer_autoconfirm=false`. أعادت الحزمة المنشورة عنوان المشروع وعلامة المفتاح العام فقط؛ لم تُطبع قيمة المفتاح أو تُسجل. إعداد CAPTCHA لم يكن مكشوفاً في استجابة الإعداد العامة، لذلك لا أدعي أنه مفعّل.
 - أُعيد اختبار وظائف Edge السبع `owner-invite`, `delete-account`, `cleanup-verification-files`, `learning-room`, `learning-token`, `learning-playback`, و`learning-webhook` بطلبات بلا JWT أو سر webhook؛ أعاد كل منها `401` مع HTTP method صحيح. لم تُرسل دعوة، ولم يُحذف حساب أو ملف أو تسجيل. هذا يثبت الرفض غير المصرح فقط، ولا يثبت إعداد `CLEANUP_WEBHOOK_SECRET` أو Database Webhook أو نجاح الطلبات المصرح بها.
-- أضيف إلى الواجهة دعم اختياري لـCloudflare Turnstile؛ يرسل `captchaToken` إلى عمليات Supabase Auth المدعومة. لم يُضبط Sitekey أو Secret، لذلك الميزة غير مفعلة وغير مختبرة في الإنتاج. التعليمات في [دليل الحماية من البوتات وطبقة الشبكة](security-hardening-setup-ar.md).
+- أضيف إلى الواجهة دعم اختياري لـCloudflare Turnstile؛ يرسل `captchaToken` إلى عمليات Supabase Auth المدعومة. لم تكشف نقطة إعداد Auth العامة حالة CAPTCHA، ولم تُجرَ تجربة إنتاج حينها؛ لذلك لم يكن ممكناً تأكيد تفعيلها. التعليمات في [دليل الحماية من البوتات وطبقة الشبكة](security-hardening-setup-ar.md).
 - اتصل فحص قراءة Cloudflare بالحساب المربوط وأعاد `0` مناطق DNS. الرابط الحالي على مضيف GitHub Pages مشترك؛ لم يُضبط نطاق مملوك، ولذلك لم تُفعّل Cloudflare proxy أو WAF/DDoS ولا يوجد ما يبرر الادعاء بالحماية منها. صفحة Cloudflare الرسمية تشرح أن مرور الويب عبر Proxy يتطلب سجلاً قابلاً للوكالة ونطاقاً مضافاً للحساب.
 - أُكدت إعدادات GitHub عبر API: Vulnerability alerts مفعّلة (HTTP `204`) وAutomated security fixes مفعّلة (HTTP `200`). أضيفت ملفات Dependabot وCodeQL إلى تغييرات المستودع الجاري نشرها؛ يتطلب إثبات تشغيل CodeQL أول run بعد دفع هذه الملفات.
 - اجتاز التحقق المحلي `npm run typecheck`, `npm run lint`, `npm run test:seo-fixtures`, و`npm run build`; بقي تحذيران lint سابقان في تحميل بيانات `/learning` و`/owner`، وتحذير Vite غير حاجب عن chunk غرفة التعلم الكبير. لم تُختبر جلسة مهيأة بـTurnstile.
 - لم يكتمل تسجيل دخول المالك أو استعادة كلمة المرور؛ لم تُستخدم أي كلمة مرور وردت سابقاً، ولم يُرسل طلب استعادة جديد بسبب مهلة المحاولات. بقيت الدعوات/الموافقة، اختبار حسابين وعزل RLS، تأكيد البريد واستعادة كلمة المرور، webhook التنظيف، الحذف عبر حساب disposable، إعداد 100ms والبث المسجل/تشغيل VOD غير مختبرة. التسجيل العام ما زال مغلقاً.
 
 **القرار التنفيذي: NO-GO.** نقص الجلسات والاختبارات المصادق عليها وإعدادات Turnstile/التنظيف/100ms والنطاق المخصص يمنع اعتبار النظام جاهزاً أو فتح التسجيل العام.
+
+
+## تحقق ما بعد النشر — 4 أكتوبر 2026، 04:08 UTC
+
+نجح النشر `37175894886` على commit التطبيق `9905b21`، ونجح CodeQL run `37175894849`. نجح أيضاً GitHub Pages platform deployment `37175894315`، وأنشأ المخرجات الساكنة commit `3bc2d4a`. أعاد فحص GitHub إعدادات vulnerability alerts (HTTP `204`)، وDependabot automated fixes (HTTP `200`)، وأظهر أن secret scanning وpush protection مفعّلان. اكتمل CodeQL workflow، لكن واجهة API لقائمة Code Scanning alerts لم تكن متاحة للصلاحية الحالية؛ لذلك لا أدعي أن عدد تنبيهات CodeQL صفر.
+
+رُصدت الصفحة الرئيسية فعلياً بالعربية، ولم يظهر خرج Console، وأعادت المسارات `/`, `/login/`, `/register/`, `/owner/`, و`/learning/` HTTP `200`؛ كما أعادت أصول CSS وJavaScript في صفحة البداية HTTP `200`. عرضت `/register/` رسالة «التسجيل العام متوقف مؤقتاً». حوّل `/owner/` و`/learning/#library` زائراً غير مصادق إلى `/login`. هذا لا يختبر صلاحيات جلسة مالك حقيقية.
+
+في DOM صفحة الدخول الحية لم يوجد عنصر Turnstile أو iframe أو script تابع له. لم تُكشف حالة CAPTCHA الخادمية في إعداد Auth العام؛ لذا تحدي المتصفح غير مثبت كميزة فعّالة، ولا يمكن تأكيد قيمة السر داخل Supabase. يبقى التسجيل مغلقاً كذلك في GitHub workflow عبر `VITE_PUBLIC_SIGNUP_ENABLED=false`.
+
+اجتاز البناء والاختبارات المحلية `typecheck`, `lint`, `test:seo-fixtures`, و`build`، وأعاد `npm audit` صفر ثغرات. ظهرت تحذيرات lint السابقة في `LearningCenterPage` و`OwnerPortalPage` وتحذير bundle لغرفة التعلم أكبر من 500 KB؛ لم تمنع النجاح.
+
+**القرار: NO-GO مستمر.** لم تُختبر جلسة المالك أو الدعوات والموافقة بحساب مصادق، أو العزل بين حسابين وEmail Verification/Password Reset فعليين، أو إعداد `CLEANUP_WEBHOOK_SECRET` وDatabase Webhook، أو حذف disposable test account. كما لم يُضبط 100ms ولم يُجر بث أو أرشفة أو تشغيل VOD مصرح/مرفوض، ولم يُفعّل Cloudflare WAF/DDoS لعدم وجود منطقة DNS أو نطاق مملوك. لا تفتح التسجيل العام حتى اجتياز هذه الاختبارات.
