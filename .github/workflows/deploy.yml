@@ -38,6 +38,7 @@ jobs:
           VITE_SITE_URL: ${{ vars.VITE_SITE_URL || 'https://proexcellencenetwork-art.github.io/mojtama-al-saytara/' }}
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_PUBLIC_SIGNUP_ENABLED: ${{ vars.VITE_PUBLIC_SIGNUP_ENABLED || 'false' }}
       - name: Stage root files for branch-based Pages
         run: npm run stage:pages
       - name: Commit generated branch-based Pages files

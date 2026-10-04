@@ -4,6 +4,7 @@ import type { User } from '@supabase/supabase-js'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import { isPublicSignupEnabled } from '../lib/supabase-config'
 
 type AuthPageProps = { onDemo: () => void; onSignedIn: (user: User) => void }
 const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
@@ -158,6 +159,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
     }
   }
 
+  if (mode === 'register' && !isPublicSignupEnabled) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">الدخول بالدعوة فقط</span><h1>التسجيل العام متوقف مؤقتاً.</h1><p>أوقفنا إنشاء الحسابات الجديدة حتى اكتمال اختبارات القبول والأمان. لن تُقبل حسابات عامة في هذه المرحلة.</p></div><div className="inline-message" role="status">إذا وصلتك دعوة على بريدك، افتح رسالة Supabase ثم أكّد البريد. للحسابات الموجودة، استخدم تسجيل الدخول أو استعادة كلمة المرور.</div><Link className="btn btn-primary btn-full" to="/login">الانتقال إلى تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch">وصلتك دعوة؟ افتح رابطها من بريدك الإلكتروني، ثم سجّل الدخول هنا إذا طُلب منك ذلك.</p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو روابط التأكيد لأحد.</small></div></main>
   const heading = forgot ? 'استعادة كلمة المرور' : mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'
   return <main className="auth-wrap"><div className="auth-card">
     <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div>

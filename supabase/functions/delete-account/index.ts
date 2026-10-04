@@ -30,6 +30,12 @@ Deno.serve(async (req) => {
   const { data: { user }, error: authError } = await caller.auth.getUser()
   if (authError || !user) return new Response('Invalid session', { status: 401, headers: cors })
 
+  const { data: isOwnerIdentity, error: ownerCheckError } = await caller.rpc('is_platform_owner_identity')
+  if (ownerCheckError) return new Response('Account deletion authorization unavailable', { status: 503, headers: cors })
+  if (isOwnerIdentity === true) {
+    return new Response('The platform owner account cannot be self-deleted; use the project-operator recovery process.', { status: 409, headers: cors })
+  }
+
   let body: unknown
   try {
     body = await req.json()

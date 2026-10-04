@@ -40,3 +40,15 @@
 
 
 **التحقق النهائي بعد النشر (3 أكتوبر 2026):** نجح تشغيل workflow للتطبيق [37151383910](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37151383910) ونجح نشر GitHub Pages [37151400542](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37151400542). استجابت `/`, `/login/`, `/register/`, `/feed/`, `/admin/` بـHTTP 200؛ وفي المتصفح أعاد `/feed/` و`/admin/` الزائر إلى `/login`. عُرض نموذج التسجيل الحي، ولم يُخرج Console المتصفح المعزول أخطاء. فحصت حزمة JavaScript المنشورة محلياً بملاءمة دقيقة للقيم: وجود Project URL ومفتاح publishable اللذين زوّد بهما المالك كلاهما `true`، ولم تُطبع أو تُحفظ قيمة المفتاح. لذلك الموقع ليس في وضع التجربة في هذا الإصدار حتى مع رفض CLI قراءة/كتابة متغيرات GitHub بـ403. لا يثبت ذلك إرسال بريد أو نجاح طلب Auth.
+
+
+## متابعة الإنتاج — 4 أكتوبر 2026
+
+- مشروع Supabase `tiifakicmnwexmqoyxfq` بحالة `ACTIVE_HEALTHY` في الفحص السابق.
+- صفحة [Authentication → Sign In / Providers](https://supabase.com/dashboard/project/tiifakicmnwexmqoyxfq/auth/providers) أظهرت `Confirm email` مفعّلاً. أُوقف `Allow new users to sign up` وحُفظ؛ أعادت الصفحة بعد reload إظهار التسجيل مغلقاً وتأكيد البريد مفعّلاً. يبقى التسجيل العام مغلقاً حتى اجتياز UAT.
+- طُبّقت migration `platform_owner_hierarchy_20261004`، المسجلة بالإصدار `20261004000220`. أزيلت سياسة المدير القديمة التي كانت تسمح بإدارة الصفوف، وتأكد أن دور `authenticated` لا يملك `INSERT` أو `UPDATE` أو `DELETE` مباشرة على `public.user_roles`.
+- نُفّذ bootstrap لمرة واحدة للحساب المؤكد الذي عيّنه المالك. استعلام تحقق لا يعرض البريد أو المعرّف أكد: صف مالك واحد، وملف المالك معتمد، وحساب واحد آخر `pending`، ولا حسابات مرفوضة. لا تُعد تشغيل `supabase/bootstrap-initial-owner.sql` على هذا المشروع.
+- جداول هوية المالك والتدقيق مخفية عن SELECT المباشر للعميل؛ دعوات المالك وإسناد الأدوار وإعداداتها تمر عبر RPCs محمية. الاختبارات الفعلية بهذه الجلسات لم تُنفذ بعد.
+- الوظائف الحية: `delete-account` version 2 (`verify_jwt=true`)، `cleanup-verification-files` version 1 (`verify_jwt=false` مع تحقق `x-cleanup-secret`)، و`owner-invite` version 1 (`verify_jwt=true`). طلب POST بلا JWT إلى الدعوة والحذف أعاد `401`، ولم يُرسل بريد أو يحدث حذف. لم يُتحقق من السر البعيد أو Database Webhook.
+- آخر Security Advisor أعاد 3 ملاحظات `INFO` عن جداول داخلية عليها RLS من دون سياسات، وتحذيراً واحداً عن `is_staff` للـ`anon`، و18 تحذيراً عن دوال `SECURITY DEFINER` متاحة لـ`authenticated`، وتحذيراً بأن حماية كلمات المرور المسرّبة غير مفعّلة. يلزم مراجعة هذه النتائج واختبار RPCs بجلسات حية قبل فتح التسجيل.
+- لا تغيير على Google OAuth؛ ما يزال اختيارياً ومؤجلاً.

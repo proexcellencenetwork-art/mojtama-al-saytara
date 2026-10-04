@@ -1,1 +1,1 @@
-export type Role = 'member' | 'verified' | 'coach' | 'moderator' | 'manager'
+export type Role = 'member' | 'verified' | 'coach' | 'moderator' | 'manager' | 'owner'

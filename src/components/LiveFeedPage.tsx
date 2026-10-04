@@ -18,8 +18,8 @@ type LivePost = {
   saved_by_me: boolean
 }
 
-const roleText: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير' }
-const canPublish = (role: Role) => ['verified', 'coach', 'moderator', 'manager'].includes(role)
+const roleText: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير', owner: 'مالك المنصة' }
+const canPublish = (role: Role) => ['verified', 'coach', 'moderator', 'manager', 'owner'].includes(role)
 
 export function LiveFeedPage({ userId, role, displayName }: { userId: string; role: Role; displayName: string }) {
   const [posts, setPosts] = useState<LivePost[]>([])
