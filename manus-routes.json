@@ -53,6 +53,10 @@
       "title": "الملف المهني للكوتش"
     },
     {
+      "path": "/learning-room/:id/",
+      "title": "غرفة ورشة مهنية خاصة"
+    },
+    {
       "path": "/login/"
     },
     {
@@ -93,6 +97,12 @@
     },
     {
       "path": "/owner/"
+    },
+    {
+      "path": "/learning/"
+    },
+    {
+      "path": "/learning-room/"
     }
   ]
 }

@@ -14,4 +14,6 @@ Disallow: /mojtama-al-saytara/moderation
 Disallow: /mojtama-al-saytara/admin
 Disallow: /mojtama-al-saytara/settings
 Disallow: /mojtama-al-saytara/owner
+Disallow: /mojtama-al-saytara/learning
+Disallow: /mojtama-al-saytara/learning-room
 Sitemap: https://proexcellencenetwork-art.github.io/mojtama-al-saytara/sitemap.xml
