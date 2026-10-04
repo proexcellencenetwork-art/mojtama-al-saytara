@@ -5,6 +5,7 @@ import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, BookOpen, Bookmark,
 import { isSupabaseConfigured } from './lib/supabase-config'
 import type { Role } from './appTypes'
 import { MarkdownBody } from './lib/markdown'
+import { findEditorialArticleRow } from './lib/editorialFallback'
 import './App.css'
 
 const LoginPage = lazy(() => import('./components/AuthPages').then(module => ({ default: module.LoginPage })))
@@ -167,15 +168,21 @@ function LivePublicDetailPage({ page, client }: { page: 'articles' | 'events' | 
     let active = true
     async function load() {
       setLoading(true)
-      if (!client || !key) { setRow(null); setLoading(false); return }
+      const fallback = page === 'articles' && key ? findEditorialArticleRow(key) : Promise.resolve(null)
+      if (!client || !key) {
+        const fallbackRow = await fallback
+        if (active) { setRow(fallbackRow); setLoading(false) }
+        return
+      }
       const query = page === 'articles'
         ? client.from('articles').select('id,title,slug,excerpt,body,published_at').eq('status', 'published').eq('slug', key).maybeSingle()
         : page === 'events'
           ? client.from('events').select('id,title,description,starts_at,ends_at,location').eq('is_private', false).eq('moderation_state', 'visible').eq('id', key).maybeSingle()
           : client.from('public_coaches').select('user_id,display_name,headline,profession,specialty,city,public_bio,coaching_topics').eq('user_id', key).maybeSingle()
-      const result = await query
+      const [result, fallbackRow] = await Promise.all([query, fallback])
       if (!active) return
-      const publicRow = result.error ? null : result.data as Record<string, unknown> | null
+      const databaseRow = result.error ? null : result.data as Record<string, unknown> | null
+      const publicRow = databaseRow ?? fallbackRow
       setRow(publicRow)
       setLoading(false)
       if (publicRow) {

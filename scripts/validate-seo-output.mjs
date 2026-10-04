@@ -10,6 +10,7 @@ const siteValue = process.env.VITE_SITE_URL?.trim() || 'https://proexcellencenet
 const siteRoot = new URL(siteValue.endsWith('/') ? siteValue : `${siteValue}/`)
 const siteUrl = siteRoot.toString()
 const basePath = siteRoot.pathname
+const assetBasePath = process.env.GITHUB_PAGES === 'true' ? basePath : '/'
 if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'routes') throw new Error('Route manifest must contain only top-level routes.')
 for (const route of manifest.routes) {
   if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
@@ -23,6 +24,12 @@ const publicTitles = new Set()
 const publicDescriptions = new Set()
 const urlsInSitemap = []
 const fileForRoute = route => resolve(dist, route.path === '/' ? 'index.html' : `${route.path.replace(/^\/+/, '')}index.html`)
+const assetRelativePath = pathname => {
+  let relative = decodeURIComponent(pathname)
+  if (basePath !== '/' && relative.startsWith(basePath)) relative = relative.slice(basePath.length)
+  else if (assetBasePath !== '/' && relative.startsWith(assetBasePath)) relative = relative.slice(assetBasePath.length)
+  return relative.replace(/^\/+/, '')
+}
 const safeJson = value => { try { return JSON.parse(value); } catch { return null } }
 
 for (const route of publicRoutes) {
@@ -51,8 +58,8 @@ for (const route of publicRoutes) {
   if (!hydrated && (/<script\b[^>]*\btype="module"/i.test(html) || /rel="modulepreload"/i.test(html))) fail.push(`Static public route unexpectedly loads the React/Supabase module bundle: ${route.path}`)
   if (hydrated && moduleScript?.[1]) {
     const assetUrl = new URL(moduleScript[1], siteUrl)
-    if (!assetUrl.pathname.startsWith(basePath)) fail.push(`Interactive route module escapes the configured site base path: ${route.path}`)
-    else { const moduleFile = resolve(dist, decodeURIComponent(assetUrl.pathname.slice(basePath.length).replace(/^\/+/, ''))); try { await access(moduleFile) } catch { fail.push(`Interactive route module asset is missing: ${route.path}`) } }
+    if (!assetUrl.pathname.startsWith(assetBasePath)) fail.push(`Interactive route module escapes the configured asset base path: ${route.path}`)
+    else { const moduleFile = resolve(dist, decodeURIComponent(assetUrl.pathname.slice(assetBasePath.length).replace(/^\/+/, ''))); try { await access(moduleFile) } catch { fail.push(`Interactive route module asset is missing: ${route.path}`) } }
   }
   if (/fonts\.googleapis\.com|fonts\.gstatic\.com|supabase\.co/i.test(html)) fail.push(`Public route has an external font or Supabase network dependency: ${route.path}`)
   if (!html.includes('critical-public-css') || !/<link\b[^>]*rel="stylesheet"/i.test(html) || html.includes('data-deferred-style')) fail.push(`Public route is missing inline critical CSS or its render-blocking stylesheet: ${route.path}`)
@@ -95,9 +102,7 @@ const index = await readFile(resolve(dist,'index.html'),'utf8')
 const assetRefs = [...index.matchAll(/(?:src|href)="([^"]+\.(?:js|css|png|svg|webmanifest|woff2|webp|avif))"/g)].map(m=>m[1])
 for (const ref of assetRefs) {
   const url = new URL(ref, siteUrl)
-  let relative = decodeURIComponent(url.pathname)
-  if (basePath !== '/' && relative.startsWith(basePath)) relative = relative.slice(basePath.length)
-  relative = relative.replace(/^\/+/, '')
+  const relative = assetRelativePath(url.pathname)
   if (!relative || relative.includes('..')) continue
   try { await access(resolve(dist, relative)) } catch { fail.push(`Broken built asset reference: ${ref}`) }
 }
@@ -110,9 +115,7 @@ else {
   if (fontRefs.length !== 8) fail.push(`Expected 8 self-hosted WOFF2 subset URLs in the built CSS; found ${fontRefs.length}.`)
   for (const ref of fontRefs) {
     const url = new URL(ref,siteUrl)
-    let relative = decodeURIComponent(url.pathname)
-    if (basePath !== '/' && relative.startsWith(basePath)) relative = relative.slice(basePath.length)
-    relative = relative.replace(/^\/+/, '')
+    const relative = assetRelativePath(url.pathname)
     try { await access(resolve(dist,relative)) } catch { fail.push(`Broken base-aware WOFF2 asset reference: ${ref}`) }
   }
 }

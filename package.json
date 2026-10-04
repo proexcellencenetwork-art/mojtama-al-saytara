@@ -1,13 +1,15 @@
 {
   "name": "mojtama-al-saytara",
   "private": true,
+  "packageManager": "npm@10.9.2",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "fonts:vendor": "node scripts/vendor-tajawal-font.mjs",
     "images:optimize": "bash scripts/optimize-public-images.sh",
-    "build": "tsc -b && vite build && node scripts/prerender-pages.mjs && node scripts/validate-seo-output.mjs",
+    "build": "tsc -b && vite build && node scripts/validate-editorial-pipeline.mjs && node scripts/prerender-pages.mjs && node scripts/validate-seo-output.mjs",
+    "test:content": "node scripts/validate-editorial-pipeline.mjs",
     "test:seo": "node scripts/validate-seo-output.mjs",
     "test:seo-fixtures": "node scripts/test-prerender-fixtures.mjs",
     "stage:pages": "node scripts/stage-pages.mjs",
