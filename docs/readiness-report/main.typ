@@ -172,4 +172,4 @@
 ]
 
 #v(0.45em)
-#text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح قبل تحديث الوثائق: workflow 37170661391 على commit 85ec611؛ تغييرات هذا الملحق والتوثيق لا تغيّر حزمة الواجهة المنشورة.]
+#text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح: workflow 37173875652 على commit المصدر afba3e7؛ يتضمن رابطاً خاصاً مباشراً لتبويب مكتبة التسجيلات.]

@@ -49,7 +49,7 @@
 | `VITE_SUPABASE_URL` | Project URL الذي نسخته من Supabase |
 | `VITE_SUPABASE_ANON_KEY` | مفتاح `anon public` أو `publishable` العام |
 
-**حالة هذا المشروع (4 أكتوبر 2026):** أكدت حزم `/owner/` و`/learning/` الحية احتواء عنوان Supabase والمفتاح العام، وأعاد Auth settings HTTP 200؛ الموقع متصل وليس في وضع التجربة. لا يستطيع تكامل GitHub CLI قراءة أسماء المتغيرات (`403`)، لكن ذلك لا يؤثر على تشغيل الموقع. آخر نشر Pages ناجح هو [37170661391](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37170661391) على commit `85ec611`.
+**حالة هذا المشروع (4 أكتوبر 2026):** أكدت حزم `/owner/` و`/learning/` الحية احتواء عنوان Supabase والمفتاح العام، وأعاد Auth settings HTTP 200؛ الموقع متصل وليس في وضع التجربة. لا يستطيع تكامل GitHub CLI قراءة أسماء المتغيرات (`403`)، لكن ذلك لا يؤثر على تشغيل الموقع. آخر نشر Pages ناجح هو [37173875652](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37173875652) على commit المصدر `afba3e7`؛ وأنشأ النشر commit ملفات Pages `82e0165`.
 
 ثم افتح **Actions → Deploy to GitHub Pages → Run workflow → Run workflow**، وانتظر اكتمال التشغيل.
 
