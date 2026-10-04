@@ -2,21 +2,21 @@
 
 ## الوضع الحالي
 
-الموقع متصل بمشروع Supabase الصحيح. فُتح التسجيل العام في Supabase Auth، مع بقاء **تأكيد البريد إلزامياً**؛ ويظل ملف الحساب الجديد قيد المراجعة حتى موافقة المالك أو المدير. أُضيف في الواجهة دعم اختياري لـCloudflare Turnstile على تسجيل الدخول، إنشاء الحساب، إعادة إرسال التأكيد، وطلب رابط الاستعادة. لم يُظهر `/login` أي Widget أو script أو iframe لـTurnstile؛ لذلك **لم يثبت أن تحدي المتصفح فعّال**. إعداد CAPTCHA/السر داخل Supabase لم يُفعّل أو يُتحقق منه.
+الموقع متصل بمشروع Supabase الصحيح. فُتح التسجيل العام في Supabase Auth، مع بقاء **تأكيد البريد إلزامياً** ومراجعة الحساب قبل دخول مساحة الأعضاء. أُنشئ في Cloudflare Widget باسم `Mojtama Al-Saytara Supabase Auth` ومضيفاه المسموحان `proexcellencenetwork-art.github.io` و`localhost`؛ لكنه لم يُربط بعد بالبناء أو بإعداد Supabase. فحص لوحة Supabase أظهر أن **Enable Captcha protection متوقف**، وفحص `/login` لم يجد Widget أو script أو iframe. لذلك حماية البوتات غير فعّالة حالياً.
 
-التسجيل العام مفتوح حالياً بطلب صاحب المشروع؛ لا تعتبر ذلك دليلاً على اكتمال الجاهزية. أسرع ما يلزم لإكمال الحماية هو ضبط Turnstile واختبار البريد وعزل الحسابات. يمكن إغلاق واجهة التسجيل بإعادة `VITE_PUBLIC_SIGNUP_ENABLED` إلى `false` وإغلاق **Allow new users to sign up** في Supabase Auth.
+التسجيل العام مفتوح حالياً بطلب صاحب المشروع؛ لا تعتبر ذلك دليلاً على اكتمال الجاهزية. يلزم إضافة Sitekey العام كـGitHub Actions Variable باسم `VITE_TURNSTILE_SITE_KEY`، ثم إدخال السر الخاص مباشرةً في Supabase، وتشغيل CAPTCHA واختبار الرفض/القبول. فشل اتصال GitHub API بصلاحية `403` عند محاولة إضافة المتغير تلقائياً، لذا أضفه يدوياً من إعدادات المستودع. لا ترسل السر في المحادثة. يمكن إغلاق التسجيل بإعادة `VITE_PUBLIC_SIGNUP_ENABLED` إلى `false` وإغلاق **Allow new users to sign up** في Supabase Auth.
 
 ## تفعيل Cloudflare Turnstile لـSupabase Auth
 
-1. افتح لوحة Cloudflare، ثم **Turnstile → Add widget**. أنشئ Widget باسم واضح، وضع المضيفين المسموحين:
+1. افتح لوحة Cloudflare → **Turnstile** وابحث عن Widget الموجود باسم `Mojtama Al-Saytara Supabase Auth` (لا تنشئ نسخة أخرى). يجب أن يظهر المضيفان:
    - `proexcellencenetwork-art.github.io`
    - `localhost` للاختبار المحلي فقط.
-2. انسخ **Sitekey** العام، ثم في GitHub افتح المستودع → **Settings → Secrets and variables → Actions → Variables → New repository variable**. أضف الاسم حرفياً `VITE_TURNSTILE_SITE_KEY` وضع فيه Sitekey. هذا المفتاح عام وسيظهر في ملفات JavaScript المنشورة؛ لا تضع **Secret key** في GitHub Variables أو في أي `VITE_*`.
-3. في Supabase افتح المشروع → **Authentication → Bot and Abuse Protection**، فعّل **Enable CAPTCHA protection**، واختر **Cloudflare Turnstile**، والصق **Secret key** في حقل السر داخل Supabase، ثم احفظ. لا ترسل السر في المحادثة ولا تضعه في المستودع.
-4. أعد تشغيل **Actions → Deploy to GitHub Pages → Run workflow**. بعد النشر يجب أن يظهر تحدي Turnstile في صفحات Auth المدعومة. اختبره بموقع حي ومتصفح فعلي، ثم تحقق من نجاح تسجيل الدخول/طلب الاستعادة مع التحدي، ومن رفض إرسال طلب بلا رمز صالح إذا كان إعداد Supabase يفرض CAPTCHA.
+2. انسخ **Sitekey** العام، ثم في GitHub افتح المستودع → **Settings → Secrets and variables → Actions → Variables → New repository variable**. أضف الاسم حرفياً `VITE_TURNSTILE_SITE_KEY` وضع فيه Sitekey. Sitekey عام وسيظهر في ملفات JavaScript المنشورة؛ لا تضع **Secret key** في GitHub أو في أي `VITE_*`.
+3. في Supabase افتح المشروع → **Authentication → Bot and Abuse Protection**. يبيّن الفحص الحالي أن CAPTCHA متوقف. من لوحة Cloudflare افتح الـWidget ودوّر/أنشئ **Secret key** جديداً إن لم تستطع استرجاع القيمة التي ظهرت عند الإنشاء؛ ألصقه مباشرةً في حقل السر داخل Supabase، اختر Cloudflare Turnstile، فعّل **Enable CAPTCHA protection**، ثم احفظ. لا ترسل السر في المحادثة ولا تضعه في المستودع.
+4. أعد تشغيل **Actions → Deploy to GitHub Pages → Run workflow** بعد إضافة المتغير العام. بعد النشر يجب أن يظهر تحدي Turnstile في صفحات Auth المدعومة. اختبره بموقع حي ومتصفح فعلي، ثم تحقق من نجاح التسجيل/الدخول مع التحدي ورفض طلب بلا رمز صالح.
 5. إذا لم تظهر الواجهة، افحص اسم المتغير `VITE_TURNSTILE_SITE_KEY` وقيمة Sitekey العامة وسجلّ Actions؛ لا تعطّل حماية Supabase لتجاوز الخطأ.
 
-> التسجيل العام مفتوح حالياً؛ إلى أن يكتمل اختبار الصلاحيات وعزل الحسابات والدعوات والبريد، أبقِ تأكيد البريد ومراجعة الحسابات إلزاميين، ولا تدّعِ جاهزية كاملة. تركيب Turnstile وحده لا يثبت حماية DDoS ولا يعوّض WAF على نطاق مملوك.
+> التسجيل العام مفتوح حالياً؛ أبقِ تأكيد البريد ومراجعة الحسابات إلزاميين. إلى أن يُفعّل CAPTCHA ويُختبر، لا تدّعِ حماية بوتات فعّالة أو جاهزية كاملة. Turnstile لا يثبت حماية DDoS ولا يعوّض WAF على نطاق مملوك.
 
 ## WAF وحماية DDoS لصفحات GitHub Pages
 

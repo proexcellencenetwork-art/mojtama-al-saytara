@@ -153,7 +153,8 @@
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[المجال]],
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[الدليل الحي]],
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[الحد المتبقي]],
-  [إعداد Auth], [`disable_signup=true` و`mailer_autoconfirm=false`؛ التسجيل العام مغلق وتأكيد البريد مطلوب.], [لم ينهِ المالك استعادة كلمة المرور أو تسجيل الدخول.],
+  [إعداد Auth], [لوحة Supabase بعد الحفظ وإعادة الفتح تؤكد السماح بالتسجيل وتأكيد البريد إلزامياً.], [CAPTCHA وحماية كلمة المرور المسرّبة ظاهرتان كمتوقفتين؛ الحسابات الجديدة تتطلب مراجعة.],
+  [المالك], [نُقلت سجلّة المالك الوحيدة إلى الحساب ذي البريد المؤكد واعتمد ملفه؛ سُجل `owner_transferred`.], [لم تُضبط كلمة مرور ولم تُختبر جلسة دخول المالك.],
   [رسائل البريد], [عُثر على رسالة استعادة كلمة المرور ضمن بيانات صندوق البريد.], [لم يكتمل تدفق الاستعادة، ولم تُرسل دعوة اختبار لتأكيد التسليم.],
   [Storage], [Bucket `verification-private` حي وخاص (`public=false`)، وسياسات الأجسام تحدد الرفع والقراءة والحذف.], [لا اختبار مستند فعلي بين حسابين.],
   [صلاحية `is_staff`], [Migration `20261004031524` سُجلت في الإنتاج؛ `anon_execute=false` و`authenticated_execute=true`، ولا سياسة `anon` تستدعيها.], [بقية RPCs تحتاج اختبار جلسات JWT حقيقية.],
@@ -168,17 +169,17 @@
 #block(fill: rgb("#FFF3F4"), stroke: 1pt + report-red, inset: 10pt, radius: 5pt)[
   #text(size: 12pt, weight: "bold", fill: report-red)[FINAL STATUS: NO-GO]
   #v(0.3em)
-  يبقى التسجيل العام مغلقاً. لم تكتمل جلسة المالك، والدعوات والموافقة، وعزل حسابين فعليين، واختبار webhook والحذف الآمن، أو إعداد بث مسجل خاص في الإنتاج؛ لذلك لم يتحقق معيار `READY`.
+  التسجيل العام مفتوح بطلب صاحب المشروع، مع تأكيد البريد ومراجعة الحسابات. لم تكتمل جلسة المالك أو دعوة مصادق عليها أو عزل حسابين أو اختبار webhook والحذف الآمن أو بث مسجل خاص؛ لذلك لم يتحقق معيار `READY`.
 ]
 
 #v(0.45em)
-#text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح: workflow 37173875652 على commit المصدر afba3e7؛ يتضمن رابطاً خاصاً مباشراً لتبويب مكتبة التسجيلات.]
+#text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح: workflow 37177339670 على commit المصدر `5a3b29a`؛ أظهر نموذج التسجيل العام في الموقع الحي.]
 
 
 #pagebreak()
 = تحديث التحقق الموسّع — 4 أكتوبر 2026
 
-#text(size: 9pt, fill: report-accent)[فحص الإنتاج والـCI عند 04:08 UTC بعد commit `9905b21`؛ يحدّث هذا الملحق حالة Auth والوظائف والحماية الشبكية.]
+#text(size: 9pt, fill: report-accent)[آخر تحقق للإنتاج والـCI عند 04:36 UTC بعد commit `5a3b29a`؛ هذا الملحق الأحدث يحل محل حالات التسجيل السابقة.]
 
 #v(0.45em)
 #text(size: 8.2pt)[
@@ -191,11 +192,12 @@
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[المجال]],
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[الدليل الأحدث]],
   [#text(fill: rgb("#FFFFFF"), weight: "bold")[الحد أو المطلوب]],
-  [Auth الحي], [HTTP `200` من إعدادات المشروع الصحيح؛ `disable_signup=true` و`mailer_autoconfirm=false`.], [لم يُكمل المالك الدخول أو الاستعادة؛ التسجيل العام يبقى مغلقاً.],
+  [Auth الحي], [لوحة Supabase بعد الحفظ وإعادة التحميل: السماح بالتسجيل مفعّل وConfirm email مفعّل.], [CAPTCHA وحماية كلمة المرور المسرّبة ما زالتا متوقفتين؛ مراجعة كل ملف جديد إلزامية.],
+  [المالك], [نُقلت سجلّة المالك الوحيدة إلى الحساب المؤكد، وأصبح ملفه `approved`؛ المالك السابق لم يعد المالك المسجل.], [لا تغيير لكلمة المرور، ولا جلسة مالك أو دخول فعلي مؤكّد.],
   [رفض Edge], [كل الوظائف السبع أعادت `401` لطلبات بلا JWT/سر webhook بالـmethod الصحيح.], [لم يُنفّذ بريد دعوة أو حذف أو تنظيف؛ سر التنظيف وDatabase Webhook غير متحقق منهما.],
-  [Turnstile], [دعم العميل منشور؛ فحص `/login` لم يجد widget أو script أو iframe.], [إعداد CAPTCHA/السر في Supabase غير ظاهر في الإعداد العام؛ لا إثبات لتحدٍ فعّال.],
+  [Turnstile], [أُنشئ Widget مُدار للمضيف `proexcellencenetwork-art.github.io` و`localhost`.], [لم يُضف Sitekey إلى GitHub Variables ولم يُدخل السر في Supabase؛ CAPTCHA متوقف، ولا تحدٍّ فعّال.],
   [Cloudflare], [الحساب المتصل يحوي صفر مناطق DNS؛ الموقع على مضيف GitHub Pages مشترك.], [لا WAF/DDoS عبر Cloudflare حتى اختيار نطاق مملوك وربطه والتحقق من HTTPS.],
-  [النشر الحي], [Pages run `37175894886` وCodeQL run `37175894849` نجحا على `9905b21`؛ الموارد العامة `200` والمسارات المحمية تعيد الزائر إلى login.], [صفحة التسجيل تعرض توقف الحسابات العامة؛ لم تحدث أخطاء Console أثناء فحص المتصفح.],
+  [النشر الحي], [Pages run `37177339670` نجح على `5a3b29a`؛ `/register/` يعرض النموذج، وأعادت الصفحات/الأصول `200` بلا خرج Console. CodeQL `37177340237` وplatform deployment `37177389772` نجحا.], [اختبارات التسجيل المصادق والمالك ما زالت غير منفذة.],
   [أمان GitHub], [Vulnerability alerts وDependabot fixes وsecret scanning وpush protection مفعّلة؛ CodeQL workflow نجح.], [قائمة CodeQL alerts غير متاحة عبر API الحالي؛ لا أدعي أن عدد التنبيهات صفر.],
   [التحقق المحلي], [`typecheck`, `lint`, `test:seo-fixtures`, `build` ناجحة؛ `npm audit` أعاد صفر ثغرات.], [تحذيران lint سابقان وتحذير حجم bundle غير حاجب.],
   [البث والتسجيل], [الواجهة والوظائف منشورة، لكن لم تُرسل بيانات أو موارد بث.], [100ms والأسرار غير مضبوطة؛ لا جلسة بث أو HLS/VOD أو اختبار صلاحية تشغيل حي.],
@@ -206,8 +208,8 @@
 #block(fill: rgb("#FFF3F4"), stroke: 1pt + report-red, inset: 10pt, radius: 5pt)[
   #text(size: 12pt, weight: "bold", fill: report-red)[FINAL STATUS: NO-GO]
   #v(0.3em)
-  لا توجد جلسة مالك مؤكدة أو دورة اختبار مصادق عليها للمالك والمدير وحسابين مستقلين. كما لم يُتحقق من البريد أو webhook التنظيف أو الحذف الآمن، ولم يُختبر تحدي Turnstile أو إعداد 100ms أو نطاق Cloudflare. لذلك لا يحقق الإنتاج معيار `READY`، ويظل التسجيل العام مغلقاً.
+  التسجيل العام مفتوح بطلب صاحب المشروع مع تأكيد البريد ومراجعة الحسابات. مع ذلك لم تُختبر جلسة المالك أو الدعوات وعزل الحسابين والبريد والتنظيف والحذف الآمن؛ كما أن CAPTCHA غير مفعّل، وWAF/100ms والبث والتسجيل غير جاهزة. لذلك لا يحقق الإنتاج معيار `READY`.
 ]
 
 #v(0.4em)
-#text(size: 8.5pt, fill: report-accent)[مرجع الإعداد اليدوي: `docs/security-hardening-setup-ar.md`. Pages deployment run 37175894886؛ CodeQL run 37175894849. لا تضع أي Secret في المتصفح أو GitHub Variables.]
+#text(size: 8.5pt, fill: report-accent)[مرجع الإعداد اليدوي: `docs/security-hardening-setup-ar.md`. Pages run 37177339670؛ platform deployment 37177389772؛ CodeQL 37177340237. لا تضع أي Secret في المتصفح أو GitHub Variables.]

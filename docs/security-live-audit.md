@@ -119,3 +119,15 @@ Google OAuth اختياري ومؤجل، وليس مطلوباً لمسار ال
 اجتاز البناء والاختبارات المحلية `typecheck`, `lint`, `test:seo-fixtures`, و`build`، وأعاد `npm audit` صفر ثغرات. ظهرت تحذيرات lint السابقة في `LearningCenterPage` و`OwnerPortalPage` وتحذير bundle لغرفة التعلم أكبر من 500 KB؛ لم تمنع النجاح.
 
 **القرار: NO-GO مستمر.** لم تُختبر جلسة المالك أو الدعوات والموافقة بحساب مصادق، أو العزل بين حسابين وEmail Verification/Password Reset فعليين، أو إعداد `CLEANUP_WEBHOOK_SECRET` وDatabase Webhook، أو حذف disposable test account. كما لم يُضبط 100ms ولم يُجر بث أو أرشفة أو تشغيل VOD مصرح/مرفوض، ولم يُفعّل Cloudflare WAF/DDoS لعدم وجود منطقة DNS أو نطاق مملوك. لا تفتح التسجيل العام حتى اجتياز هذه الاختبارات.
+
+
+## متابعة مباشرة: نقل الملكية وفتح التسجيل — 4 أكتوبر 2026، 04:36 UTC
+
+- بعد الحفظ وإعادة تحميل لوحة Supabase، ظهر مفتاح **Allow new users to sign up** مفعّلاً، وبقي **Confirm email** مفعّلاً. لم أغيّر بقية مفاتيح Auth.
+- قبل النقل، كان الحساب المستهدف موجوداً وبريده مؤكداً وملفه `pending`، وكانت هناك سجلّة مالك وحيدة. طُبقت migration `20261004042800_owner_transfer_audit.sql` لإضافة حدث تدقيق `owner_transferred`، ثم نُقلت السجلّة الوحيدة في معاملة ذرية إلى الحساب المؤكد واعتمد ملفه. تحقق الاستعلام من أن الحساب المستهدف هو المالك الوحيد، وأن البريد السابق لم يعد مالكاً، وحالة الملف الجديدة `approved`. لم تُضبط كلمة مرور ولم تُختبر جلسة مالك.
+- نُشر commit `5a3b29a`؛ نجح Pages run `37177339670`، ونجح CodeQL run `37177340237`، ونجح platform deployment `37177389772`. الصفحة الحية `/register/` تعرض نموذج التسجيل، والمسارات والموارد العامة أعادت `200`؛ لم يظهر خرج Console.
+- أُنشئ في Cloudflare Widget مُدار للمضيف `proexcellencenetwork-art.github.io` و`localhost`. فحص Supabase **Attack Protection** أظهر أن CAPTCHA متوقف، وفحص `/login` لم يجد widget. تعذرت كتابة `VITE_TURNSTILE_SITE_KEY` عبر GitHub API بصلاحية `403`؛ لذلك لم يُربط Sitekey بالبناء، ولم يُدخل سر Turnstile في Supabase. كما ظهر خيار منع كلمات المرور المسرّبة كمتوقف. لا ندعي حماية Auth من البوتات قبل إتمام الإعداد واختبار الرفض.
+- الاستعلام عن مناطق Cloudflare أعاد صفراً؛ لا يوجد نطاق مملوك يمكن توجيه GitHub Pages عبر Proxy/WAF. يظل DDoS/WAF غير مضبوط.
+- نجحت `npm run typecheck`, `npm run lint`, `npm run test:seo-fixtures`, و`VITE_PUBLIC_SIGNUP_ENABLED=true npm run build`. بقي تحذيران lint سابقان وتحذير chunk غرفة التعلم الأكبر من 500 KB؛ لم تفشل الاختبارات.
+
+**القرار الحالي: NO-GO للجاهزية الكاملة، مع أن التسجيل العام مفتوح الآن بطلب صاحب المشروع.** تأكيد البريد ومراجعة الحسابات باقيان إلزاميين. لم تُختبر جلسة المالك أو الدعوات بحساب مصادق، أو عزل حسابين، أو تدفق تحقق البريد/الاستعادة، أو Database Webhook التنظيف والحذف الآمن. Turnstile يحتاج Sitekey في GitHub Variable وسرّاً داخل Supabase، وWAF يتطلب نطاقاً مملوكاً؛ كما أن 100ms والبث والأرشفة وتشغيل الفيديو غير مهيأة وغير مختبرة.
