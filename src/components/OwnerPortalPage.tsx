@@ -200,8 +200,8 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     <section className="owner-card owner-settings-card">
       <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>إعدادات المنصة</h2><p>الإعدادات الداخلية الحساسة لا تُغيّر إلا من حساب المالك وتُسجّل في سجل التدقيق.</p></div></div>
       <div className="owner-setting-row"><div><b>دعوات الحسابات</b><small>تشغيل دعوات البريد من لوحة المالك فقط؛ تعطيلها يمنع وظيفة الدعوة على الخادم.</small></div><span className={`owner-pill ${ownerInvitationsEnabled ? 'owner-setting-on' : 'owner-setting-off'}`}>{ownerInvitationsEnabled ? 'مفعّلة' : 'متوقفة'}</span><button className="btn btn-outline btn-small" type="button" disabled={busy} onClick={() => void toggleOwnerInvitations()}>{ownerInvitationsEnabled ? 'إيقاف الدعوات' : 'تفعيل الدعوات'}</button></div>
-      <div className="owner-setting-row owner-setting-locked"><div><b>التسجيل العام</b><small>مغلق حالياً في إعداد Supabase Auth، ويظل مغلقاً حتى اكتمال UAT. لا تفتحه من هذه اللوحة.</small></div><span className="owner-pill owner-setting-off">مغلق</span></div>
-      <p className="owner-note">تأكيد البريد يبقى إلزامياً. فتح التسجيل العام مستقبلاً يحتاج تغيير إعداد Supabase Auth وإعداد البناء معاً بعد اجتياز اختبارات الإنتاج.</p>
+      <div className="owner-setting-row"><div><b>التسجيل العام</b><small>مفتوح. تأكيد البريد إلزامي، وكل حساب جديد يبقى قيد المراجعة حتى موافقة المالك أو المدير.</small></div><span className="owner-pill owner-setting-on">مفتوح</span></div>
+      <p className="owner-note">إنشاء الحساب لا يمنح صلاحيات العضوية أو النشر تلقائياً؛ تظل الموافقة الإدارية مطلوبة.</p>
     </section>
 
     <section className="owner-card owner-wide-card">
@@ -213,8 +213,8 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     </section>
 
     <section className="owner-card owner-wide-card">
-      <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>سجل تغييرات المالك</h2><p>تُسجل عمليات منح الأدوار وإزالتها مع السبب والوقت.</p></div></div>
-      {audit.length === 0 ? <p className="owner-empty">لا توجد تغييرات مسجلة بعد.</p> : <div className="owner-audit-list">{audit.map(entry => <article className="owner-audit-row" key={entry.id}><div><b>{entry.action === 'owner_bootstrap' ? 'تهيئة المالك الأول' : entry.action === 'role_granted' ? 'منح دور' : entry.action === 'role_revoked' ? 'إزالة دور' : entry.action === 'account_suspended' ? 'تعليق حساب' : entry.action === 'account_restored' ? 'استعادة حساب' : `تغيير إعداد: ${entry.setting_key || 'منصة'}`}{entry.role ? ` · ${roleLabels[entry.role]}` : ''}{entry.action === 'setting_changed' ? ` · ${entry.setting_value ? 'مفعّل' : 'متوقف'}` : ''}</b><span dir="ltr">{entry.target_email}</span><small>{entry.reason}</small></div><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('ar')}</time></article>)}</div>}
+      <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>سجل تغييرات المالك</h2><p>تُسجل عمليات نقل الملكية ومنح الأدوار وإزالتها مع السبب والوقت.</p></div></div>
+      {audit.length === 0 ? <p className="owner-empty">لا توجد تغييرات مسجلة بعد.</p> : <div className="owner-audit-list">{audit.map(entry => <article className="owner-audit-row" key={entry.id}><div><b>{entry.action === 'owner_bootstrap' ? 'تهيئة المالك الأول' : entry.action === 'owner_transferred' ? 'نقل ملكية المنصة' : entry.action === 'role_granted' ? 'منح دور' : entry.action === 'role_revoked' ? 'إزالة دور' : entry.action === 'account_suspended' ? 'تعليق حساب' : entry.action === 'account_restored' ? 'استعادة حساب' : `تغيير إعداد: ${entry.setting_key || 'منصة'}`}{entry.role ? ` · ${roleLabels[entry.role]}` : ''}{entry.action === 'setting_changed' ? ` · ${entry.setting_value ? 'مفعّل' : 'متوقف'}` : ''}</b><span dir="ltr">{entry.target_email}</span><small>{entry.reason}</small></div><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('ar')}</time></article>)}</div>}
       <p className="owner-footnote"><ArrowLeft size={13}/> استعادة كلمة مرور المالك تتم عبر رابط استعادة Supabase إلى البريد الموثّق. لا تُرسل كلمة مرور أو رمز دخول في المحادثة.</p>
     </section>
   </main>
