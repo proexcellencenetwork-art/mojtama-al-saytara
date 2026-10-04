@@ -179,7 +179,7 @@
 #pagebreak()
 = تحديث التحقق الموسّع — 4 أكتوبر 2026
 
-#text(size: 9pt, fill: report-accent)[آخر تحقق للإنتاج والـCI عند 04:36 UTC بعد commit `5a3b29a`؛ هذا الملحق الأحدث يحل محل حالات التسجيل السابقة.]
+#text(size: 9pt, fill: report-accent)[فُحص الإنتاج والـCI عند 04:36 UTC بعد commit `5a3b29a`؛ وصُنّف WAF كـFuture Hardening عند 05:06 UTC، وهذا الملحق يحل محل حالات التسجيل السابقة.]
 
 #v(0.45em)
 #text(size: 8.2pt)[
