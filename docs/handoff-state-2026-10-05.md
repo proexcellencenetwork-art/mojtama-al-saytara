@@ -15,6 +15,7 @@
 
 - **إغلاق التسجيل العام — PASS:** تم تغيير `.github/workflows/deploy.yml` إلى `VITE_PUBLIC_SIGNUP_ENABLED=false`، ونجح GitHub Actions run `37236738724` على commit `e607c02`. فتح المتصفح صفحة `/register/` المنشورة فعلياً وأكد ظهور رسالة «التسجيل العام متوقف مؤقتاً» مع رابط تسجيل الدخول، دون نموذج إنشاء حساب.
 - **تحديث وثائق الحالة — PASS:** تمت مواءمة README ودليل Turnstile مع قرار NO-GO الحالي، وتسجيل التناقض السابق بين فتح Supabase التاريخي وبناء Pages.
+- **تصحيح واجهة البث — PASS محلياً:** أصبحت غرفة التعلم تربط زر مشاركة الشاشة بحالة 100ms الفعلية فتتيح البدء والإيقاف، وصارت لوحة المالك تعرض التسجيل العام «مغلق» بما يطابق بناء Pages. اجتاز التعديل `typecheck` و`lint` و`build` و`test:seo-fixtures` و`npm audit --omit=dev --audit-level=high`.
 
 ## IN PROGRESS
 
@@ -42,5 +43,7 @@
 **FINAL STATUS: NO-GO** للفتح العام الكامل أو ادعاء أن مركز البث يعمل.
 
 **CRITICAL:** Auth/UAT، البريد، RLS/Storage بجلسات حقيقية، CAPTCHA، التنظيف/الحذف، وعدم وجود مزود بث مضبوط.
+
+**ملاحظة:** تصحيح واجهة مشاركة الشاشة لا يساوي اختبار بث حي؛ ما زالت موارد 100ms والأسرار وجلسات Owner/Member وRecording/Webhook/Playback الفعلية مطلوبة قبل PASS.
 
 **NON-CRITICAL:** Cloudflare WAF/DDoS على نطاق مملوك؛ يصنف Future Hardening كما في التوجيه، ولا يبرر تغيير DNS الآن.

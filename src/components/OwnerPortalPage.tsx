@@ -200,7 +200,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     <section className="owner-card owner-settings-card">
       <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>إعدادات المنصة</h2><p>الإعدادات الداخلية الحساسة لا تُغيّر إلا من حساب المالك وتُسجّل في سجل التدقيق.</p></div></div>
       <div className="owner-setting-row"><div><b>دعوات الحسابات</b><small>تشغيل دعوات البريد من لوحة المالك فقط؛ تعطيلها يمنع وظيفة الدعوة على الخادم.</small></div><span className={`owner-pill ${ownerInvitationsEnabled ? 'owner-setting-on' : 'owner-setting-off'}`}>{ownerInvitationsEnabled ? 'مفعّلة' : 'متوقفة'}</span><button className="btn btn-outline btn-small" type="button" disabled={busy} onClick={() => void toggleOwnerInvitations()}>{ownerInvitationsEnabled ? 'إيقاف الدعوات' : 'تفعيل الدعوات'}</button></div>
-      <div className="owner-setting-row"><div><b>التسجيل العام</b><small>مفتوح. تأكيد البريد إلزامي، وكل حساب جديد يبقى قيد المراجعة حتى موافقة المالك أو المدير.</small></div><span className="owner-pill owner-setting-on">مفتوح</span></div>
+      <div className="owner-setting-row"><div><b>التسجيل العام</b><small>مغلق في بناء الموقع الحالي حتى اكتمال اختبارات القبول والأمان؛ الوصول يمر عبر دعوة ومراجعة الحساب.</small></div><span className="owner-pill owner-setting-off">مغلق</span></div>
       <p className="owner-note">إنشاء الحساب لا يمنح صلاحيات العضوية أو النشر تلقائياً؛ تظل الموافقة الإدارية مطلوبة.</p>
     </section>
 
