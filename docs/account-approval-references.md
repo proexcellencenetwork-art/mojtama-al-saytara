@@ -52,3 +52,11 @@
 - الوظائف الحية: `delete-account` version 2 (`verify_jwt=true`)، `cleanup-verification-files` version 1 (`verify_jwt=false` مع تحقق `x-cleanup-secret`)، و`owner-invite` version 1 (`verify_jwt=true`). طلب POST بلا JWT إلى الدعوة والحذف أعاد `401`، ولم يُرسل بريد أو يحدث حذف. لم يُتحقق من السر البعيد أو Database Webhook.
 - آخر Security Advisor أعاد 3 ملاحظات `INFO` عن جداول داخلية عليها RLS من دون سياسات، وتحذيراً واحداً عن `is_staff` للـ`anon`، و18 تحذيراً عن دوال `SECURITY DEFINER` متاحة لـ`authenticated`، وتحذيراً بأن حماية كلمات المرور المسرّبة غير مفعّلة. يلزم مراجعة هذه النتائج واختبار RPCs بجلسات حية قبل فتح التسجيل.
 - لا تغيير على Google OAuth؛ ما يزال اختيارياً ومؤجلاً.
+
+
+## التحقق النهائي من بوابة المالك — 4 أكتوبر 2026
+
+- نجح workflow التطبيق [37164428472](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37164428472) ونشر Pages [37164428191](https://github.com/proexcellencenetwork-art/mojtama-al-saytara/actions/runs/37164428191) بعد commit `f2d8ee4`.
+- كشف الفحص المباشر أن أول build بعد إضافة البوابة لم يولّد shell لـ`/owner/` لأن قائمة `protectedRoutes` في `scripts/prerender-pages.mjs` لم تتضمنه. أُضيف المسار أيضاً إلى allowlist الخاص في `scripts/validate-seo-output.mjs`؛ اجتاز البناء والتحقق، وأُعيد النشر.
+- بعد الإصلاح: `/`, `/login/`, `/register/`, و`/owner/` أعادت HTTP 200؛ `owner` صار `noindex,nofollow`؛ ملفات CSS وJS للبوابة أعادت 200. متصفح Sandbox غير المسجل تحوّل من `/owner/` إلى `/login`، وعرض `/register/` رسالة «الدخول بالدعوة فقط». لم يظهر أي إخراج في Console.
+- هذه نتائج سلوك الزائر غير المسجل فقط؛ لم نختبر تسجيل دخول المالك أو مدير/عضو فعليين في صفحة البوابة، ولا أي RPC مصادق أو رسالة بريد حقيقية. سيبقى التسجيل العام مغلقاً حتى إتمام UAT.

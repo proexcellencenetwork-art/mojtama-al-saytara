@@ -36,3 +36,6 @@ docs/readiness-report/.typst-document.json
 docs/readiness-report/main.pdf
 docs/readiness-report/*verification*.json
 docs/readiness-report/review/
+docs/readiness-report/*.verify.json
+docs/readiness-report/review-final/
+docs/*.verify.json

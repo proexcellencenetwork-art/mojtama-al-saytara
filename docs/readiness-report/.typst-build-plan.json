@@ -31,7 +31,7 @@
   },
   "verification": {
     "status": "pass",
-    "pass": 8,
+    "pass": 7,
     "warn": 0,
     "fail": 0,
     "unknown": 0,
