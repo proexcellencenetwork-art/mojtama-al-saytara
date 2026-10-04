@@ -5,6 +5,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { isPublicSignupEnabled } from '../lib/supabase-config'
+import { isTurnstileConfigured } from '../lib/turnstile-config'
+import { TurnstileChallenge } from './TurnstileChallenge'
 
 type AuthPageProps = { onDemo: () => void; onSignedIn: (user: User) => void }
 const googleAuthEnabled = import.meta.env.VITE_GOOGLE_AUTH_ENABLED === 'true'
@@ -25,6 +27,8 @@ function authMessage(message: string) {
   if (text.includes('unsupported provider') || (text.includes('provider') && (text.includes('disabled') || text.includes('not enabled')))) return 'تسجيل الدخول عبر Google غير مفعّل في إعدادات Supabase بعد.'
   if (text.includes('password') && text.includes('least')) return 'كلمة المرور لا تحقق الحد الأدنى المطلوب.'
   if (text.includes('rate limit') || text.includes('too many requests')) return 'محاولات كثيرة خلال وقت قصير. انتظر قليلاً ثم حاول مجدداً.'
+  if (text.includes('captcha') || text.includes('turnstile')) return 'أكمل التحقق الأمني من Cloudflare ثم حاول مرة أخرى.'
+  if ((text.includes('token') || text.includes('otp') || text.includes('session missing')) && (text.includes('invalid') || text.includes('expired') || text.includes('used') || text.includes('missing'))) return 'رابط الاستعادة غير صالح أو انتهت صلاحيته أو استُخدم مسبقاً. اطلب رابطاً جديداً وافتح أحدث رسالة فقط.'
   if (text.includes('network') || text.includes('fetch')) return 'تعذر الاتصال بالخدمة الآن. تحقق من الإنترنت وحاول مجدداً.'
   return 'تعذر إكمال الطلب. تحقق من الإعدادات وحاول مرة أخرى.'
 }
@@ -45,6 +49,23 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   )
   const [message, setMessage] = useState(typeof callbackError === 'string' ? callbackError : '')
   const [isError, setIsError] = useState(typeof callbackError === 'string' && callbackError.length > 0)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const [captchaResetKey, setCaptchaResetKey] = useState(0)
+
+  function requireCaptchaToken(): string | undefined | null {
+    if (!isTurnstileConfigured) return undefined
+    if (!captchaToken) {
+      setIsError(true)
+      setMessage('أكمل التحقق الأمني قبل المتابعة.')
+      return null
+    }
+    return captchaToken
+  }
+
+  function resetCaptcha() {
+    setCaptchaToken('')
+    setCaptchaResetKey(key => key + 1)
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -55,11 +76,13 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage('الحسابات الحقيقية غير مفعّلة بعد. استكشف نسخة التجربة الآن، أو أضف إعدادات Supabase كما في دليل الإعداد.')
       return
     }
+    const captchaTokenForRequest = requireCaptchaToken()
+    if (captchaTokenForRequest === null) return
     setBusy(true)
     try {
       if (forgot) {
         const redirectTo = `${getAppBaseUrl()}?flow=recovery`
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo })
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo, ...(captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : {}) })
         if (error) throw error
         setMessage('إذا كان البريد مرتبطاً بحساب، فستصلك رسالة لاستعادة كلمة المرور. تحقق من صندوق الوارد والرسائل غير المرغوب فيها.')
         return
@@ -71,6 +94,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
           options: {
             data: { display_name: displayName.trim() },
             emailRedirectTo: `${getAppBaseUrl()}?flow=confirm`,
+            ...(captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : {}),
           },
         })
         if (error) throw error
@@ -84,7 +108,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
           setMessage('أُنشئ الحساب. أكّد بريدك من الرسالة؛ بعد ذلك يبقى الوصول للعضوية محدوداً حتى مراجعة المدير واعتماد الحساب.')
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : undefined })
         if (error) throw error
         if (!data.session || !data.user || !hasConfirmedEmail(data.user)) {
           if (data.session) await supabase.auth.signOut({ scope: 'local' })
@@ -103,6 +127,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage(authMessage(error instanceof Error ? error.message : 'auth error'))
     } finally {
       setBusy(false)
+      resetCaptcha()
     }
   }
 
@@ -118,12 +143,14 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage('أدخل بريدك الإلكتروني أولاً لإعادة إرسال رسالة التأكيد.')
       return
     }
+    const captchaTokenForRequest = requireCaptchaToken()
+    if (captchaTokenForRequest === null) return
     setBusy(true)
     try {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: normalizedEmail,
-        options: { emailRedirectTo: `${getAppBaseUrl()}?flow=confirm` },
+        options: { emailRedirectTo: `${getAppBaseUrl()}?flow=confirm`, ...(captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : {}) },
       })
       if (error) throw error
       setIsError(false)
@@ -133,6 +160,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage(authMessage(error instanceof Error ? error.message : 'confirmation resend error'))
     } finally {
       setBusy(false)
+      resetCaptcha()
     }
   }
 
@@ -170,6 +198,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       {!forgot && mode === 'login' && <button className="auth-inline-link" type="button" onClick={() => { setForgot(true); setMessage('') }}>نسيت كلمة المرور؟</button>}
       <button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الإرسال…' : forgot ? 'إرسال رابط الاستعادة' : mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'} <ArrowLeft size={16}/></button>
     </form>
+    {isSupabaseConfigured && isTurnstileConfigured && <TurnstileChallenge onToken={setCaptchaToken} resetKey={captchaResetKey}/>}
     {message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}
     {canResendConfirmation && !forgot && <button className="auth-inline-link" type="button" onClick={() => void resendConfirmation()} disabled={busy || !email.trim()}>إعادة إرسال رسالة تأكيد البريد</button>}
     {isSupabaseConfigured && googleAuthEnabled && !forgot && <><div className="auth-separator"><span>أو</span></div><button className="btn btn-outline btn-full auth-google-button" type="button" onClick={() => void signInWithGoogle()} disabled={busy} aria-label="المتابعة بحساب Google"><span className="google-mark" aria-hidden="true">G</span><span>{busy ? 'جارٍ فتح Google…' : 'المتابعة بحساب Google'}</span></button></>}

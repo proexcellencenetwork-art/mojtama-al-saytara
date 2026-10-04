@@ -8,6 +8,8 @@
 
 > **مركز التعلّم والورش الحيّة:** migration 017 مطبقة، وmigration 018 أزالت استدعاء `is_staff` المباشر من `anon`. الجداول وRLS مفحوصة؛ وظائف Edge الأربع منشورة وترد `401` عند الطلب غير المصادق. الواجهة منشورة كمسار خاص `noindex`؛ المركز [ومكتبة التسجيلات](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/learning/#library) في المسار نفسه، واختُبر تحويل `/learning/` وروابط الغرف الديناميكية إلى `/login` للزائر غير المسجل. 100ms غير مضبوط، لذلك لم يُختبر بث حي. اتبع [دليل الإعداد العربي](docs/learning-center-deployment-ar.md).
 
+> **Turnstile وWAF/DDoS:** أُضيف دعم اختياري لـTurnstile في صفحات Auth، لكنه غير مفعّل إنتاجياً حتى يُضاف Sitekey العام إلى GitHub Variables ويُحفظ Secret key داخل Supabase Auth. فحص Cloudflare أعاد صفر مناطق DNS؛ لذلك لم تُفعّل طبقة WAF/DDoS على `github.io` المشترك، ويستلزم ذلك نطاقاً مملوكاً تختاره وتربطه. اتبع [دليل الحماية العربي](docs/security-hardening-setup-ar.md). التسجيل العام يبقى مغلقاً.
+
 ## 1. ما تحتاجه
 
 1. حساب GitHub لديه صلاحية تعديل مستودع [`proexcellencenetwork-art/mojtama-al-saytara`](https://github.com/proexcellencenetwork-art/mojtama-al-saytara).

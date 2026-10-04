@@ -274,7 +274,9 @@ function SupabaseCallbackRouter() {
         const callbackUrl = new URL(window.location.href)
         for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
         window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
-        const authError = callbackError || (unverified ? 'أكّد بريدك الإلكتروني قبل استخدام مساحة العضوية.' : 'تعذر إكمال المصادقة. تحقق من إعدادات البريد وروابط العودة في Supabase.')
+        const authError = flow === 'recovery' && failed
+          ? 'تعذر التحقق من رابط الاستعادة؛ قد يكون منتهياً أو سبق استخدامه. اطلب رابطاً جديداً بعد انتهاء مهلة المحاولات، وافتح أحدث رسالة فقط.'
+          : callbackError || (unverified ? 'أكّد بريدك الإلكتروني قبل استخدام مساحة العضوية.' : 'تعذر إكمال المصادقة. تحقق من إعدادات البريد وروابط العودة في Supabase.')
         navigate(target, { replace: true, state: failed ? { authError } : null })
       }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر إكمال تسجيل الدخول. حاول مرة أخرى.' } }) })
     }).catch(() => { if (active) navigate('/login', { replace: true, state: { authError: 'تعذر تحميل خدمة تسجيل الدخول. حاول مرة أخرى.' } }) })

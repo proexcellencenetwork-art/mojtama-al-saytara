@@ -173,3 +173,40 @@
 
 #v(0.45em)
 #text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح: workflow 37173875652 على commit المصدر afba3e7؛ يتضمن رابطاً خاصاً مباشراً لتبويب مكتبة التسجيلات.]
+
+
+#pagebreak()
+= تحديث التحقق الموسّع — 4 أكتوبر 2026
+
+#text(size: 9pt, fill: report-accent)[الفحص الحي عند 03:58 UTC؛ يحدّث هذا الملحق حالة Auth والوظائف والحماية الشبكية بعد فحص النشر السابق.]
+
+#v(0.45em)
+#text(size: 8.2pt)[
+#table(
+  columns: (0.95fr, 1.85fr, 1.32fr),
+  inset: 4pt,
+  stroke: 0.45pt + luma(215),
+  fill: (x, y) => if y == 0 { report-accent } else { rgb("#F7F8FA") },
+  align: (right, right, right),
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[المجال]],
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[الدليل الأحدث]],
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[الحد أو المطلوب]],
+  [Auth الحي], [HTTP `200` من إعدادات المشروع الصحيح؛ `disable_signup=true` و`mailer_autoconfirm=false`.], [لم يُكمل المالك الدخول أو الاستعادة؛ التسجيل العام يبقى مغلقاً.],
+  [رفض Edge], [كل الوظائف السبع أعادت `401` لطلبات بلا JWT/سر webhook بالـmethod الصحيح.], [لم يُنفّذ بريد دعوة أو حذف أو تنظيف؛ سر التنظيف وDatabase Webhook غير متحقق منهما.],
+  [Turnstile], [أضيف دعم عميل اختياري يمرر `captchaToken` لعمليات Auth المدعومة.], [Sitekey وSecret غير مضبوطين؛ CAPTCHA غير مفعّلة/غير مختبرة في الإنتاج.],
+  [Cloudflare], [الحساب المتصل يحوي صفر مناطق DNS؛ الموقع على مضيف GitHub Pages مشترك.], [لا WAF/DDoS عبر Cloudflare حتى اختيار نطاق مملوك وربطه والتحقق من HTTPS.],
+  [أمان GitHub], [Vulnerability alerts `204` وAutomated security fixes `200`; أضيفت ملفات Dependabot وCodeQL للمستودع.], [يلزم أول تشغيل CodeQL بعد دفع التغييرات؛ لا يثبت ذلك مراجعة جلسات المستخدمين أو حماية كل الإعدادات.],
+  [التحقق المحلي], [`typecheck`, `lint`, `test:seo-fixtures`, و`build` ناجحة.], [تحذيران lint معروفان وتحذير حجم bundle غير حاجب؛ اختبار نشر الواجهة ينتظر اكتمال النشر.],
+  [البث والتسجيل], [الواجهة والوظائف منشورة، لكن لم تُرسل بيانات أو موارد بث.], [100ms والأسرار غير مضبوطة؛ لا جلسة بث أو HLS/VOD أو اختبار صلاحية تشغيل حي.],
+)
+]
+
+#v(0.55em)
+#block(fill: rgb("#FFF3F4"), stroke: 1pt + report-red, inset: 10pt, radius: 5pt)[
+  #text(size: 12pt, weight: "bold", fill: report-red)[FINAL STATUS: NO-GO]
+  #v(0.3em)
+  لا توجد جلسة مالك مؤكدة أو دورة اختبار مصادق عليها للمالك والمدير وحسابين مستقلين. كما لم يُتحقق من البريد أو webhook التنظيف أو الحذف الآمن، ولم يُعد 100ms أو Turnstile أو نطاق Cloudflare. لذلك لا يحقق الإنتاج معيار `READY`، ويظل التسجيل العام مغلقاً.
+]
+
+#v(0.4em)
+#text(size: 8.5pt, fill: report-accent)[مرجع الإعداد اليدوي للحماية: `docs/security-hardening-setup-ar.md`. لا تضع أي Secret في المتصفح أو GitHub Variables.]
