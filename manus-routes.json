@@ -2,7 +2,7 @@
   "routes": [
     {
       "path": "/",
-      "title": "مجتمع السيطرة | مجتمع مهني صحي"
+      "title": "مجتمع السيطرة | مجتمع مهني ورحلة مهنية"
     },
     {
       "path": "/about/",
@@ -41,6 +41,54 @@
       "title": "ميثاق السلوك المهني | مجتمع السيطرة"
     },
     {
+      "path": "/career-journey/",
+      "title": "رحلتك المهنية | أدوات ومسارات مجتمع السيطرة"
+    },
+    {
+      "path": "/career-compass/",
+      "title": "البوصلة المهنية | تقييم وخطة عملية"
+    },
+    {
+      "path": "/linkedin-audit/",
+      "title": "تدقيق LinkedIn | تقييم وخطة تحسين"
+    },
+    {
+      "path": "/fresh-graduate/",
+      "title": "جاهزية حديث التخرج | خطة 30 و90 يوماً"
+    },
+    {
+      "path": "/value-economy/",
+      "title": "اقتصاد القيمة المهنية | من المهارة إلى الدليل"
+    },
+    {
+      "path": "/achievement-portfolio/",
+      "title": "ملف الإنجازات المهني | قالب STAR محلي"
+    },
+    {
+      "path": "/promotion-intelligence/",
+      "title": "الاستعداد للترقية | تقييم وملف ومحادثة"
+    },
+    {
+      "path": "/innovation-rd/",
+      "title": "الابتكار والبحث والتطوير | من الفكرة إلى القيمة"
+    },
+    {
+      "path": "/ai-career-leverage/",
+      "title": "AI Career Leverage | الذكاء الاصطناعي في العمل"
+    },
+    {
+      "path": "/saudi-labor-market-radar/",
+      "title": "رادار سوق العمل السعودي | بيانات وإشارات"
+    },
+    {
+      "path": "/professional-positioning/",
+      "title": "التموضع المهني | جملة توضح قيمتك ودليلك"
+    },
+    {
+      "path": "/linkedin-workshop/",
+      "title": "ورشة اختراق LinkedIn | من ملف إلى أصل مهني"
+    },
+    {
       "path": "/articles/:slug/",
       "title": "تفاصيل المقال"
     },
@@ -55,6 +103,46 @@
     {
       "path": "/learning-room/:id/",
       "title": "غرفة ورشة مهنية خاصة"
+    },
+    {
+      "path": "/articles/career-compass/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/linkedin-workshop/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/fresh-graduate/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/professional-value/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/achievement-portfolio/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/promotion-readiness/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/innovation-value/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/ai-career-leverage/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/saudi-labor-market/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/professional-positioning/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
     },
     {
       "path": "/login/"
@@ -100,6 +188,9 @@
     },
     {
       "path": "/learning/"
+    },
+    {
+      "path": "/content-studio/"
     },
     {
       "path": "/learning-room/"
