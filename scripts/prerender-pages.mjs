@@ -206,7 +206,7 @@ for (const route of protectedRoutes) {
   routes.push({ path: normalizeRoute(route) })
 }
 const notFoundPage = { title: 'صفحة غير موجودة | مجتمع السيطرة', description: 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.' }
-const deepRouteRecovery = `<script>(function(){const target=location.pathname+location.search+location.hash;const home=new URL(${JSON.stringify(siteRoot.toString())});home.searchParams.set('__saytara_route',target);location.replace(home.toString())})()</script>`
+const deepRouteRecovery = `<script>(function(){const target=location.pathname+location.search+location.hash;const appShell=new URL('learning-room/',${JSON.stringify(siteRoot.toString())});appShell.searchParams.set('__saytara_route',target);location.replace(appShell.toString())})()</script>`
 await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header()}<main class="public-page wrap"><h1>جارٍ فتح الصفحة المطلوبة…</h1><p>لحظة واحدة.</p>${deepRouteRecovery}</main>${footer()}`,null,true,true))
 await writeFile(resolve(distDir,'robots.txt'),`User-agent: *\nAllow: /\n${protectedRoutes.map(route=>`Disallow: ${basePath.replace(/\/$/,'')}${route}`).join('\n')}\nSitemap: ${new URL('sitemap.xml',siteRoot)}\n`)
 const privateRoutePaths = new Set(protectedRoutes.map(normalizeRoute))
