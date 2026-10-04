@@ -135,3 +135,41 @@
 #text(size: 8.3pt, fill: luma(95))[
 الموقع: [#link("https://proexcellencenetwork-art.github.io/mojtama-al-saytara/")[الصفحة العامة]] · [#link("https://proexcellencenetwork-art.github.io/mojtama-al-saytara/owner/")[بوابة المالك]] · المراجع التشغيلية: [#link("https://github.com/proexcellencenetwork-art/mojtama-al-saytara/blob/main/docs/security-live-audit.md")[التدقيق الأمني]] و[#link("https://github.com/proexcellencenetwork-art/mojtama-al-saytara/blob/main/README.md")[دليل الإعداد]]. تاريخ الفحص: 4 أكتوبر 2026.
 ]
+
+
+#pagebreak()
+= تحديث التحقق الحي — 4 أكتوبر 2026
+
+#text(size: 9pt, fill: report-accent)[هذا الملحق أحدث من سجل الفحص السابق، ويحل محل أي تعداد سابق للإعدادات أو تنبيهات Security Advisor لا يتوافق مع النتائج التالية.]
+
+#v(0.45em)
+#text(size: 8.6pt)[
+#table(
+  columns: (0.92fr, 1.85fr, 1.35fr),
+  inset: 4.5pt,
+  stroke: 0.45pt + luma(215),
+  fill: (x, y) => if y == 0 { report-accent } else { rgb("#F7F8FA") },
+  align: (right, right, right),
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[المجال]],
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[الدليل الحي]],
+  [#text(fill: rgb("#FFFFFF"), weight: "bold")[الحد المتبقي]],
+  [إعداد Auth], [`disable_signup=true` و`mailer_autoconfirm=false`؛ التسجيل العام مغلق وتأكيد البريد مطلوب.], [لم ينهِ المالك استعادة كلمة المرور أو تسجيل الدخول.],
+  [رسائل البريد], [عُثر على رسالة استعادة كلمة المرور ضمن بيانات صندوق البريد.], [لم يكتمل تدفق الاستعادة، ولم تُرسل دعوة اختبار لتأكيد التسليم.],
+  [Storage], [Bucket `verification-private` حي وخاص (`public=false`)، وسياسات الأجسام تحدد الرفع والقراءة والحذف.], [لا اختبار مستند فعلي بين حسابين.],
+  [صلاحية `is_staff`], [Migration `20261004031524` سُجلت في الإنتاج؛ `anon_execute=false` و`authenticated_execute=true`، ولا سياسة `anon` تستدعيها.], [بقية RPCs تحتاج اختبار جلسات JWT حقيقية.],
+  [Edge Functions], [الوظائف السبع أعادت `401` لطلبات POST بلا JWT أو بسر تنظيف غير صالح.], [رفض فقط؛ لم يُختبر التنفيذ المصرح أو بريد الدعوة أو الحذف.],
+  [Webhook التنظيف], [لا يوجد trigger خارجي على `verification_requests`؛ يوجد trigger لطابور التنظيف فقط.], [السر وDatabase Webhook غير مضبوطين/متحققين.],
+  [Security Advisor], [6 ملاحظات `INFO` لجداول مقفلة، و23 تحذيراً لدوال `SECURITY DEFINER` المتاحة لـ`authenticated`، وتحذير حماية كلمة مرور مسرّبة.], [لم تُختبر كل الوظائف بجلسة مصرح بها؛ حماية التسريب غير مفعّلة.],
+  [البث والتسجيل], [واجهة التعلم ووظائفها منشورة ومقيدة؛ مسارات الزوار تعيدهم إلى الدخول.], [100ms وأسراره غير مهيأة؛ لا بث أو تسجيل أو مكتبة VOD فعلية.],
+)
+]
+
+#v(0.55em)
+#block(fill: rgb("#FFF3F4"), stroke: 1pt + report-red, inset: 10pt, radius: 5pt)[
+  #text(size: 12pt, weight: "bold", fill: report-red)[FINAL STATUS: NO-GO]
+  #v(0.3em)
+  يبقى التسجيل العام مغلقاً. لم تكتمل جلسة المالك، والدعوات والموافقة، وعزل حسابين فعليين، واختبار webhook والحذف الآمن، أو إعداد بث مسجل خاص في الإنتاج؛ لذلك لم يتحقق معيار `READY`.
+]
+
+#v(0.45em)
+#text(size: 8.5pt, fill: report-accent)[آخر نشر Pages ناجح قبل تحديث الوثائق: workflow 37170661391 على commit 85ec611؛ تغييرات هذا الملحق والتوثيق لا تغيّر حزمة الواجهة المنشورة.]

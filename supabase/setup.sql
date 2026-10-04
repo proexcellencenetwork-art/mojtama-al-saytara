@@ -2464,3 +2464,9 @@ revoke all on function public.list_learning_library() from public, anon;
 grant execute on function public.list_learning_library() to authenticated;
 
 commit;
+
+-- ===== Source: supabase/migrations/20261004031524_revoke_anon_is_staff_execute_20261004.sql =====
+-- Keep is_staff available to authenticated RLS consumers only; anon policies do not call it.
+BEGIN;
+REVOKE EXECUTE ON FUNCTION public.is_staff(uuid) FROM anon;
+COMMIT;

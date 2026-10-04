@@ -52,7 +52,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [tab, setTab] = useState<'workshops' | 'library'>('workshops')
+  const [tab, setTab] = useState<'workshops' | 'library'>(() => typeof window !== 'undefined' && window.location.hash === '#library' ? 'library' : 'workshops')
   const [showForm, setShowForm] = useState(false)
   const [audience, setAudience] = useState<Role[]>(['member', 'verified', 'coach', 'moderator', 'manager', 'owner'])
   const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
