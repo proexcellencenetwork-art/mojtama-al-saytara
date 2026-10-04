@@ -14,8 +14,9 @@ if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'rout
 for (const route of manifest.routes) {
   if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
 }
-const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/learning/','/learning-room/'])
+const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
+const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
 const publicTitles = new Set()
@@ -43,8 +44,16 @@ for (const route of publicRoutes) {
   if (!html.includes('og:image') || !html.includes('twitter:card')) fail.push(`Social metadata missing: ${route.path}`)
   if (!/<h1\b[^>]*>\s*[^<]/i.test(html)) fail.push(`Rendered H1 missing: ${route.path}`)
   if (!html.includes('id="root">')) fail.push(`Rendered body content missing: ${route.path}`)
-  if (!html.includes('.css') || !html.includes('public-site.js')) fail.push(`Public page CSS or lightweight behavior script is missing: ${route.path}`)
-  if (/<script\b[^>]*\btype="module"/i.test(html) || /rel="modulepreload"/i.test(html)) fail.push(`Public route unexpectedly loads the React/Supabase module bundle: ${route.path}`)
+  const hydrated = interactiveRoutes.has(route.path) || /^\/articles\/[^/:]+\/$/.test(route.path)
+  if (!html.includes('.css') || (!hydrated && !html.includes('public-site.js'))) fail.push(`Public page CSS or its required behavior script is missing: ${route.path}`)
+  const moduleScript = html.match(/<script\b(?=[^>]*\btype="module")(?=[^>]*\bsrc="([^"]+)")[^>]*>/i)
+  if (hydrated && !moduleScript) fail.push(`Interactive career route is missing its local application module: ${route.path}`)
+  if (!hydrated && (/<script\b[^>]*\btype="module"/i.test(html) || /rel="modulepreload"/i.test(html))) fail.push(`Static public route unexpectedly loads the React/Supabase module bundle: ${route.path}`)
+  if (hydrated && moduleScript?.[1]) {
+    const assetUrl = new URL(moduleScript[1], siteUrl)
+    if (!assetUrl.pathname.startsWith(basePath)) fail.push(`Interactive route module escapes the configured site base path: ${route.path}`)
+    else { const moduleFile = resolve(dist, decodeURIComponent(assetUrl.pathname.slice(basePath.length).replace(/^\/+/, ''))); try { await access(moduleFile) } catch { fail.push(`Interactive route module asset is missing: ${route.path}`) } }
+  }
   if (/fonts\.googleapis\.com|fonts\.gstatic\.com|supabase\.co/i.test(html)) fail.push(`Public route has an external font or Supabase network dependency: ${route.path}`)
   if (!html.includes('critical-public-css') || !/<link\b[^>]*rel="stylesheet"/i.test(html) || html.includes('data-deferred-style')) fail.push(`Public route is missing inline critical CSS or its render-blocking stylesheet: ${route.path}`)
   if (route.path === '/about/') {
@@ -55,6 +64,8 @@ for (const route of publicRoutes) {
   if (!scripts.some(item => item['@type'] === 'Organization') || !scripts.some(item => item['@type'] === 'WebSite') || !scripts.some(item => item['@type'] === 'BreadcrumbList')) fail.push(`Required Organization/WebSite/BreadcrumbList schema missing: ${route.path}`)
   if (route.path === '/faq/' && !scripts.some(item => item['@type'] === 'FAQPage')) fail.push('FAQPage schema missing.')
   if (route.path === '/coaching/' && !scripts.some(item => item['@type'] === 'Service')) fail.push('Service schema missing.')
+  if (route.path === '/career-journey/' && !scripts.some(item => item['@type'] === 'WebPage')) fail.push('Career Journey WebPage schema missing.')
+  if (route.path === '/linkedin-workshop/' && !scripts.some(item => item['@type'] === 'Course')) fail.push('LinkedIn workshop Course schema missing.')
   if (/^\/articles\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Article')) fail.push(`Article schema missing: ${route.path}`)
   if (/^\/events\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Event')) fail.push(`Event schema missing: ${route.path}`)
   if (/^\/coaches\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Person')) fail.push(`Person schema missing: ${route.path}`)

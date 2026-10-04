@@ -48,9 +48,10 @@ function StateMessage({ children, tone = 'neutral' }: { children: React.ReactNod
 export default function LearningCenterPage({ role }: { role: Role }) {
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
-  const [loading, setLoading] = useState(true)
+  const configured = Boolean(supabase && isSupabaseConfigured)
+  const [loading, setLoading] = useState(configured)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(configured ? '' : 'يتطلب مركز التعلم إعداد اتصال Supabase أولاً.')
   const [notice, setNotice] = useState('')
   const [tab, setTab] = useState<'workshops' | 'library'>(() => typeof window !== 'undefined' && window.location.hash === '#library' ? 'library' : 'workshops')
   const [showForm, setShowForm] = useState(false)
@@ -59,8 +60,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
   const navigate = useNavigate()
 
   const load = useCallback(async () => {
-    if (!supabase || !isSupabaseConfigured) { setLoading(false); setError('يتطلب مركز التعلم إعداد اتصال Supabase أولاً.'); return }
-    setLoading(true)
+    if (!supabase || !isSupabaseConfigured) return
     setError('')
     const [workshopResult, recordingResult] = await Promise.all([
       supabase.from('learning_workshops').select('id,title,description,instructor_name,scheduled_at,duration_minutes,cover_url,audience_roles,status').order('scheduled_at', { ascending: false }).limit(100),
@@ -76,7 +76,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
     setLoading(false)
   }, [])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void Promise.resolve().then(load) }, [load])
 
   const createWorkshop = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -127,7 +127,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
       <div><span className="eyebrow"><ShieldCheck size={14}/> مساحة تعليم مهني خاصة</span><h1>مركز التعلّم</h1><p>ورش حيّة ومسجّلة ضمن مجتمع مهني مغلق. الدخول متاح للحسابات المعتمدة والجمهور المحدد لكل ورشة.</p></div>
       <div className="learning-mark" aria-hidden="true"><Activity size={24}/><span>تعلّم<br/>معاً</span></div>
     </header>
-    <div className="learning-notice"><LockKeyhole size={16}/><span>لا تشارك معلومات أو صور المرضى في البث أو المحادثة. دخول الغرف وروابط التسجيل محمية بصلاحية الحساب.</span></div>
+    <div className="learning-notice"><LockKeyhole size={16}/><span>لا تشارك معلومات أو صور المرضى في البث أو المحادثة. دخول الغرف وروابط التسجيل محمية بصلاحية الحساب.</span></div><section className="learning-self-paced"><div><span className="eyebrow"><FileVideo2 size={14}/> ورشة ذاتية الآن</span><h2>اختراق LinkedIn: من ملف ساكن إلى أصل مهني</h2><p>وحدات وتمارين وقائمة تحقق وخطة 30 يوماً. هذه نسخة تعلم ذاتي؛ لا يوجد موعد بث أو تسجيل خارجي مجدول حالياً.</p></div><Link className="btn btn-outline btn-small" to="/linkedin-workshop">ابدأ الورشة الذاتية <ArrowLeft size={14}/></Link></section>
     {!isSupabaseConfigured && <StateMessage tone="error">لا يعمل مركز التعلم في وضع التجربة؛ لا تُنشأ جلسات أو حسابات وهمية.</StateMessage>}
     {error && <StateMessage tone="error">{error}</StateMessage>}
     {notice && <StateMessage tone="success"><Check size={15}/>{notice}</StateMessage>}

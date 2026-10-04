@@ -103,7 +103,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     setLoading(false)
   }, [role])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void Promise.resolve().then(load) }, [load])
 
   async function manageRole(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
