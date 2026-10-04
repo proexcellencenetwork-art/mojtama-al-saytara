@@ -55,7 +55,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
   const [notice, setNotice] = useState('')
   const [tab, setTab] = useState<'workshops' | 'library'>(() => typeof window !== 'undefined' && window.location.hash === '#library' ? 'library' : 'workshops')
   const [showForm, setShowForm] = useState(false)
-  const [audience, setAudience] = useState<Role[]>(['member', 'verified', 'coach', 'moderator', 'manager', 'owner'])
+  const [audience, setAudience] = useState<Role[]>(['member', 'verified', 'coach', 'moderator', 'manager'])
   const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
   const navigate = useNavigate()
 
