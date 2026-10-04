@@ -39,8 +39,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
-          # Public signup is enabled by request; Supabase Auth still requires email confirmation.
-          VITE_PUBLIC_SIGNUP_ENABLED: 'true'
+          # Keep public signup closed until authenticated UAT, email, RLS, and CAPTCHA gates pass.
+          VITE_PUBLIC_SIGNUP_ENABLED: 'false'
       - name: Stage root files for branch-based Pages
         run: npm run stage:pages
       - name: Commit generated branch-based Pages files

@@ -1,0 +1,43 @@
+# حالة تسلّم المشروع — 5 أكتوبر 2026
+
+هذه الصفحة تسجل ما تم إثباته من المستودع والنشر الحالي، وتفصل بين الكود الموجود والاختبار التشغيلي الفعلي. لا تحتوي أسراراً أو JWT أو كلمات مرور.
+
+## DONE / PASS
+
+- **المستودع والنشر:** `main` متزامن مع `origin/main`، وآخر commit قبل هذا التحديث هو `4136069` (`chore: update GitHub Pages static output`). مسار GitHub Actions السابق نجح، والمسارات المنشورة الرئيسية أعادت HTTP 200.
+- **الواجهة العامة والمحتوى:** Career Journey، Career Compass، LinkedIn Workshop، Fresh Graduate، Value Economy، Promotion Intelligence، Innovation/R&D، AI Career Leverage، Saudi Labor Market Radar، المقالات العامة، ومركز التعلم منشورة ضمن البنية الحالية.
+- **SEO المنشور:** `/manus-routes.json` و`/sitemap.xml` و`/robots.txt` تستجيب، وصفحة Career Compass المنشورة تحتوي المحتوى العربي وJSON-LD.
+- **فحوص محلية سابقة:** `typecheck` و`lint` و`build` و`test:content` و`test:seo-fixtures` نجحت حسب سجلات الإصدار الأخيرة؛ لا يعاد تصنيفها كاختبار Auth حي.
+- **رفض غير المصرح:** سجل التدقيق يوثق أن وظائف Edge السبع رفضت POST غير مصادق بـ`401`. هذا PASS لبوابة الرفض فقط، وليس لمسار مصادق.
+- **طبقة البيانات المعلنة:** migrations بوابة الاعتماد وهرمية المالك ومركز التعلم وتشديد `is_staff` موجودة في المستودع، مع RLS وStorage الخاصين موثقين في تقارير التدقيق.
+
+## IN PROGRESS
+
+- **إغلاق التسجيل العام:** تم تغيير `.github/workflows/deploy.yml` إلى `VITE_PUBLIC_SIGNUP_ENABLED=false` حتى لا يعرض بناء Pages نموذج إنشاء الحساب قبل اكتمال UAT والبريد وRLS وCAPTCHA. يجب نشر هذا التغيير والتحقق من صفحة `/register/` الحية.
+- **تحديث وثائق الحالة:** تمت مواءمة README ودليل Turnstile مع قرار NO-GO الحالي، وتسجيل التناقض السابق بين فتح Supabase التاريخي وبناء Pages.
+- **إعداد المنتج:** المحتوى العام والأدوات والروابط المنشورة موجودة؛ الاختبارات التشغيلية للعضوية ومخرجات أدوات المستخدم لم تُنجز بجلسات فعلية.
+
+## BLOCKED — EXTERNAL ACCESS
+
+- لا يوجد Connector مفعّل حالياً لـSupabase أو Supabase API في جلسة Manus، لذلك لا يمكن تنفيذ أو إثبات استعلامات Supabase الحية أو تغيير إعداد Auth أو إضافة Secret أو إنشاء Database Webhook من هذه الجلسة.
+- لا توجد جلسة مالك/مدير/عضوين اختبار متاحة هنا، ولا يجوز طلب أو نقل كلمات المرور أو JWT أو مفاتيح الخدمة داخل المحادثة.
+- إعداد 100ms، أسراره، وموارد الغرفة/التسجيل غير موجودة في الحالة الحالية؛ لا يمكن ادعاء أن Live/Recording/Playback يعمل.
+
+## NOT TESTED
+
+- Owner login وOwner Portal مع جلسة حقيقية.
+- دعوة مصادق عليها، قبول/رفض، manager permissions، وسجل التدقيق عبر الموقع.
+- تأكيد البريد، Resend، Password Reset وSMTP الحي.
+- عزل Account A عن Account B عبر JWT حي للرسائل وطلبات التوثيق وStorage والحدود اليومية.
+- `CLEANUP_WEBHOOK_SECRET` وDatabase Webhook والتنظيف الفعلي للوثائق.
+- `delete-account` على حساب تطوير disposable، مع إثبات حماية حساب المالك.
+- Turnstile/CAPTCHA: Sitekey/Secret والقبول والرفض الفعليان.
+- Camera، Microphone، Screen Share، Recording، Archive، Signed Playback، وUnauthorized Denied عبر 100ms أو مزود بث فعلي.
+
+## الحكم الحالي
+
+**FINAL STATUS: NO-GO** للفتح العام الكامل أو ادعاء أن مركز البث يعمل.
+
+**CRITICAL:** Auth/UAT، البريد، RLS/Storage بجلسات حقيقية، CAPTCHA، التنظيف/الحذف، وعدم وجود مزود بث مضبوط.
+
+**NON-CRITICAL:** Cloudflare WAF/DDoS على نطاق مملوك؛ يصنف Future Hardening كما في التوجيه، ولا يبرر تغيير DNS الآن.

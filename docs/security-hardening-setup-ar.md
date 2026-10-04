@@ -2,9 +2,9 @@
 
 ## الوضع الحالي
 
-الموقع متصل بمشروع Supabase الصحيح. فُتح التسجيل العام في Supabase Auth، مع بقاء **تأكيد البريد إلزامياً** ومراجعة الحساب قبل دخول مساحة الأعضاء. أُنشئ في Cloudflare Widget باسم `Mojtama Al-Saytara Supabase Auth` ومضيفاه المسموحان `proexcellencenetwork-art.github.io` و`localhost`؛ لكنه لم يُربط بعد بالبناء أو بإعداد Supabase. فحص لوحة Supabase أظهر أن **Enable Captcha protection متوقف**، وفحص `/login` لم يجد Widget أو script أو iframe. لذلك حماية البوتات غير فعّالة حالياً.
+الموقع متصل بمشروع Supabase الصحيح. التسجيل العام **موقوف حالياً في بناء Pages** إلى أن تكتمل بوابات UAT، مع بقاء **تأكيد البريد إلزامياً** ومراجعة الحساب قبل دخول مساحة الأعضاء. أُنشئ في Cloudflare Widget باسم `Mojtama Al-Saytara Supabase Auth` ومضيفاه المسموحان `proexcellencenetwork-art.github.io` و`localhost`؛ لكنه لم يُربط بعد بالبناء أو بإعداد Supabase. فحص لوحة Supabase أظهر أن **Enable Captcha protection متوقف**، وفحص `/login` لم يجد Widget أو script أو iframe. لذلك حماية البوتات غير فعّالة حالياً.
 
-التسجيل العام مفتوح حالياً بطلب صاحب المشروع؛ لا تعتبر ذلك دليلاً على اكتمال الجاهزية. يلزم إضافة Sitekey العام كـGitHub Actions Variable باسم `VITE_TURNSTILE_SITE_KEY`، ثم إدخال السر الخاص مباشرةً في Supabase، وتشغيل CAPTCHA واختبار الرفض/القبول. فشل اتصال GitHub API بصلاحية `403` عند محاولة إضافة المتغير تلقائياً، لذا أضفه يدوياً من إعدادات المستودع. لا ترسل السر في المحادثة. يمكن إغلاق التسجيل بإعادة `VITE_PUBLIC_SIGNUP_ENABLED` إلى `false` وإغلاق **Allow new users to sign up** في Supabase Auth.
+التسجيل العام موقوف حالياً في بناء Pages؛ لا تعتبر ذلك دليلاً على اكتمال الجاهزية. يلزم إضافة Sitekey العام كـGitHub Actions Variable باسم `VITE_TURNSTILE_SITE_KEY`، ثم إدخال السر الخاص مباشرةً في Supabase، وتشغيل CAPTCHA واختبار الرفض/القبول. فشل اتصال GitHub API بصلاحية `403` عند محاولة إضافة المتغير تلقائياً، لذا أضفه يدوياً من إعدادات المستودع. لا ترسل السر في المحادثة. يجب إبقاء `VITE_PUBLIC_SIGNUP_ENABLED` على `false` وإبقاء **Allow new users to sign up** مغلقاً في Supabase Auth حتى اجتياز اختبارات القبول.
 
 ## تفعيل Cloudflare Turnstile لـSupabase Auth
 
@@ -16,7 +16,7 @@
 4. أعد تشغيل **Actions → Deploy to GitHub Pages → Run workflow** بعد إضافة المتغير العام. بعد النشر يجب أن يظهر تحدي Turnstile في صفحات Auth المدعومة. اختبره بموقع حي ومتصفح فعلي، ثم تحقق من نجاح التسجيل/الدخول مع التحدي ورفض طلب بلا رمز صالح.
 5. إذا لم تظهر الواجهة، افحص اسم المتغير `VITE_TURNSTILE_SITE_KEY` وقيمة Sitekey العامة وسجلّ Actions؛ لا تعطّل حماية Supabase لتجاوز الخطأ.
 
-> التسجيل العام مفتوح حالياً؛ أبقِ تأكيد البريد ومراجعة الحسابات إلزاميين. إلى أن يُفعّل CAPTCHA ويُختبر، لا تدّعِ حماية بوتات فعّالة أو جاهزية كاملة. WAF/DDoS مصنف **Future Hardening** وليس مانع إطلاق حالياً؛ Turnstile وحده لا يثبت حماية DDoS.
+> التسجيل العام موقوف حالياً؛ أبقِ تأكيد البريد ومراجعة الحسابات إلزاميين. إلى أن يُفعّل CAPTCHA ويُختبر، لا تدّعِ حماية بوتات فعّالة أو جاهزية كاملة. WAF/DDoS مصنف **Future Hardening** وليس مانع إطلاق حالياً؛ Turnstile وحده لا يثبت حماية DDoS.
 
 ## WAF وحماية DDoS — Future Hardening (ليست مانع إطلاق)
 
