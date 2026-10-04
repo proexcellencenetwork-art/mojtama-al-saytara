@@ -90,6 +90,9 @@
     },
     {
       "path": "/settings/"
+    },
+    {
+      "path": "/owner/"
     }
   ]
 }
