@@ -9,3 +9,17 @@ verify_jwt = false
 # The account deletion endpoint must receive a valid signed-in user's JWT.
 [functions.delete-account]
 verify_jwt = true
+
+# Learning endpoints authenticate approved users with their Supabase JWT.
+[functions.learning-room]
+verify_jwt = true
+
+[functions.learning-token]
+verify_jwt = true
+
+[functions.learning-playback]
+verify_jwt = true
+
+# 100ms webhooks use a high-entropy custom header rather than a Supabase user JWT.
+[functions.learning-webhook]
+verify_jwt = false

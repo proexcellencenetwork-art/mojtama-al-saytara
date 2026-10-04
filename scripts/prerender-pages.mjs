@@ -29,7 +29,7 @@ const pages = {
   '/charter': { title: 'ميثاق السلوك المهني | مجتمع السيطرة', description: 'مبادئ الاحترام والسرية والتواصل المسؤول في مجتمع السيطرة.', heading: 'الاحترام ليس خياراً إضافياً.', intro: 'نحافظ معاً على مساحة مهنية تحترم الإنسان والخصوصية وتفسح المجال للاختلاف.', points: [['احترام متبادل', 'نختلف في الرأي دون إساءة أو تحرش.'], ['سرية مهنية', 'لا تعِد نشر محتوى الأعضاء خارج سياقه.'], ['تواصل مسؤول', 'لا رسائل مزعجة ولا ادعاءات مضللة.']] },
 }
 const questions = pages['/faq'].points
-const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner']
+const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner', '/learning', '/learning-room']
 const routes = []
 const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 const urlFor = route => new URL(route === '/' ? '' : `${route.replace(/^\/+|\/+$/g, '')}/`, siteRoot).toString()
@@ -175,6 +175,7 @@ routes.push(
   { path: '/articles/:slug/', title: 'تفاصيل المقال' },
   { path: '/events/:id/', title: 'تفاصيل الفعالية' },
   { path: '/coaches/:id/', title: 'الملف المهني للكوتش' },
+  { path: '/learning-room/:id/', title: 'غرفة ورشة مهنية خاصة' },
 )
 for (const [collection,records] of Object.entries(recordsByPage)) {
   for (const record of records) {
@@ -205,7 +206,8 @@ for (const route of protectedRoutes) {
   routes.push({ path: normalizeRoute(route) })
 }
 const notFoundPage = { title: 'صفحة غير موجودة | مجتمع السيطرة', description: 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.' }
-await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header()}<main class="public-page wrap"><h1>لم نعثر على هذه الصفحة.</h1><p>تحقق من الرابط أو عد إلى الصفحة الرئيسية.</p>${htmlLink('/','العودة إلى الرئيسية','btn btn-primary')}${htmlLink('/faq','الأسئلة الشائعة')}</main>${footer()}`,null,true))
+const deepRouteRecovery = `<script>(function(){const target=location.pathname+location.search+location.hash;const home=new URL(${JSON.stringify(siteRoot.toString())});home.searchParams.set('__saytara_route',target);location.replace(home.toString())})()</script>`
+await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header()}<main class="public-page wrap"><h1>جارٍ فتح الصفحة المطلوبة…</h1><p>لحظة واحدة.</p>${deepRouteRecovery}</main>${footer()}`,null,true,true))
 await writeFile(resolve(distDir,'robots.txt'),`User-agent: *\nAllow: /\n${protectedRoutes.map(route=>`Disallow: ${basePath.replace(/\/$/,'')}${route}`).join('\n')}\nSitemap: ${new URL('sitemap.xml',siteRoot)}\n`)
 const privateRoutePaths = new Set(protectedRoutes.map(normalizeRoute))
 const sitemap = routes.filter(route=>!privateRoutePaths.has(route.path) && !route.path.includes('/:')).map(route=>`<url><loc>${safeText(urlFor(route.path))}</loc><lastmod>${publishedAt.toISOString().slice(0,10)}</lastmod><changefreq>${route.path==='/'?'weekly':'monthly'}</changefreq></url>`).join('')

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-js'
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, X } from 'lucide-react'
+import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
 import type { Role } from './appTypes'
 import './App.css'
@@ -12,6 +12,8 @@ const LiveDashboardPage = lazy(() => import('./components/LiveDashboardPage').th
 const LiveFeedPage = lazy(() => import('./components/LiveFeedPage').then(module => ({ default: module.LiveFeedPage })))
 const LivePublicPage = lazy(() => import('./components/LivePublicPage').then(module => ({ default: module.LivePublicPage })))
 const OwnerPortalPage = lazy(() => import('./components/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
+const LearningCenterPage = lazy(() => import('./components/LearningCenterPage'))
+const LearningRoomPage = lazy(() => import('./components/LearningRoomPage'))
 
 const roleNames: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير', owner: 'مالك المنصة' }
 type AccountStatus = 'pending' | 'approved' | 'rejected' | 'unknown'
@@ -30,6 +32,7 @@ const navItems = [
   { to: '/feed', label: 'الخلاصة', icon: Home }, { to: '/connections', label: 'الاتصالات', icon: Users },
   { to: '/messages', label: 'الرسائل', icon: MessageCircle }, { to: '/groups', label: 'المجموعات', icon: Compass },
   { to: '/events', label: 'الفعاليات', icon: CalendarDays }, { to: '/notifications', label: 'الإشعارات', icon: Bell },
+  { to: '/learning', label: 'مركز التعلّم', icon: Video },
 ]
 
 function Brand({ light = false }: { light?: boolean }) {
@@ -77,17 +80,19 @@ const publicSeo: Record<string, { title: string; description: string }> = {
   '/register': { title: 'إنشاء حساب | مجتمع السيطرة', description: 'أنشئ حساباً للانضمام إلى مجتمع مهني للقطاع الصحي.' },
   '/reset-password': { title: 'استعادة كلمة المرور | مجتمع السيطرة', description: 'استعد الوصول إلى حسابك في مجتمع السيطرة.' },
   '/owner': { title: 'مركز مالك المنصة | مجتمع السيطرة', description: 'بوابة خاصة لإدارة ملكية منصة مجتمع السيطرة.' },
+  '/learning': { title: 'مركز التعلّم | مجتمع السيطرة', description: 'ورش مهنية حيّة ومسجلة للأعضاء المعتمدين في مجتمع السيطرة.' },
 }
-const privatePaths = new Set(['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner'])
+const privatePaths = new Set(['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner', '/learning', '/learning-room'])
 
 function RouteMetadata() {
   const { pathname } = useLocation()
   useEffect(() => {
     const path = pathname.replace(/\/$/, '') || '/'
-    const meta = publicSeo[path]
+    const workshopRoute = /^\/learning-room\/[0-9a-f-]{36}$/i.test(path)
+    const meta = publicSeo[path] || (workshopRoute ? { title: 'غرفة ورشة مهنية | مجتمع السيطرة', description: 'غرفة تعليمية خاصة لأعضاء مجتمع السيطرة المعتمدين.' } : undefined)
     const detailRoute = /^\/(articles|events|coaches)\/[^/]+$/.test(path)
     if (detailRoute) return
-    const privateRoute = privatePaths.has(path)
+    const privateRoute = privatePaths.has(path) || workshopRoute
     const siteRoot = import.meta.env.VITE_SITE_URL || `${window.location.origin}${import.meta.env.BASE_URL}`
     const canonical = new URL(path === '/' ? '' : `${path.replace(/^\//, '')}/`, siteRoot.endsWith('/') ? siteRoot : `${siteRoot}/`).toString()
     document.title = meta?.title || 'صفحة غير موجودة | مجتمع السيطرة'
@@ -442,7 +447,7 @@ function App() {
   }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/pending-review" element={<PendingReviewPage authReady={authReady} authenticated={authenticated} demoMode={demo} accountStatus={accountStatus} onSignOut={onSignOut} onRefreshStatus={refreshAccountStatus}/>}/><Route path="/owner" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><OwnerPortalPage role={role}/></AppShell>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/pending-review" element={<PendingReviewPage authReady={authReady} authenticated={authenticated} demoMode={demo} accountStatus={accountStatus} onSignOut={onSignOut} onRefreshStatus={refreshAccountStatus}/>}/><Route path="/owner" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><OwnerPortalPage role={role}/></AppShell>}/><Route path="/learning" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningCenterPage role={role}/></AppShell>}/><Route path="/learning-room/:id" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningRoomPage role={role} userId={user?.id || ''} displayName={displayName}/></AppShell>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
 }
 
 export default App

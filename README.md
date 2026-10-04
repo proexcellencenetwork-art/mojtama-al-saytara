@@ -6,6 +6,8 @@
 
 > **تقرير القرار النهائي:** [تقرير الجاهزية العربي — PDF](docs/readiness-final-2026-10-04.pdf) — **NO-GO** لفتح التسجيل العام حتى اجتياز اختبارات البريد، المالك/المدير، عزل الحسابين، والتنظيف والحذف.
 
+> **مركز التعلّم والورش الحيّة:** migration 017 مطبقة على Supabase الحي، والجداول وRLS مفحوصة؛ وظائف Edge الأربع منشورة وترد `401` عند الطلب غير المصادق. الواجهة لم تُنشر بعد و100ms غير مضبوط، لذا لم يُختبر بث حي. اتبع [دليل الإعداد العربي](docs/learning-center-deployment-ar.md).
+
 ## 1. ما تحتاجه
 
 1. حساب GitHub لديه صلاحية تعديل مستودع [`proexcellencenetwork-art/mojtama-al-saytara`](https://github.com/proexcellencenetwork-art/mojtama-al-saytara).

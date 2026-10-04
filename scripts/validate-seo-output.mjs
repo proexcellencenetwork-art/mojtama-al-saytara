@@ -14,8 +14,8 @@ if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'rout
 for (const route of manifest.routes) {
   if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
 }
-const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/'])
-const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/'])
+const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/learning/','/learning-room/'])
+const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
 const publicTitles = new Set()
@@ -73,6 +73,8 @@ const sitemapLocs = [...sitemapText.matchAll(/<loc>([\s\S]*?)<\/loc>/g)].map(mat
 if (sitemapLocs.some(url => !urlsInSitemap.includes(url)) || urlsInSitemap.some(url => !sitemapLocs.includes(url))) fail.push('Sitemap URLs do not exactly match public prerendered pages.')
 const notFoundHtml = await readFile(resolve(dist,'404.html'),'utf8')
 if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFoundHtml.includes('rel="canonical"')) fail.push('404 page must be noindex and must not declare a false canonical URL.')
+if (!manifest.routes.some(route => route.path === '/learning-room/:id/')) fail.push('Private workshop-room route pattern is missing from the manifest.')
+if (!notFoundHtml.includes('__saytara_route')) fail.push('GitHub Pages dynamic route recovery is missing from 404.html.')
 const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
 if (!robots.includes('Sitemap:') || !robots.includes(new URL('sitemap.xml', siteRoot).toString())) fail.push('robots.txt sitemap location is incorrect.')
 for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg','public-site.js','images/brand-community-480.avif','images/brand-community-480.webp','images/brand-community-1200.avif','images/brand-community-1200.webp','fonts/OFL.txt']) {

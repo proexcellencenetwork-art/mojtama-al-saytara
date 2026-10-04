@@ -40,10 +40,17 @@ try {
   for (const relative of expected.map(([path])=>`/${path.replace(/\/index\.html$/,'/')}`)) {
     if (!routes.some(route=>route.path===relative)) throw new Error(`Generated detail route missing from manifest: ${relative}`)
   }
+  for (const relative of ['learning/index.html','learning-room/index.html']) {
+    const html = await readFile(resolve(root,'dist',relative),'utf8')
+    if (!html.includes('name="robots" content="noindex,nofollow"')) throw new Error(`Private learning shell must be noindex: ${relative}`)
+  }
+  if (!routes.some(route=>route.path==='/learning-room/:id/')) throw new Error('Dynamic workshop room route missing from the route manifest.')
   const sitemap = await readFile(resolve(root,'dist/sitemap.xml'),'utf8')
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
+  const notFound = await readFile(resolve(root,'dist/404.html'),'utf8')
+  if (!notFound.includes('__saytara_route')) throw new Error('GitHub Pages deep-link recovery is missing from 404.html.')
   await access(resolve(root,'dist/404.html'))
-  console.log('Synthetic SEO fixture smoke test passed: Arabic article, public event, coach profile, schemas, routes and sitemap.')
+  console.log('Synthetic SEO fixture smoke test passed: public details, private learning noindex routes, deep-link recovery, schemas, routes and sitemap.')
 } finally {
   if (child && child.exitCode === null) child.kill('SIGTERM')
   await new Promise(resolveClose => server.close(resolveClose))
