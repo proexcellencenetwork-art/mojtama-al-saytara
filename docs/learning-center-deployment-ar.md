@@ -2,7 +2,7 @@
 
 ## الحالة الحالية
 
-أُضيفت واجهة مركز التعلّم وغرفة تفاعلية إلى مصدر المشروع، مع migration 017 وسياسات RLS وأربع وظائف Edge. **تُطبّق migration على Supabase الإنتاجي بالفعل**؛ تحققت قراءةً فقط من وجود الجداول الأربعة وتفعيل RLS ومنع دور `authenticated` من القراءة المباشرة لمعرفات الغرف والتسجيلات وسجلات webhook. الوظائف الأربع `learning-room`, `learning-token`, `learning-playback`, `learning-webhook` نشطة في الإنتاج؛ أعاد اختبار POST بلا JWT أو secret الرمز `401` لكل منها. لم تُنشأ موارد 100ms أو تُضف أسرارها؛ لذلك لا يعمل البث بعد. الواجهة لم تُنشر بعد. التسجيل العام ما زال مغلقاً، وتظل جاهزية فتحه **NO-GO** حتى استكمال إعداد المزود والاختبارات.
+نُشرت واجهة مركز التعلّم وغرفة تفاعلية كمسارات خاصة `noindex` على [الموقع](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/learning/)، مع migration 017 وسياسات RLS وأربع وظائف Edge. **تُطبّق migration على Supabase الإنتاجي بالفعل**؛ تحققت قراءةً فقط من وجود الجداول الأربعة وتفعيل RLS ومنع دور `authenticated` من القراءة المباشرة لمعرفات الغرف والتسجيلات وسجلات webhook. الوظائف الأربع `learning-room`, `learning-token`, `learning-playback`, `learning-webhook` نشطة في الإنتاج؛ أعاد اختبار POST بلا JWT أو secret الرمز `401` لكل منها. تحقق المتصفح الفعلي أن `/learning/` ورابط غرفة ديناميكي يعيدان الزائر غير المسجل إلى `/login`. لم تُنشأ موارد 100ms أو تُضف أسرارها؛ لذلك لا يعمل البث بعد. التسجيل العام ما زال مغلقاً، وتظل جاهزية فتحه **NO-GO** حتى استكمال إعداد المزود والاختبارات.
 
 البث المقترح يستخدم 100ms للتواصل التفاعلي داخل المتصفح، مع تسجيل خاص يديره المزود. تعتمد الكلفة والإتاحة على خطة 100ms والإعدادات الحالية؛ راجع لوحة المزود والتسعير قبل أول بث. لا تُدخل أي بيانات مرضى أو تفاصيل تعريفية عنهم في محادثة الورشة.
 
@@ -10,7 +10,7 @@
 
 في المشروع الحي الحالي اكتمل تطبيق `20261004020648_learning_center_20261004` بالفعل. **لا تشغّل migration أو `setup.sql` مرة أخرى على هذا المشروع.** للتحقق، افتح **Supabase → SQL Editor** ونفّذ استعلام قراءة:
 
-من مجلد المستودع:
+داخل **Supabase → SQL Editor**:
 
 ```bash
 select table_name
@@ -101,6 +101,6 @@ https://tiifakicmnwexmqoyxfq.supabase.co/functions/v1/learning-webhook
 
 ## حدود التحقق الحالية
 
-نجح بناء الواجهة وفحص TypeScript، كما قُبلت migration محلياً في قاعدة PostgreSQL مؤقتة مع تحقق من الجداول والسياسات ومنع القراءة المباشرة للمعرفات. هذه فحوص محلية وليست تطبيقاً على Supabase الحي. لم يتم إنشاء حساب أو مورد أو بث في 100ms، ولم يُختبر webhook أو البريد أو جلسات JWT حقيقية.
+نجح بناء الواجهة وفحص TypeScript، وقُبلت migration محلياً في قاعدة PostgreSQL مؤقتة ثم طُبقت على Supabase الحي، حيث تحققت الجداول وRLS للقراءة فقط. نُشرت الواجهة، واختبر المتصفح الزائر غير المسجل لمسار المركز ورابط غرفة ديناميكي؛ كلاهما انتهى بصفحة الدخول. واختُبرت الوظائف الأربع بلا JWT/secret فأعادت `401`. لم يتم إنشاء حساب أو مورد أو بث في 100ms، ولم يُختبر webhook سري أو البريد أو جلسات JWT مصادق عليها.
 
 مصادر مرجعية: [100ms Webhooks](https://www.100ms.live/docs/server-side/v2/how-to-guides/configure-webhooks/webhook)، [تأمين Webhooks](https://www.100ms.live/docs/server-side/v2/how-to-guides/configure-webhooks/secure-webhooks)، [روابط تسجيل 100ms المؤقتة](https://www.100ms.live/docs/server-side/v2/api-reference/recording-assets/get-presigned-url)، [بحث موفري البث](streaming-provider-research.md).
