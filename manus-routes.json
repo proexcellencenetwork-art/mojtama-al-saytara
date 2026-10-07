@@ -187,6 +187,9 @@
       "path": "/owner/"
     },
     {
+      "path": "/owner/100ms/"
+    },
+    {
       "path": "/learning/"
     },
     {

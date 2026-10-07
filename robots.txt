@@ -14,6 +14,7 @@ Disallow: /mojtama-al-saytara/moderation
 Disallow: /mojtama-al-saytara/admin
 Disallow: /mojtama-al-saytara/settings
 Disallow: /mojtama-al-saytara/owner
+Disallow: /mojtama-al-saytara/owner/100ms
 Disallow: /mojtama-al-saytara/learning
 Disallow: /mojtama-al-saytara/content-studio
 Disallow: /mojtama-al-saytara/learning-room
