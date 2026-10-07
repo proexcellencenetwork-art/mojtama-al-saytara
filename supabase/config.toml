@@ -20,6 +20,10 @@ verify_jwt = true
 [functions.learning-playback]
 verify_jwt = true
 
+# Owner-only readiness check; values are never returned to the browser.
+[functions.learning-health]
+verify_jwt = true
+
 # 100ms webhooks use a high-entropy custom header rather than a Supabase user JWT.
 [functions.learning-webhook]
 verify_jwt = false

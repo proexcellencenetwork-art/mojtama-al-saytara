@@ -10,12 +10,13 @@ const siteValue = process.env.VITE_SITE_URL?.trim() || 'https://proexcellencenet
 const siteRoot = new URL(siteValue.endsWith('/') ? siteValue : `${siteValue}/`)
 const siteUrl = siteRoot.toString()
 const basePath = siteRoot.pathname
-const assetBasePath = process.env.GITHUB_PAGES === 'true' ? basePath : '/'
+const builtIndex = await readFile(resolve(dist, 'index.html'), 'utf8')
+const assetBasePath = process.env.GITHUB_PAGES === 'true' || builtIndex.includes(`src="${basePath}`) || builtIndex.includes(`href="${basePath}`) ? basePath : '/'
 if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'routes') throw new Error('Route manifest must contain only top-level routes.')
 for (const route of manifest.routes) {
   if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
 }
-const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/learning/','/content-studio/','/learning-room/'])
+const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
 const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))

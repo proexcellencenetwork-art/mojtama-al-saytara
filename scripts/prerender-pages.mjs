@@ -42,7 +42,7 @@ const pages = {
   '/linkedin-workshop': { title: 'ورشة اختراق LinkedIn | من ملف إلى أصل مهني', description: 'ورشة ذاتية بوحدات وأمثلة وتمارين وقائمة تحقق وخطة مراجعة 30 يوماً.', heading: 'اختراق LinkedIn: من ملف ساكن إلى أصل مهني', intro: 'ورشة ذاتية عملية بأهداف ووحدات وأمثلة وتمارين وقائمة تحقق وخطة مراجعة 30 يوماً، مع مقال موثق.', type: 'course', interactive: true, points: [['الوحدات', 'التموضع والعنوان وAbout والخبرة والمهارات وFeatured والمحتوى.'], ['الممارسة', 'تمارين كتابة وتدقيق وأمثلة للخريج والموظف وقائمة قابلة للنسخ.'], ['خطة 30 يوماً', 'أنجز التعديل واختبر الوضوح والأدلة؛ لا توجد صيغة خوارزمية مضمونة.']], related: [['/articles/linkedin-workshop','الدليل والمصادر'],['/linkedin-audit','تدقيق ذاتي'],['/professional-positioning','التموضع']] },
 }
 const questions = pages['/faq'].points
-const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner', '/learning', '/content-studio', '/learning-room']
+const protectedRoutes = ['/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner', '/owner/100ms', '/learning', '/content-studio', '/learning-room']
 const routes = []
 const safeText = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 const urlFor = route => new URL(route === '/' ? '' : `${route.replace(/^\/+|\/+$/g, '')}/`, siteRoot).toString()
