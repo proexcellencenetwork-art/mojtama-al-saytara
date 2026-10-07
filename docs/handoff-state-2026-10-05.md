@@ -4,7 +4,7 @@
 
 ## DONE / PASS
 
-- **المستودع والنشر:** `main` متزامن مع `origin/main`، وآخر commit قبل هذا التحديث هو `4136069` (`chore: update GitHub Pages static output`). مسار GitHub Actions السابق نجح، والمسارات المنشورة الرئيسية أعادت HTTP 200.
+- **المستودع والنشر:** `main` متزامن مع `origin/main` عند commit `e03f5b5` (`fix: align streaming controls and signup policy`). النسخة المنشورة في GitHub Pages تطابق المصدر العام عند commit `b268671`، وGitHub Actions run `37237574064` نجح، والمسارات المنشورة الرئيسية أعادت HTTP 200.
 - **الواجهة العامة والمحتوى:** Career Journey، Career Compass، LinkedIn Workshop، Fresh Graduate، Value Economy، Promotion Intelligence، Innovation/R&D، AI Career Leverage، Saudi Labor Market Radar، المقالات العامة، ومركز التعلم منشورة ضمن البنية الحالية.
 - **SEO المنشور:** `/manus-routes.json` و`/sitemap.xml` و`/robots.txt` تستجيب، وصفحة Career Compass المنشورة تحتوي المحتوى العربي وJSON-LD.
 - **فحوص محلية سابقة:** `typecheck` و`lint` و`build` و`test:content` و`test:seo-fixtures` نجحت حسب سجلات الإصدار الأخيرة؛ لا يعاد تصنيفها كاختبار Auth حي.
@@ -16,6 +16,7 @@
 - **إغلاق التسجيل العام — PASS:** تم تغيير `.github/workflows/deploy.yml` إلى `VITE_PUBLIC_SIGNUP_ENABLED=false`، ونجح GitHub Actions run `37236738724` على commit `e607c02`. فتح المتصفح صفحة `/register/` المنشورة فعلياً وأكد ظهور رسالة «التسجيل العام متوقف مؤقتاً» مع رابط تسجيل الدخول، دون نموذج إنشاء حساب.
 - **تحديث وثائق الحالة — PASS:** تمت مواءمة README ودليل Turnstile مع قرار NO-GO الحالي، وتسجيل التناقض السابق بين فتح Supabase التاريخي وبناء Pages.
 - **تصحيح واجهة البث — PASS محلياً:** أصبحت غرفة التعلم تربط زر مشاركة الشاشة بحالة 100ms الفعلية فتتيح البدء والإيقاف، وصارت لوحة المالك تعرض التسجيل العام «مغلق» بما يطابق بناء Pages. اجتاز التعديل `typecheck` و`lint` و`build` و`test:seo-fixtures` و`npm audit --omit=dev --audit-level=high`.
+- **فحص SEO حي بعد النشر — PASS:** `/manus-routes.json` و`/sitemap.xml` و`/robots.txt` أعادت HTTP 200؛ صفحة المقال العامة أعادت canonical و`Article` JSON-LD؛ مسار `/learning/` أعاد `noindex,nofollow`؛ و`robots.txt` يمنع المسارات الخاصة ببادئة `/mojtama-al-saytara/` الصحيحة. التسجيل العام ظاهر كمغلق في Auth bundle المنشور.
 
 ## IN PROGRESS
 
