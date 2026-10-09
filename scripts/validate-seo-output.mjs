@@ -97,11 +97,11 @@ if (!notFoundHtml.includes('__saytara_route')) fail.push('GitHub Pages dynamic r
 const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
 if (!robots.includes('Sitemap:') || !robots.includes(new URL('sitemap.xml', siteRoot).toString())) fail.push('robots.txt sitemap location is incorrect.')
 const disallowedPrivateRoutes = privateRoutes.filter(route => {
-  const routePath = `${basePath.replace(/\\/$/, '')}${route.path.replace(/\\/$/, '')}`
-  return robots.split(/\\r?\\n/).some(line => {
-    const match = line.match(/^Disallow:\\s*(\\S+)/i)
+  const routePath = `${basePath.replace(/\/$/, '')}${route.path.replace(/\/$/, '')}`
+  return robots.split(/\r?\n/).some(line => {
+    const match = line.match(/^Disallow:\s*(\S+)/i)
     if (!match) return false
-    const disallowed = match[1].replace(/\\/$/, '')
+    const disallowed = match[1].replace(/\/$/, '')
     return routePath === disallowed || routePath.startsWith(`${disallowed}/`)
   })
 })
