@@ -111,8 +111,10 @@ https://tiifakicmnwexmqoyxfq.supabase.co/functions/v1/learning-webhook
 أُضيف إلى المستودع مسار مراجعة مستقل لتغييرات `supabase/**`. عند فتح طلب دمج، يفترض أن:
 
 1. يشغّل Supabase محلياً داخل runner معزول، ثم يعيد بناء قاعدة الاختبار من migrations الموجودة في Git.
-2. ينفذ `supabase db lint --local --fail-on error` و`supabase test db`.
+2. ينفذ `supabase db lint --local --fail-on error` ثم يشغّل اختبار pgTAP المستقل الذي لا يتطلب حسابات جاهزة: `supabase test db supabase/tests/ci_schema_security.sql`.
 3. يشغّل `deno check` على كل مدخل Edge Function.
+
+اختبارات `account_approval_smoke.sql` و`platform_owner_smoke.sql` و`rls_security_smoke.sql` هي اختبارات قبول منفصلة تحتاج تجهيز fixtures/حسابات اختبار. لا يشغّلها CI تلقائياً؛ نفّذها على بيئة اختبار معزولة بعد تجهيز متطلباتها، وليس على الإنتاج.
 
 هذه الفحوص محلية ولا تتصل بقاعدة Supabase الإنتاجية ولا تطبّق migrations عليها. نجاحها يثبت قابلية بناء المخطط والاختبارات الموجودة، ولا يثبت نجاح المصادقة أو العزل عبر JWT حي أو إعداد البريد أو إعداد 100ms.
 
