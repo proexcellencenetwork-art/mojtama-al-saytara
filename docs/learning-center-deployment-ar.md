@@ -104,3 +104,18 @@ https://tiifakicmnwexmqoyxfq.supabase.co/functions/v1/learning-webhook
 نجح بناء الواجهة وفحص TypeScript، وقُبلت migration محلياً في قاعدة PostgreSQL مؤقتة ثم طُبقت على Supabase الحي، حيث تحققت الجداول وRLS للقراءة فقط. نُشرت الواجهة، واختبر المتصفح الزائر غير المسجل لمسار المركز ورابط غرفة ديناميكي؛ كلاهما انتهى بصفحة الدخول. واختُبرت الوظائف الأربع بلا JWT/secret فأعادت `401`. لم يتم إنشاء حساب أو مورد أو بث في 100ms، ولم يُختبر webhook سري أو البريد أو جلسات JWT مصادق عليها.
 
 مصادر مرجعية: [100ms Webhooks](https://www.100ms.live/docs/server-side/v2/how-to-guides/configure-webhooks/webhook)، [تأمين Webhooks](https://www.100ms.live/docs/server-side/v2/how-to-guides/configure-webhooks/secure-webhooks)، [روابط تسجيل 100ms المؤقتة](https://www.100ms.live/docs/server-side/v2/api-reference/recording-assets/get-presigned-url)، [بحث موفري البث](streaming-provider-research.md).
+
+
+## تحقق CI إضافي — 10 أكتوبر 2026
+
+أُضيف إلى المستودع مسار مراجعة مستقل لتغييرات `supabase/**`. عند فتح طلب دمج، يفترض أن:
+
+1. يشغّل Supabase محلياً داخل runner معزول، ثم يعيد بناء قاعدة الاختبار من migrations الموجودة في Git.
+2. ينفذ `supabase db lint --local --fail-on error` ثم يشغّل اختبار pgTAP المستقل الذي لا يتطلب حسابات جاهزة: `supabase test db supabase/tests/ci_schema_security.sql`.
+3. يشغّل `deno check` على كل مدخل Edge Function.
+
+اختبارات `account_approval_smoke.sql` و`platform_owner_smoke.sql` و`rls_security_smoke.sql` هي اختبارات قبول منفصلة تحتاج تجهيز fixtures/حسابات اختبار. لا يشغّلها CI تلقائياً؛ نفّذها على بيئة اختبار معزولة بعد تجهيز متطلباتها، وليس على الإنتاج.
+
+هذه الفحوص محلية ولا تتصل بقاعدة Supabase الإنتاجية ولا تطبّق migrations عليها. نجاحها يثبت قابلية بناء المخطط والاختبارات الموجودة، ولا يثبت نجاح المصادقة أو العزل عبر JWT حي أو إعداد البريد أو إعداد 100ms.
+
+تم تحسين مصدر `learning-health` ليتحقق من قالب 100ms وصلاحيات الدورين ووجهة HLS الفعلية، ومن وجود حدث تسجيل HLS معالج، ومن قدرة 100ms على إصدار رابط تشغيل مؤقت لأحدث تسجيل مكتمل. **لن يصبح هذا الفحص المحسّن فعالاً في Supabase الحي بمجرد دمج الكود؛ يلزم نشر وظيفة `learning-health` عبر المسار المصرّح به ثم إعادة الاختبار بحساب المالك.** لا تُشغّل `supabase db push` أو `setup.sql` على الإنتاج لهذا التغيير؛ فهو تعديل وظيفة Edge فقط، ولا يتضمن migration قاعدة بيانات.

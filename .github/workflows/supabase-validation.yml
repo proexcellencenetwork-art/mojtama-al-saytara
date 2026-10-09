@@ -1,0 +1,67 @@
+name: Supabase Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/supabase-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-validation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  database:
+    name: Local Supabase migrations, database lint, and SQL tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase stack
+        run: supabase start
+
+      - name: Rebuild isolated local database from migrations
+        run: supabase db reset --local
+
+      - name: Lint local database functions
+        run: supabase db lint --local --fail-on error
+
+      - name: Run SQL security tests
+        run: supabase test db supabase/tests/ci_schema_security.sql
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: supabase stop --no-backup || true
+
+  edge-functions:
+    name: Type-check Supabase Edge Functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Type-check every Edge Function entry point
+        run: |
+          set -eu
+          for file in supabase/functions/*/index.ts; do
+            echo "Checking $file"
+            deno check "$file"
+          done
