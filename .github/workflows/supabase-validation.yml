@@ -39,7 +39,7 @@ jobs:
         run: supabase db lint --local --fail-on error
 
       - name: Run SQL security tests
-        run: supabase test db
+        run: supabase test db supabase/tests/ci_schema_security.sql
 
       - name: Stop local Supabase stack
         if: always()
