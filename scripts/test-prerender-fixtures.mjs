@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const ids = { coach: '10000000-0000-4000-8000-000000000001', event: '20000000-0000-4000-8000-000000000002', article: '30000000-0000-4000-8000-000000000003' }
 const fixtureRows = {
   public_coaches: [{ user_id: ids.coach, display_name: 'كوتش تجريبي', headline: 'كوتش مهني', profession: 'ممارس صحي', specialty: 'التطوير المهني', city: 'مدينة تجريبية', photo_url: null, public_bio: 'ملف تجريبي مولّد لاختبار HTML العام.', coaching_topics: ['المسار المهني'], session_minutes: [30,60], booking_enabled: false }],
-  articles: [{ id: ids.article, title: 'مقال تجريبي للسيو', slug: 'مقال-تجريبي', excerpt: 'محتوى تجريبي لاختبار HTML وبيانات المقال.', body: 'نص اختبار عام لا يحتوي بيانات مستخدم أو مريض.', published_at: new Date('2026-01-01T00:00:00.000Z').toISOString() }],
+  articles: [{ id: ids.article, title: 'مقال تجريبي للسيو', slug: 'مقال-تجريبي', excerpt: 'محتوى تجريبي لاختبار HTML وبيانات المقال.', body: 'نص اختبار عام لا يحتوي بيانات مستخدم أو مريض.', published_at: new Date('2026-01-01T00:00:00.000Z').toISOString(), updated_at: new Date('2026-02-01T12:30:00.000Z').toISOString() }],
   events: [{ id: ids.event, title: 'فعالية تجريبية', description: 'وصف فعالية مؤقتة لاختبار البيانات المنظمة.', starts_at: new Date(Date.now()+86400000).toISOString(), ends_at: new Date(Date.now()+90000000).toISOString(), location: 'افتراضي' }],
 }
 const server = createServer((req,res) => {
@@ -47,6 +47,9 @@ try {
   if (!routes.some(route=>route.path==='/learning-room/:id/')) throw new Error('Dynamic workshop room route missing from the route manifest.')
   const sitemap = await readFile(resolve(root,'dist/sitemap.xml'),'utf8')
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
+  if (!sitemap.includes('<lastmod>2026-02-01T12:30:00.000Z</lastmod>')) throw new Error('Sitemap must expose the verified updated_at timestamp for a synthetic published article.')
+  const articleSchemaHtml = await readFile(resolve(root,'dist/articles/مقال-تجريبي/index.html'),'utf8')
+  if (!articleSchemaHtml.includes('"datePublished":"2026-01-01T00:00:00.000Z"') || !articleSchemaHtml.includes('"dateModified":"2026-02-01T12:30:00.000Z"')) throw new Error('Article structured-data dates must match explicit published_at and updated_at values.')
   const notFound = await readFile(resolve(root,'dist/404.html'),'utf8')
   if (!notFound.includes('__saytara_route') || !notFound.includes('learning-room/')) throw new Error('GitHub Pages deep-link recovery must route through the React-bearing learning-room shell.')
   await access(resolve(root,'dist/404.html'))
