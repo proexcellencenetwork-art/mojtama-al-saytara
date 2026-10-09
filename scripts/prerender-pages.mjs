@@ -15,7 +15,6 @@ const appName = 'مجتمع السيطرة'
 const ogImage = new URL(`${basePath.replace(/\/$/, '')}/og-social.png`, site.origin).toString()
 const builtIndex = await readFile(resolve(distDir, 'index.html'), 'utf8')
 const criticalCss = await readFile(resolve(projectRoot, 'scripts/public-critical.css'), 'utf8')
-const publishedAt = new Date()
 
 const pages = {
   '/': { title: 'مجتمع السيطرة | مجتمع مهني ورحلة مهنية', description: 'مجتمع مهني للقطاع الصحي يجمع التواصل والكوتشنج ومركز التعلم، مع بوصلة وأدوات وورش ومحتوى لمسارك المهني.', heading: 'مسارك المهني، بإيقاعك أنت.', intro: 'مجتمع السيطرة مساحة مهنية آمنة للعاملين في القطاع الصحي، تجمع التواصل والكوتشنج والورش ومركز التعلم وأدوات رحلة مهنية عملية.', type: 'home' },
@@ -52,6 +51,19 @@ const ensureMetadataLimits = page => {
   if ([...page.title].length >= 60) throw new Error(`SEO title must remain under 60 characters: ${page.title}`)
   if ([...page.description].length >= 160) throw new Error(`SEO description must remain under 160 characters: ${page.title}`)
 }
+function truncateAtWordBoundary(value, maxChars) {
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
+  const chars = [...normalized]
+  if (chars.length <= maxChars) return normalized
+  let result = chars.slice(0, maxChars).join('').trimEnd()
+  const boundary = result.lastIndexOf(' ')
+  if (boundary >= Math.floor(maxChars * 0.6)) result = result.slice(0, boundary).trimEnd()
+  return result.replace(/[,:;.!?–—-]+$/u, '').trimEnd()
+}
+function sitemapDate(value) {
+  const timestamp = value ? Date.parse(String(value)) : Number.NaN
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null
+}
 function crumbData(route, page) {
   const labels = [{ name: 'الرئيسية', path: '/' }]
   if (route !== '/') {
@@ -75,7 +87,7 @@ function schemaFor(route, page, record = null) {
   if (page.type === 'faq') list.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: questions.map(([question, answer]) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) })
   if (page.type === 'course') list.push({ '@context': 'https://schema.org', '@type': 'Course', name: page.heading, description: page.intro, provider: { '@type': 'Organization', name: appName, url: urlFor('/') }, url: urlFor(route), inLanguage: 'ar' })
   if (['career_hub','career_tool','course'].includes(page.type)) list.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: page.heading, description: page.intro, url: urlFor(route), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: appName, url: urlFor('/') } })
-  if (record?.kind === 'article') list.push({ '@context': 'https://schema.org', '@type': 'Article', headline: record.title, description: record.excerpt || record.title, datePublished: record.published_at, dateModified: record.published_at, inLanguage: 'ar', mainEntityOfPage: urlFor(route), publisher: { '@type': 'Organization', name: appName, url: urlFor('/') } })
+  if (record?.kind === 'article') list.push({ '@context': 'https://schema.org', '@type': 'Article', headline: record.title, description: record.excerpt || record.title, ...(sitemapDate(record.published_at) ? { datePublished: sitemapDate(record.published_at) } : {}), ...(sitemapDate(record.updated_at) ? { dateModified: sitemapDate(record.updated_at) } : {}), inLanguage: 'ar', mainEntityOfPage: urlFor(route), publisher: { '@type': 'Organization', name: appName, url: urlFor('/') } })
   if (record?.kind === 'event') list.push({ '@context': 'https://schema.org', '@type': 'Event', name: record.title, description: record.description || record.title, startDate: record.starts_at, ...(record.ends_at ? { endDate: record.ends_at } : {}), eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode', eventStatus: 'https://schema.org/EventScheduled', location: { '@type': 'VirtualLocation', url: urlFor(route) }, organizer: { '@type': 'Organization', name: appName, url: urlFor('/') }, inLanguage: 'ar' })
   if (record?.kind === 'coach') list.push({ '@context': 'https://schema.org', '@type': 'Person', name: record.display_name, jobTitle: record.headline || record.profession, description: record.public_bio || page.description, url: urlFor(route), knowsAbout: record.coaching_topics || [] })
   return list
@@ -111,9 +123,9 @@ function staticBody(route, page, records = []) {
 }
 function metadata(route, page, record = null) {
   const recordTitle = record ? String(record.title || record.display_name || 'محتوى المجتمع') : ''
-  const title = record ? `${[...recordTitle].slice(0, 40).join('')} | مجتمع السيطرة` : page.title
+  const title = record ? `${truncateAtWordBoundary(recordTitle, 40)} | مجتمع السيطرة` : page.title
   const recordSummary = record ? String(record.excerpt || record.public_bio || record.description || 'محتوى عام منشور في مجتمع السيطرة.') : ''
-  const description = record ? `${recordTitle}: ${recordSummary}`.slice(0, 155) : page.description
+  const description = record ? truncateAtWordBoundary(`${recordTitle}: ${recordSummary}`, 155) : page.description
   ensureMetadataLimits({ title, description })
   const canonical = urlFor(route)
   const type = record?.kind === 'article' ? 'article' : 'website'
@@ -179,14 +191,14 @@ async function readPublicRows(table, query) {
 const now = encodeURIComponent(new Date().toISOString())
 const [coachRows, articleRows, eventRows] = await Promise.all([
   readPublicRows('public_coaches','select=user_id,display_name,headline,profession,specialty,city,photo_url,public_bio,coaching_topics&order=display_name.asc&limit=200'),
-  readPublicRows('articles','select=id,title,slug,excerpt,body,published_at&status=eq.published&order=published_at.desc&limit=200'),
+  readPublicRows('articles','select=id,title,slug,excerpt,body,published_at,updated_at&status=eq.published&order=published_at.desc&limit=200'),
   readPublicRows('events',`select=id,title,description,starts_at,ends_at,location&is_private=eq.false&moderation_state=eq.visible&starts_at=gte.${now}&order=starts_at.asc&limit=200`),
 ])
 const editorialBundle = JSON.parse(await readFile(resolve(projectRoot, 'src/content/editorial-pipeline.json'), 'utf8'))
 const publishedCmsArticles = articleRows.filter(row => row.slug && row.title).map(row => ({ ...row, kind: 'article' }))
 const articlesBySlug = new Map(publishedCmsArticles.map(row => [row.slug, row]))
 for (const seed of editorialBundle.articles || []) {
-  if (!articlesBySlug.has(seed.slug) && seed.title && seed.slug && seed.content_body) articlesBySlug.set(seed.slug, { id: `seed-${seed.slug}`, title: seed.title, slug: seed.slug, excerpt: seed.excerpt, body: seed.content_body, published_at: `${seed.last_checked || '2026-10-04'}T00:00:00.000Z`, kind: 'article' })
+  if (!articlesBySlug.has(seed.slug) && seed.title && seed.slug && seed.content_body) articlesBySlug.set(seed.slug, { id: `seed-${seed.slug}`, title: seed.title, slug: seed.slug, excerpt: seed.excerpt, body: seed.content_body, kind: 'article' })
 }
 const recordsByPage = { '/coaches': coachRows.filter(row => row.user_id && row.display_name).map(row => ({ ...row, kind: 'coach' })), '/articles': [...articlesBySlug.values()], '/events': eventRows.filter(row => row.id && row.title && row.starts_at).map(row => ({ ...row, kind: 'event' })) }
 for (const [route,page] of Object.entries(pages)) {
@@ -194,7 +206,8 @@ for (const [route,page] of Object.entries(pages)) {
   const records = recordsByPage[route] || []
   const html = shell(route,page,`${header()}${staticBody(route,page,records)}${footer()}`,null,false,page.interactive === true)
   await writeRoute(route,html)
-  routes.push({ path: normalizeRoute(route), title: page.title })
+  const lastmod = records.map(record => sitemapDate(record.updated_at)).filter(Boolean).sort().at(-1)
+  routes.push({ path: normalizeRoute(route), title: page.title, ...(lastmod ? { lastmod } : {}) })
 }
 routes.push(
   { path: '/articles/:slug/', title: 'تفاصيل المقال' },
@@ -222,7 +235,8 @@ for (const [collection,records] of Object.entries(recordsByPage)) {
     const summary = record.kind === 'article' ? record.excerpt : record.kind === 'coach' ? record.public_bio : record.description
     const body = `${header()}<main class="public-page wrap"><nav class="breadcrumbs" aria-label="مسار التنقل">${htmlLink('/','الرئيسية')}<span>/</span>${htmlLink(collection,page.heading)}<span>/</span><span>${safeText(page.heading)}</span></nav><article class="public-article"><span class="eyebrow">${record.kind === 'article' ? 'مقال منشور' : record.kind === 'coach' ? 'ملف كوتش مهني عام' : 'فعالية عامة قادمة'}</span><h1>${safeText(page.heading)}</h1>${record.kind === 'article' && record.published_at ? `<time datetime="${safeText(record.published_at)}">${new Date(record.published_at).toLocaleDateString('ar')}</time>` : ''}${record.kind === 'event' ? `<p>${new Date(record.starts_at).toLocaleString('ar',{dateStyle:'long',timeStyle:'short'})} · ${safeText(record.location || 'افتراضي')}</p>` : ''}<p>${safeText(summary || '')}</p>${record.kind === 'article' ? `<div class="public-article-body">${renderMarkdownToHtml(record.body || '').replace(/href="\/(?!\/)/g, `href="${basePath.replace(/\/$/,'')}/`)}</div>` : ''}${record.kind === 'coach' && Array.isArray(record.coaching_topics) ? `<p>${safeText(record.coaching_topics.join(' · '))}</p>` : ''}</article><nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/articles','مقالات المجتمع')}${htmlLink('/faq','الأسئلة الشائعة')}</nav></main>${footer()}`
     await writeRoute(route,shell(route,page,body,record,false,record.kind === 'article'))
-    routes.push({ path: normalizeRoute(route), title: page.title })
+    const lastmod = sitemapDate(record.updated_at)
+    routes.push({ path: normalizeRoute(route), title: page.title, ...(lastmod ? { lastmod } : {}) })
   }
 }
 for (const route of protectedRoutes) {
@@ -237,7 +251,11 @@ await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header(
 // robots.txt is not an access-control mechanism; member data remains protected by Auth/RLS.
 await writeFile(resolve(distDir,'robots.txt'),`User-agent: *\nAllow: /\nSitemap: ${new URL('sitemap.xml',siteRoot)}\n`)
 const privateRoutePaths = new Set(protectedRoutes.map(normalizeRoute))
-const sitemap = routes.filter(route=>!privateRoutePaths.has(route.path) && !route.path.includes('/:')).map(route=>`<url><loc>${safeText(urlFor(route.path))}</loc><lastmod>${publishedAt.toISOString().slice(0,10)}</lastmod><changefreq>${route.path==='/'?'weekly':'monthly'}</changefreq></url>`).join('')
+const sitemap = routes.filter(route=>!privateRoutePaths.has(route.path) && !route.path.includes('/:')).map(route => {
+  const lastmod = sitemapDate(route.lastmod)
+  const lastmodTag = lastmod ? `<lastmod>${safeText(lastmod)}</lastmod>` : ''
+  return `<url><loc>${safeText(urlFor(route.path))}</loc>${lastmodTag}<changefreq>${route.path==='/'?'weekly':'monthly'}</changefreq></url>`
+}).join('')
 await writeFile(resolve(distDir,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${sitemap}</urlset>\n`)
 await writeFile(resolve(distDir,'manus-routes.json'),JSON.stringify({ routes },null,2)+'\n')
 console.log(`Pre-rendered ${Object.keys(pages).length} public landing pages, ${Object.values(recordsByPage).reduce((count,rows)=>count+rows.length,0)} public content detail pages, ${protectedRoutes.length} noindex SPA routes, sitemap.xml, robots.txt, and 404.html.`)
