@@ -76,6 +76,13 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage('الحسابات الحقيقية غير مفعّلة بعد. استكشف نسخة التجربة الآن، أو أضف إعدادات Supabase كما في دليل الإعداد.')
       return
     }
+    // Defense in depth: never allow the public signup UI to submit without a configured CAPTCHA widget.
+    // This is not a substitute for enabling CAPTCHA in Supabase Auth itself.
+    if (mode === 'register' && !forgot && !isTurnstileConfigured) {
+      setIsError(true)
+      setMessage('التسجيل الجديد متوقف لأن حماية Cloudflare Turnstile غير مهيأة. سيبقى التسجيل مغلقاً حتى إعداد الحماية والتحقق منها في Supabase.')
+      return
+    }
     const captchaTokenForRequest = requireCaptchaToken()
     if (captchaTokenForRequest === null) return
     setBusy(true)
@@ -188,6 +195,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   }
 
   if (mode === 'register' && !isPublicSignupEnabled) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">الدخول بالدعوة فقط</span><h1>التسجيل العام متوقف مؤقتاً.</h1><p>أوقفنا إنشاء الحسابات الجديدة حتى اكتمال اختبارات القبول والأمان. لن تُقبل حسابات عامة في هذه المرحلة.</p></div><div className="inline-message" role="status">إذا وصلتك دعوة على بريدك، افتح رسالة Supabase ثم أكّد البريد. للحسابات الموجودة، استخدم تسجيل الدخول أو استعادة كلمة المرور.</div><Link className="btn btn-primary btn-full" to="/login">الانتقال إلى تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch">وصلتك دعوة؟ افتح رابطها من بريدك الإلكتروني، ثم سجّل الدخول هنا إذا طُلب منك ذلك.</p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو روابط التأكيد لأحد.</small></div></main>
+  if (mode === 'register' && !isTurnstileConfigured) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">إعدادات الحماية</span><h1>التسجيل الجديد غير متاح بعد.</h1><p>لم تُهيأ حماية Cloudflare Turnstile لهذا البناء. لن نعرض نموذج إنشاء الحساب حتى يتم إعداد Site Key وتفعيل التحقق المقابل في Supabase Auth واختباره.</p></div><div className="inline-message live-error" role="alert">التسجيل سيظل مغلقاً حتى اكتمال الحماية واختبار مراجعة العضويات.</div><Link className="btn btn-primary btn-full" to="/login">العودة إلى تسجيل الدخول <ArrowLeft size={16}/></Link><small className="auth-privacy"><LockKeyhole size={13}/> لا تشارك كلمات المرور أو مفاتيح الخدمة.</small></div></main>
   const heading = forgot ? 'استعادة كلمة المرور' : mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'
   return <main className="auth-wrap"><div className="auth-card">
     <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div>
