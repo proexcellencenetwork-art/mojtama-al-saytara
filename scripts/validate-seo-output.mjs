@@ -96,6 +96,16 @@ if (!manifest.routes.some(route => route.path === '/learning-room/:id/')) fail.p
 if (!notFoundHtml.includes('__saytara_route')) fail.push('GitHub Pages dynamic route recovery is missing from 404.html.')
 const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
 if (!robots.includes('Sitemap:') || !robots.includes(new URL('sitemap.xml', siteRoot).toString())) fail.push('robots.txt sitemap location is incorrect.')
+const disallowedPrivateRoutes = privateRoutes.filter(route => {
+  const routePath = `${basePath.replace(/\\/$/, '')}${route.path.replace(/\\/$/, '')}`
+  return robots.split(/\\r?\\n/).some(line => {
+    const match = line.match(/^Disallow:\\s*(\\S+)/i)
+    if (!match) return false
+    const disallowed = match[1].replace(/\\/$/, '')
+    return routePath === disallowed || routePath.startsWith(`${disallowed}/`)
+  })
+})
+if (disallowedPrivateRoutes.length) fail.push(`robots.txt blocks routes with noindex metadata: ${disallowedPrivateRoutes.map(route => route.path).join(', ')}`)
 for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg','public-site.js','images/brand-community-480.avif','images/brand-community-480.webp','images/brand-community-1200.avif','images/brand-community-1200.webp','fonts/OFL.txt']) {
   try { await access(resolve(dist,file)) } catch { fail.push(`Required static asset missing: ${file}`) }
 }
