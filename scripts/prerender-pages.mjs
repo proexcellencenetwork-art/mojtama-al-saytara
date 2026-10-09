@@ -60,6 +60,12 @@ function truncateAtWordBoundary(value, maxChars) {
   if (boundary >= Math.floor(maxChars * 0.6)) result = result.slice(0, boundary).trimEnd()
   return result.replace(/[,:;.!?–—-]+$/u, '').trimEnd()
 }
+function formatRecordTitle(value) {
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
+  const suffix = ' | مجتمع السيطرة'
+  if ([...normalized].length + [...suffix].length < 60) return `${normalized}${suffix}`
+  return truncateAtWordBoundary(normalized, 59)
+}
 function sitemapDate(value) {
   const timestamp = value ? Date.parse(String(value)) : Number.NaN
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null
@@ -123,7 +129,7 @@ function staticBody(route, page, records = []) {
 }
 function metadata(route, page, record = null) {
   const recordTitle = record ? String(record.title || record.display_name || 'محتوى المجتمع') : ''
-  const title = record ? `${truncateAtWordBoundary(recordTitle, 40)} | مجتمع السيطرة` : page.title
+  const title = record ? formatRecordTitle(recordTitle) : page.title
   const recordSummary = record ? String(record.excerpt || record.public_bio || record.description || 'محتوى عام منشور في مجتمع السيطرة.') : ''
   const description = record ? truncateAtWordBoundary(`${recordTitle}: ${recordSummary}`, 155) : page.description
   ensureMetadataLimits({ title, description })
