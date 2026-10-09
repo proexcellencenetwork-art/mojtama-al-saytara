@@ -12,6 +12,8 @@ on:
       - 'src/**'
       - 'scripts/**'
       - 'public/**'
+      - 'docs/**'
+      - '*.md'
   workflow_dispatch:
 
 permissions:
