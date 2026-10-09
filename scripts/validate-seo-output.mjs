@@ -47,6 +47,12 @@ const truncateAtWordBoundary = (value, maxChars) => {
   if (boundary >= Math.floor(maxChars * 0.6)) result = result.slice(0, boundary).trimEnd()
   return result.replace(/[,:;.!?–—-]+$/u, '').trimEnd()
 }
+const formatRecordTitle = value => {
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
+  const suffix = ' | مجتمع السيطرة'
+  if ([...normalized].length + [...suffix].length < 60) return `${normalized}${suffix}`
+  return truncateAtWordBoundary(normalized, 59)
+}
 
 for (const route of publicRoutes) {
   const file = fileForRoute(route)
@@ -92,7 +98,7 @@ for (const route of publicRoutes) {
   if (/^\/articles\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Article')) fail.push(`Article schema missing: ${route.path}`)
   const articleSchema = scripts.find(item => item['@type'] === 'Article')
   if (articleSchema) {
-    const expectedTitle = `${truncateAtWordBoundary(articleSchema.headline, 40)} | مجتمع السيطرة`
+    const expectedTitle = formatRecordTitle(articleSchema.headline)
     if (title !== expectedTitle) fail.push(`Article title must truncate at a word boundary: ${route.path}`)
     if (articleSchema.datePublished && !Number.isFinite(Date.parse(articleSchema.datePublished))) fail.push(`Invalid Article datePublished: ${route.path}`)
     if (articleSchema.dateModified && !Number.isFinite(Date.parse(articleSchema.dateModified))) fail.push(`Invalid Article dateModified: ${route.path}`)
