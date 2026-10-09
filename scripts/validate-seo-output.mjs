@@ -115,7 +115,7 @@ for (const entry of sitemapEntries) {
   const timestamp = Date.parse(entry.lastmod)
   if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString() !== entry.lastmod) fail.push(`Invalid/non-normalized sitemap lastmod: ${entry.loc}`)
   if (entry.loc && /^\/articles\/[^/]+\/$/.test(new URL(entry.loc).pathname.replace(basePath, '/'))) {
-    const articlePath = `/${new URL(entry.loc).pathname.replace(basePath, '').replace(/^\\/+|\\/+$/g, '')}/`
+    const articlePath = '/' + new URL(entry.loc).pathname.replace(basePath, '').split('/').filter(Boolean).join('/') + '/'
     const articleFile = fileForRoute({ path: articlePath })
     try {
       const articleHtml = await readFile(articleFile, 'utf8')
