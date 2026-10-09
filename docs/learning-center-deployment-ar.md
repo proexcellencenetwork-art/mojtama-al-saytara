@@ -52,9 +52,10 @@ order by table_name;
 
 ## 4. التحقق من وظائف Edge
 
-نُشرت الوظائف الأربع بالفعل على المشروع الحي وهي `ACTIVE`. **لا تحتاج إلى إعادة نشرها بعد إدخال الأسرار**؛ ستقرأها الوظائف من بيئة Edge عند التشغيل. أوامر النشر التالية مرجع لإعداد مشروع آخر أو نشر تحديث للكود فقط:
+الوظائف الأساسية الأربع `learning-room` و`learning-token` و`learning-playback` و`learning-webhook` موثقة كوظائف `ACTIVE` في آخر فحص سابق. كانت `learning-health` منشورة أيضاً بإصدار سابق، لكن التعديل الأحدث الذي يتحقق من إعداد 100ms والتسجيلات أُدمج في GitHub ولم يثبت نشره إلى Supabase الحي. **بعد مراجعة الكود، انشر `learning-health` وحدها بالأمر الأول أدناه عبر Supabase CLI موثّق الدخول؛ لا حاجة إلى migration قاعدة بيانات لهذا التعديل.** الأوامر الباقية مرجع لإعداد مشروع آخر أو لإعادة نشر وظيفة بعينها:
 
 ```bash
+supabase functions deploy learning-health --project-ref tiifakicmnwexmqoyxfq
 supabase functions deploy learning-room --project-ref tiifakicmnwexmqoyxfq
 supabase functions deploy learning-token --project-ref tiifakicmnwexmqoyxfq
 supabase functions deploy learning-playback --project-ref tiifakicmnwexmqoyxfq
@@ -63,7 +64,7 @@ supabase functions deploy learning-webhook --no-verify-jwt --project-ref tiifaki
 
 الوظائف الثلاث الأولى تتطلب JWT. وظيفة webhook وحدها تعمل مع `verify_jwt=false` لأنها تتحقق بنفسها من header سري ثابت التوقيت. لا تجعل webhook عاماً بلا السر.
 
-**علامة النجاح الحالية:** الوظائف الأربع `ACTIVE`، وأعاد اختبار حقيقي بلا JWT أو secret `401` لكل endpoint. لم يُثبت بعد قبول جلسة مالك/مدير مصرح بها أو نجاح webhook حقيقي؛ لا يوجد حالياً Webhook تنظيف لملفات التوثيق، وتحتاج أسرار 100ms و100ms webhook إلى ضبط آمن من لوحة Supabase.
+**علامة النجاح:** بعد نشر `learning-health`، سجّل الدخول بحساب المالك وافتح `/owner/100ms/` ثم شغّل فحص الجاهزية؛ يجب أن يثبت الفحص إعداد القالب والأدوار وHLS ووجود حدث تسجيل معالج ورابط تشغيل مؤقت لتسجيل مكتمل. لا تعتبر أسماء الأسرار وحدها نجاحاً. آخر اختبار موثق للوظائف كان بلا JWT/secret وأعاد `401`؛ لم يُثبت بعد قبول جلسة مالك/مدير مصادق عليها أو نجاح webhook حقيقي. لا يوجد حالياً Webhook تنظيف لملفات التوثيق، وتحتاج أسرار 100ms و100ms webhook إلى ضبط آمن من لوحة Supabase.
 
 ## 5. إعداد 100ms Webhook
 
