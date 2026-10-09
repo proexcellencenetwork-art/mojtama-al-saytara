@@ -233,7 +233,9 @@ for (const route of protectedRoutes) {
 const notFoundPage = { title: 'صفحة غير موجودة | مجتمع السيطرة', description: 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.' }
 const deepRouteRecovery = `<script>(function(){const target=location.pathname+location.search+location.hash;const appShell=new URL('learning-room/',${JSON.stringify(siteRoot.toString())});appShell.searchParams.set('__saytara_route',target);location.replace(appShell.toString())})()</script>`
 await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header()}<main class="public-page wrap"><h1>جارٍ فتح الصفحة المطلوبة…</h1><p>لحظة واحدة.</p>${deepRouteRecovery}</main>${footer()}`,null,true,true))
-await writeFile(resolve(distDir,'robots.txt'),`User-agent: *\nAllow: /\n${protectedRoutes.map(route=>`Disallow: ${basePath.replace(/\/$/,'')}${route}`).join('\n')}\nSitemap: ${new URL('sitemap.xml',siteRoot)}\n`)
+// Keep noindex app shells crawlable so search engines can read their robots meta directive.
+// robots.txt is not an access-control mechanism; member data remains protected by Auth/RLS.
+await writeFile(resolve(distDir,'robots.txt'),`User-agent: *\nAllow: /\nSitemap: ${new URL('sitemap.xml',siteRoot)}\n`)
 const privateRoutePaths = new Set(protectedRoutes.map(normalizeRoute))
 const sitemap = routes.filter(route=>!privateRoutePaths.has(route.path) && !route.path.includes('/:')).map(route=>`<url><loc>${safeText(urlFor(route.path))}</loc><lastmod>${publishedAt.toISOString().slice(0,10)}</lastmod><changefreq>${route.path==='/'?'weekly':'monthly'}</changefreq></url>`).join('')
 await writeFile(resolve(distDir,'sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${sitemap}</urlset>\n`)
