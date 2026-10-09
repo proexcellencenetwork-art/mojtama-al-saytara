@@ -14,7 +14,13 @@ const builtIndex = await readFile(resolve(dist, 'index.html'), 'utf8')
 const assetBasePath = process.env.GITHUB_PAGES === 'true' || builtIndex.includes(`src="${basePath}`) || builtIndex.includes(`href="${basePath}`) ? basePath : '/'
 if (!Array.isArray(manifest.routes) || Object.keys(manifest).join(',') !== 'routes') throw new Error('Route manifest must contain only top-level routes.')
 for (const route of manifest.routes) {
-  if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string')) fail.push('Invalid route manifest entry; expected only path/title fields.')
+  const lastmod = route?.lastmod
+  const validLastmod = lastmod === undefined || (
+    typeof lastmod === 'string' &&
+    Number.isFinite(Date.parse(lastmod)) &&
+    new Date(Date.parse(lastmod)).toISOString() === lastmod
+  )
+  if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title','lastmod'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string') || !validLastmod) fail.push('Invalid route manifest entry; expected path/title and an optional ISO lastmod.')
 }
 const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
@@ -40,6 +46,12 @@ const truncateAtWordBoundary = (value, maxChars) => {
   const boundary = result.lastIndexOf(' ')
   if (boundary >= Math.floor(maxChars * 0.6)) result = result.slice(0, boundary).trimEnd()
   return result.replace(/[,:;.!?–—-]+$/u, '').trimEnd()
+}
+const formatRecordTitle = value => {
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
+  const suffix = ' | مجتمع السيطرة'
+  if ([...normalized].length + [...suffix].length < 60) return `${normalized}${suffix}`
+  return truncateAtWordBoundary(normalized, 59)
 }
 
 for (const route of publicRoutes) {
@@ -86,7 +98,7 @@ for (const route of publicRoutes) {
   if (/^\/articles\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Article')) fail.push(`Article schema missing: ${route.path}`)
   const articleSchema = scripts.find(item => item['@type'] === 'Article')
   if (articleSchema) {
-    const expectedTitle = `${truncateAtWordBoundary(articleSchema.headline, 40)} | مجتمع السيطرة`
+    const expectedTitle = formatRecordTitle(articleSchema.headline)
     if (title !== expectedTitle) fail.push(`Article title must truncate at a word boundary: ${route.path}`)
     if (articleSchema.datePublished && !Number.isFinite(Date.parse(articleSchema.datePublished))) fail.push(`Invalid Article datePublished: ${route.path}`)
     if (articleSchema.dateModified && !Number.isFinite(Date.parse(articleSchema.dateModified))) fail.push(`Invalid Article dateModified: ${route.path}`)
@@ -115,7 +127,7 @@ for (const entry of sitemapEntries) {
   const timestamp = Date.parse(entry.lastmod)
   if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString() !== entry.lastmod) fail.push(`Invalid/non-normalized sitemap lastmod: ${entry.loc}`)
   if (entry.loc && /^\/articles\/[^/]+\/$/.test(new URL(entry.loc).pathname.replace(basePath, '/'))) {
-    const articlePath = '/' + new URL(entry.loc).pathname.replace(basePath, '').split('/').filter(Boolean).join('/') + '/'
+    const articlePath = '/' + decodeURIComponent(new URL(entry.loc).pathname.replace(basePath, '')).split('/').filter(Boolean).join('/') + '/'
     const articleFile = fileForRoute({ path: articlePath })
     try {
       const articleHtml = await readFile(articleFile, 'utf8')
