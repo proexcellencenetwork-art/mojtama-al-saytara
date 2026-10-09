@@ -52,7 +52,7 @@ const ensureMetadataLimits = page => {
   if ([...page.description].length >= 160) throw new Error(`SEO description must remain under 160 characters: ${page.title}`)
 }
 function truncateAtWordBoundary(value, maxChars) {
-  const normalized = String(value ?? '').replace(/\\s+/gu, ' ').trim()
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
   const chars = [...normalized]
   if (chars.length <= maxChars) return normalized
   let result = chars.slice(0, maxChars).join('').trimEnd()
