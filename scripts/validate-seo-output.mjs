@@ -32,6 +32,15 @@ const assetRelativePath = pathname => {
   return relative.replace(/^\/+/, '')
 }
 const safeJson = value => { try { return JSON.parse(value); } catch { return null } }
+const truncateAtWordBoundary = (value, maxChars) => {
+  const normalized = String(value ?? '').replace(/\s+/gu, ' ').trim()
+  const chars = [...normalized]
+  if (chars.length <= maxChars) return normalized
+  let result = chars.slice(0, maxChars).join('').trimEnd()
+  const boundary = result.lastIndexOf(' ')
+  if (boundary >= Math.floor(maxChars * 0.6)) result = result.slice(0, boundary).trimEnd()
+  return result.replace(/[,:;.!?–—-]+$/u, '').trimEnd()
+}
 
 for (const route of publicRoutes) {
   const file = fileForRoute(route)
@@ -75,6 +84,13 @@ for (const route of publicRoutes) {
   if (route.path === '/career-journey/' && !scripts.some(item => item['@type'] === 'WebPage')) fail.push('Career Journey WebPage schema missing.')
   if (route.path === '/linkedin-workshop/' && !scripts.some(item => item['@type'] === 'Course')) fail.push('LinkedIn workshop Course schema missing.')
   if (/^\/articles\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Article')) fail.push(`Article schema missing: ${route.path}`)
+  const articleSchema = scripts.find(item => item['@type'] === 'Article')
+  if (articleSchema) {
+    const expectedTitle = `${truncateAtWordBoundary(articleSchema.headline, 40)} | مجتمع السيطرة`
+    if (title !== expectedTitle) fail.push(`Article title must truncate at a word boundary: ${route.path}`)
+    if (articleSchema.datePublished && !Number.isFinite(Date.parse(articleSchema.datePublished))) fail.push(`Invalid Article datePublished: ${route.path}`)
+    if (articleSchema.dateModified && !Number.isFinite(Date.parse(articleSchema.dateModified))) fail.push(`Invalid Article dateModified: ${route.path}`)
+  }
   if (/^\/events\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Event')) fail.push(`Event schema missing: ${route.path}`)
   if (/^\/coaches\/[^/:]+\/$/.test(route.path) && !scripts.some(item => item['@type'] === 'Person')) fail.push(`Person schema missing: ${route.path}`)
   urlsInSitemap.push(canonical)
@@ -90,6 +106,24 @@ for (const route of privateRoutes) {
 const sitemapText = await readFile(resolve(dist, 'sitemap.xml'), 'utf8')
 const sitemapLocs = [...sitemapText.matchAll(/<loc>([\s\S]*?)<\/loc>/g)].map(match => match[1])
 if (sitemapLocs.some(url => !urlsInSitemap.includes(url)) || urlsInSitemap.some(url => !sitemapLocs.includes(url))) fail.push('Sitemap URLs do not exactly match public prerendered pages.')
+const sitemapEntries = [...sitemapText.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(match => ({
+  loc: match[1].match(/<loc>([\s\S]*?)<\/loc>/)?.[1],
+  lastmod: match[1].match(/<lastmod>([\s\S]*?)<\/lastmod>/)?.[1],
+}))
+for (const entry of sitemapEntries) {
+  if (!entry.lastmod) continue
+  const timestamp = Date.parse(entry.lastmod)
+  if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString() !== entry.lastmod) fail.push(`Invalid/non-normalized sitemap lastmod: ${entry.loc}`)
+  if (entry.loc && /^\/articles\/[^/]+\/$/.test(new URL(entry.loc).pathname.replace(basePath, '/'))) {
+    const articlePath = `/${new URL(entry.loc).pathname.replace(basePath, '').replace(/^\\/+|\\/+$/g, '')}/`
+    const articleFile = fileForRoute({ path: articlePath })
+    try {
+      const articleHtml = await readFile(articleFile, 'utf8')
+      const articleSchemas = [...articleHtml.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match => safeJson(match[1])).filter(item => item?.['@type'] === 'Article')
+      if (!articleSchemas.some(item => item.dateModified && new Date(item.dateModified).toISOString() === entry.lastmod)) fail.push(`Sitemap lastmod must match an explicit Article dateModified: ${entry.loc}`)
+    } catch { fail.push(`Unable to verify article lastmod: ${entry.loc}`) }
+  }
+}
 const notFoundHtml = await readFile(resolve(dist,'404.html'),'utf8')
 if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFoundHtml.includes('rel="canonical"')) fail.push('404 page must be noindex and must not declare a false canonical URL.')
 if (!manifest.routes.some(route => route.path === '/learning-room/:id/')) fail.push('Private workshop-room route pattern is missing from the manifest.')
