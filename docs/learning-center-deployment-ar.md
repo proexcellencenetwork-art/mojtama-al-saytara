@@ -62,7 +62,7 @@ supabase functions deploy learning-playback --project-ref tiifakicmnwexmqoyxfq
 supabase functions deploy learning-webhook --no-verify-jwt --project-ref tiifakicmnwexmqoyxfq
 ```
 
-الوظائف الثلاث الأولى تتطلب JWT. وظيفة webhook وحدها تعمل مع `verify_jwt=false` لأنها تتحقق بنفسها من header سري ثابت التوقيت. لا تجعل webhook عاماً بلا السر.
+وظائف `learning-health`, `learning-room`, `learning-token`, و`learning-playback` تتطلب JWT. وظيفة `learning-webhook` وحدها تعمل مع `verify_jwt=false` لأنها تتحقق بنفسها من header سري ثابت التوقيت. لا تجعل webhook عاماً بلا السر.
 
 **علامة النجاح:** بعد ضبط الأسرار والقالب والأدوار في 100ms، سجّل الدخول بحساب المالك وافتح `/owner/100ms/` ثم شغّل فحص الجاهزية؛ يجب أن يثبت الفحص إعداد القالب والأدوار وHLS ووجود حدث تسجيل معالج ورابط تشغيل مؤقت لتسجيل مكتمل. لا تعتبر أسماء الأسرار وحدها نجاحاً. آخر اختبار موثق للوظائف كان بلا JWT/secret وأعاد `401`؛ لم يُثبت بعد قبول جلسة مالك/مدير مصادق عليها أو نجاح webhook حقيقي. لا يوجد حالياً Webhook تنظيف لملفات التوثيق، وتحتاج أسرار 100ms و100ms webhook إلى ضبط آمن من لوحة Supabase.
 
