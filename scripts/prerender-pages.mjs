@@ -131,7 +131,8 @@ function metadata(route, page, record = null) {
   const recordTitle = record ? String(record.title || record.display_name || 'محتوى المجتمع') : ''
   const title = record ? formatRecordTitle(recordTitle) : page.title
   const recordSummary = record ? String(record.excerpt || record.public_bio || record.description || 'محتوى عام منشور في مجتمع السيطرة.') : ''
-  const description = record ? truncateAtWordBoundary(`${recordTitle}: ${recordSummary}`, 155) : page.description
+  // The title has its own metadata field; duplicating it here can truncate useful excerpts mid-sentence.
+  const description = record ? truncateAtWordBoundary(recordSummary, 155) : page.description
   ensureMetadataLimits({ title, description })
   const canonical = urlFor(route)
   const type = record?.kind === 'article' ? 'article' : 'website'
