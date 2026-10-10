@@ -27,6 +27,7 @@ const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id
 const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
+if (!publicRoutes.some(route => route.path === '/membership/')) fail.push('Public membership page missing from route manifest.')
 const publicTitles = new Set()
 const publicDescriptions = new Set()
 const urlsInSitemap = []
@@ -91,7 +92,11 @@ for (const route of publicRoutes) {
   }
   const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match => safeJson(match[1])).filter(Boolean)
   if (!scripts.some(item => item['@type'] === 'Organization') || !scripts.some(item => item['@type'] === 'WebSite') || !scripts.some(item => item['@type'] === 'BreadcrumbList')) fail.push(`Required Organization/WebSite/BreadcrumbList schema missing: ${route.path}`)
-  if (route.path === '/faq/' && !scripts.some(item => item['@type'] === 'FAQPage')) fail.push('FAQPage schema missing.')
+  if (route.path === '/faq/') {
+    const faqSchema = scripts.find(item => item['@type'] === 'FAQPage')
+    if (!faqSchema) fail.push('FAQPage schema missing.')
+    else if (!Array.isArray(faqSchema.mainEntity) || faqSchema.mainEntity.length < 12) fail.push('FAQPage must contain at least 12 substantive questions.')
+  }
   if (route.path === '/coaching/' && !scripts.some(item => item['@type'] === 'Service')) fail.push('Service schema missing.')
   if (route.path === '/career-journey/' && !scripts.some(item => item['@type'] === 'WebPage')) fail.push('Career Journey WebPage schema missing.')
   if (route.path === '/linkedin-workshop/' && !scripts.some(item => item['@type'] === 'Course')) fail.push('LinkedIn workshop Course schema missing.')
@@ -112,6 +117,7 @@ for (const route of privateRoutes) {
   try {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
+    if (route.path === '/register/' && !html.includes('التسجيل العام متوقف مؤقتاً')) fail.push('Pre-rendered registration page must explain that public signup is paused.')
     if (/<main[^>]*>\s*<(?:article|h1)[^>]*>[^<]{8,}/i.test(html) && !html.includes('هذه المساحة تتطلب الدخول')) fail.push(`Private content appears in static HTML: ${route.path}`)
   } catch { fail.push(`Missing private SPA shell for ${route.path}`) }
 }
