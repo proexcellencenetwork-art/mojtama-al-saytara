@@ -30,6 +30,10 @@
       "title": "الأسئلة الشائعة | مجتمع السيطرة"
     },
     {
+      "path": "/membership/",
+      "title": "العضوية في مجتمع السيطرة | المجاني والمميز"
+    },
+    {
       "path": "/privacy/",
       "title": "سياسة الخصوصية | مجتمع السيطرة"
     },
@@ -154,6 +158,22 @@
       "path": "/articles/career-compass/",
       "title": "مقالات التطور المهني الصحي | مجتمع السيطرة",
       "lastmod": "2026-10-04T20:19:03.404Z"
+    },
+    {
+      "path": "/articles/healthcare-classification-registration/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/healthcare-cpd-plan/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/saudi-board-readiness/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
+    },
+    {
+      "path": "/articles/health-informatics-transition/",
+      "title": "مقالات التطور المهني الصحي | مجتمع السيطرة"
     },
     {
       "path": "/login/"
