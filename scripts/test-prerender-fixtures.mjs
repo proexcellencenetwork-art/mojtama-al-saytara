@@ -49,6 +49,8 @@ try {
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
   if (!sitemap.includes('<lastmod>2026-02-01T12:30:00.000Z</lastmod>')) throw new Error('Sitemap must expose the verified updated_at timestamp for a synthetic published article.')
   const articleSchemaHtml = await readFile(resolve(root,'dist/articles/مقال-تجريبي/index.html'),'utf8')
+  if (!articleSchemaHtml.includes('<meta name="description" content="محتوى تجريبي لاختبار HTML وبيانات المقال.">')) throw new Error('Article meta description must use the authored excerpt without repeating the page title.')
+  if (articleSchemaHtml.includes('<meta name="description" content="مقال تجريبي للسيو:')) throw new Error('Article meta description must not prefix the authored excerpt with the page title.')
   if (!articleSchemaHtml.includes('"datePublished":"2026-01-01T00:00:00.000Z"') || !articleSchemaHtml.includes('"dateModified":"2026-02-01T12:30:00.000Z"')) throw new Error('Article structured-data dates must match explicit published_at and updated_at values.')
   const notFound = await readFile(resolve(root,'dist/404.html'),'utf8')
   if (!notFound.includes('__saytara_route') || !notFound.includes('learning-room/')) throw new Error('GitHub Pages deep-link recovery must route through the React-bearing learning-room shell.')
