@@ -55,6 +55,23 @@ for (const [index, article] of (pipeline.articles ?? []).entries()) {
   }
 }
 
+const requiredHealthcareArticles = [
+  'healthcare-classification-registration',
+  'healthcare-cpd-plan',
+  'saudi-board-readiness',
+  'health-informatics-transition',
+]
+for (const slug of requiredHealthcareArticles) {
+  const article = (pipeline.articles ?? []).find(item => item?.slug === slug)
+  if (!article) {
+    issues.push(`Missing required Saudi healthcare article: ${slug}.`)
+    continue
+  }
+  if (!Array.isArray(article.sources) || !article.sources.some(source => {
+    try { return new URL(source.url).hostname === 'scfhs.org.sa' } catch { return false }
+  })) issues.push(`Healthcare article ${slug} must cite an official SCFHS source.`)
+}
+
 if (issues.length) {
   console.error(`Editorial pipeline validation failed with ${issues.length} issue(s):\n- ${issues.join('\n- ')}`)
   process.exitCode = 1
