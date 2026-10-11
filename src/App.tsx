@@ -54,7 +54,7 @@ const navItems = [
 ]
 
 function Brand({ light = false }: { light?: boolean }) {
-  return <Link to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="مجتمع السيطرة - الرئيسية"><span className="brand-mark"><HeartHandshake size={21} strokeWidth={1.8}/><i /></span><span className="brand-word">مجتمع <b>السيطرة</b><small>مساحة مهنية آمنة</small></span></Link>
+  return <Link to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="مجتمع السيطرة المهنية - الرئيسية"><span className="brand-mark"><HeartHandshake size={21} strokeWidth={1.8}/><i /></span><span className="brand-word">مجتمع <b>السيطرة المهنية</b><small>Professional Mastery Community</small></span></Link>
 }
 function Verified({ role }: { role: Role }) { return role !== 'member' ? <span className={`verified-mark ${role === 'coach' ? 'coach-mark' : ''}`} title={roleNames[role]}><BadgeCheck size={14}/></span> : null }
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
@@ -62,16 +62,65 @@ function Footer() { return <footer className="site-footer"><div className="wrap 
 
 function Header({ demo, authenticated, displayName, role, toggleTheme, dark }: { demo: boolean; authenticated: boolean; displayName: string; role: Role; toggleTheme: () => void; dark: boolean }) {
   const [open, setOpen] = useState(false)
-  return <header className="topbar"><div className="topbar-inner wrap"><Brand/><nav className={`public-nav ${open ? 'nav-open' : ''}`}><NavLink to="/career-journey">الرحلة المهنية</NavLink><NavLink to="/about">عن المجتمع</NavLink><NavLink to="/coaching">الكوتشنج</NavLink><NavLink to="/coaches">الكوتشات</NavLink><NavLink to="/articles">المقالات</NavLink><NavLink to="/events">الفعاليات</NavLink></nav><div className="header-actions"><button className="icon-btn theme-toggle" aria-label="تبديل الوضع" onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>{authenticated ? <Link className="user-chip" to="/profile"><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span><ChevronDown size={14}/></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}<button className="icon-btn menu-btn" onClick={() => setOpen(!open)} aria-label="القائمة">{open ? <X size={20}/> : <Menu size={20}/>}</button></div></div></header>
+  const location = useLocation()
+  useEffect(() => { setOpen(false) }, [location.pathname])
+  return <header className="topbar"><div className="topbar-inner wrap">
+    <Brand/>
+    <nav id="primary-navigation" aria-label="التنقل الرئيسي" className={`public-nav ${open ? 'nav-open' : ''}`}>
+      <NavLink to="/career-journey" onClick={() => setOpen(false)}>الرحلة المهنية</NavLink>
+      <NavLink to="/about" onClick={() => setOpen(false)}>عن المجتمع</NavLink>
+      <NavLink to="/coaching" onClick={() => setOpen(false)}>الكوتشنج</NavLink>
+      <NavLink to="/coaches" onClick={() => setOpen(false)}>الكوتشات</NavLink>
+      <NavLink to="/articles" onClick={() => setOpen(false)}>المقالات</NavLink>
+      <NavLink to="/events" onClick={() => setOpen(false)}>الفعاليات</NavLink>
+    </nav>
+    <div className="header-actions">
+      <button type="button" className="icon-btn theme-toggle" aria-label={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} aria-pressed={dark} title={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>
+      {authenticated ? <Link className="user-chip" to="/profile"><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span><ChevronDown size={14}/></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}
+      <button type="button" className="icon-btn menu-btn" aria-controls="primary-navigation" aria-expanded={open} aria-label={open ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل'} onClick={() => setOpen(value => !value)}>{open ? <X size={20}/> : <Menu size={20}/>}</button>
+    </div>
+  </div></header>
 }
-function PublicHome() { return <><section className="hero wrap"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot"/> Professional Mastery Community · One Network</div><h1>ابنِ قيمتك المهنية،<br/><em>وأوصلها بالأثر.</em></h1><p className="hero-lead">مجتمع مهني يربط التقدم المهني والابتكار والبحث، لتحوّل خبرتك إلى قيمة واضحة وتعاون وأثر حقيقي.</p><div className="hero-actions"><Link className="btn btn-primary" to="/register">أنشئ حسابك مجانًا <ArrowLeft size={17}/></Link><Link className="btn btn-quiet" to="/about">كيف يعمل المجتمع؟ <ArrowUpLeft size={17}/></Link></div><div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>تسجيل مفتوح وبسيط</b><small>أكد بريدك وابدأ بعضوية عادية</small></span></div></div><div className="hero-art" aria-label="تصميم تجريدي يرمز إلى التواصل والدعم المهني"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><HeartHandshake size={65} strokeWidth={1.2}/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Sparkles size={16}/></span><span><b>خطوة صغيرة</b><small>تصنع فرقاً مستمراً</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>Credibility, Collaboration & Impact</b><small>من أهل الاختصاص</small></span></div><div className="art-ring-label">تطوّر · تواصل · توازن</div></div></section><section className="trust-strip"><div className="wrap trust-inner"><span>ثلاثة مسارات، شبكة واحدة</span><b><BriefcaseMedical size={17}/> Professional · التقدم المهني</b><i/><b><Heart size={17}/> Innovation · البناء والابتكار</b><i/><b><Shield size={17}/> Research · المصداقية والأثر</b></div></section><section className="section wrap"><div className="section-heading"><div><span className="eyebrow">One Community · One Brand · One Network</span><h2>ثلاثة مسارات، قيمة مهنية واحدة</h2><p>اختر المسار الذي يناسب طموحك: تقدّم مهني، بناء وابتكار، أو بحث يرفع مصداقيتك وأثرك.</p></div><Link to="/career-journey" className="text-link">استكشف الرحلة المهنية <ArrowLeft size={14}/></Link></div><div className="feature-grid"><article className="feature-card"><span className="feature-icon feature-icon-blue"><Compass/></span><h3>Professional · التقدم والظهور المهني</h3><p>ابنِ تموضعك، أظهر قيمتك، واربط خبرتك بفرص مهنية ذات معنى.</p><Link to="/career-compass" className="card-link">ابدأ التقييم <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon feature-icon-gold"><BookOpen/></span><h3>Innovation · البناء والتجربة</h3><p>حوّل الفكرة إلى مشروع أو حل أو قدرة متخصصة قابلة للبناء.</p><Link to="/linkedin-workshop" className="card-link">افتح الورشة <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon"><FileText/></span><h3>Research · المصداقية والأثر</h3><p>اربط البحث والبيانات والتعاون العلمي بأثر مهني قابل للتواصل.</p><Link to="/articles" className="card-link">افتح المكتبة <ArrowLeft size={14}/></Link></article></div></section><section className="section wrap"><div className="section-heading"><div><span className="eyebrow">Professional · Innovation · Research</span><h2>ابنِ قيمة واضحة. أظهرها. أوصلها بالأثر.</h2></div><Link to="/about" className="text-link">اكتشف المجتمع <ArrowLeft size={15}/></Link></div><div className="feature-grid"><article className="feature-card feature-main"><span className="feature-icon"><HeartHandshake/></span><span className="feature-count">01</span><h3>Career & Cash Engine</h3><p>تقدّم مهني، تموضع، ظهور، وقدرة على الوصول إلى فرص ذات معنى.</p><Link to="/coaching" className="card-link">كيف يعمل الكوتشنج؟ <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon feature-icon-blue"><Users/></span><span className="feature-count">02</span><h3>Specialist & Builder Track</h3><p>مشاريع ومنتجات وحلول وتقنيات تُبنى من خبرتك المتخصصة.</p><Link to="/register" className="card-link">ابدأ التواصل <ArrowLeft size={14}/></Link></article><article className="feature-card"><span className="feature-icon feature-icon-gold"><BadgeCheck/></span><span className="feature-count">03</span><h3>Credibility, Collaboration & Impact</h3><p>بحث سريري وبيانات صحية وتعاون علمي يرفع المصداقية والأثر.</p><Link to="/coaches" className="card-link">تعرّف على الكوتشات <ArrowLeft size={14}/></Link></article></div></section><section className="quote-section"><div className="wrap quote-inner"><span className="quote-mark">“</span><div><p>حين نمنح أنفسنا مساحة للتفكير، نصبح أقرب إلى الطريق الذي نختاره بوعي.</p><small>مجتمع السيطرة · مساحتك المهنية الآمنة</small></div><Link to="/charter" className="btn btn-outline">ميثاقنا المهني <ArrowLeft size={15}/></Link></div></section><section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>خبرتك هي البداية. قيمتك المهنية ما تبنيه وتوصله.</h2><p>انضم إلى شبكة مهنية تربط التقدم والابتكار والبحث.</p></div><Link className="btn btn-primary" to="/register">انضم إلى مجتمع السيطرة <ArrowLeft size={16}/></Link></section><Footer/></> }
+
+function PublicHome() {
+ return <>
+  <section className="hero wrap">
+   <div className="hero-copy">
+    <div className="eyebrow"><span className="eyebrow-dot"/> Professional Mastery Community · One Network</div>
+    <h1>ابنِ قيمتك المهنية،<br/><em>وأوصلها بالأثر.</em></h1>
+    <p className="hero-lead">مجتمع مهني يربط التقدم المهني والابتكار والبحث، لتحوّل خبرتك إلى قيمة واضحة وتعاون وأثر حقيقي.</p>
+    <div className="hero-actions"><Link className="btn btn-primary" to="/register">أنشئ حسابك مجانًا <ArrowLeft size={17}/></Link><Link className="btn btn-quiet" to="/about">كيف يعمل المجتمع؟ <ArrowUpLeft size={17}/></Link></div>
+    <div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>تسجيل مفتوح وبسيط</b><small>أكد بريدك وابدأ بعضوية عادية</small></span></div>
+   </div>
+   <div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><HeartHandshake size={65} strokeWidth={1.2}/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Sparkles size={16}/></span><span><b>خطوة صغيرة</b><small>تصنع فرقاً مستمراً</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>مصداقية وتعاون وأثر</b><small>مصادر واضحة وخطوات قابلة للمراجعة</small></span></div><div className="art-ring-label">تطوّر · تواصل · توازن</div></div>
+  </section>
+  <section className="trust-strip"><div className="wrap trust-inner"><span>ثلاثة مسارات، شبكة واحدة</span><b><BriefcaseMedical size={17}/> Professional · التقدم المهني</b><i/><b><Heart size={17}/> Innovation · البناء والابتكار</b><i/><b><Shield size={17}/> Research · المصداقية والأثر</b></div></section>
+  <section className="section wrap"><div className="section-heading"><div><span className="eyebrow">One Community · One Brand · One Network</span><h2>ثلاثة مسارات، قيمة مهنية واحدة</h2><p>اختر المسار الذي يناسب طموحك: تقدّم مهني، بناء وابتكار، أو بحث يرفع مصداقيتك وأثرك.</p></div><Link to="/career-journey" className="text-link">استكشف الرحلة المهنية <ArrowLeft size={14}/></Link></div>
+   <div className="feature-grid">
+    <article className="feature-card"><span className="feature-icon feature-icon-blue"><Compass/></span><h3>Professional · التقدم والظهور المهني</h3><p>ابنِ تموضعك، أظهر قيمتك، واربط خبرتك بفرص مهنية ذات معنى.</p><Link to="/career-compass" className="card-link">ابدأ التقييم <ArrowLeft size={14}/></Link></article>
+    <article className="feature-card"><span className="feature-icon feature-icon-gold"><BookOpen/></span><h3>Innovation · البناء والتجربة</h3><p>حوّل الفكرة إلى مشروع أو حل أو قدرة متخصصة قابلة للبناء.</p><Link to="/innovation-rd" className="card-link">استكشف الابتكار وR&amp;D <ArrowLeft size={14}/></Link></article>
+    <article className="feature-card"><span className="feature-icon"><FileText/></span><h3>Research · المصداقية والأثر</h3><p>اربط البحث والبيانات والتعاون العلمي بأثر مهني قابل للتواصل.</p><Link to="/articles" className="card-link">تصفّح المحتوى والمصادر <ArrowLeft size={14}/></Link></article>
+   </div>
+  </section>
+  <section className="section wrap"><div className="section-heading"><div><span className="eyebrow">Professional · Innovation · Research</span><h2>ابنِ قيمة واضحة. أظهرها. أوصلها بالأثر.</h2></div><Link to="/about" className="text-link">اكتشف المجتمع <ArrowLeft size={15}/></Link></div>
+   <div className="feature-grid">
+    <article className="feature-card feature-main"><span className="feature-icon"><HeartHandshake/></span><span className="feature-count">01</span><h3>التقدم المهني والقيمة المستدامة</h3><p>تموضع أوضح، إنجازات موثقة، وقدرة أفضل على شرح القيمة التي تضيفها.</p><Link to="/career-journey" className="card-link">استكشف رحلتك المهنية <ArrowLeft size={14}/></Link></article>
+    <article className="feature-card"><span className="feature-icon feature-icon-blue"><Users/></span><span className="feature-count">02</span><h3>مسار التخصص والابتكار</h3><p>مشاريع ومنتجات وحلول وتقنيات تُبنى من خبرتك المتخصصة.</p><Link to="/innovation-rd" className="card-link">حوّل الفكرة إلى مشروع <ArrowLeft size={14}/></Link></article>
+    <article className="feature-card"><span className="feature-icon feature-icon-gold"><BadgeCheck/></span><span className="feature-count">03</span><h3>ملفات مهنية واضحة</h3><p>تظهر الملفات العامة بعد مراجعة البيانات وموافقة أصحابها؛ لن نعرض بيانات تجريبية.</p><Link to="/coaches" className="card-link">استعرض الملفات المنشورة <ArrowLeft size={14}/></Link></article>
+   </div>
+  </section>
+  <section className="quote-section"><div className="wrap quote-inner"><span className="quote-mark">“</span><div><p>حين نمنح أنفسنا مساحة للتفكير، نصبح أقرب إلى الطريق الذي نختاره بوعي.</p><small>مجتمع السيطرة المهنية · مساحتك المهنية الآمنة</small></div><Link to="/charter" className="btn btn-outline">ميثاقنا المهني <ArrowLeft size={15}/></Link></div></section>
+  <section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>خبرتك هي البداية. قيمتك المهنية ما تبنيه وتوصله بالأثر.</h2><p>انضم إلى شبكة مهنية تربط التقدم والابتكار والبحث.</p></div><Link className="btn btn-primary" to="/register">انضم إلى مجتمع السيطرة المهنية <ArrowLeft size={16}/></Link></section>
+  <Footer/>
+ </>
+}
 
 const publicCopy: Record<string, { title: string; eyebrow: string; intro: string; points: [string, string][] }> = {
   about: { eyebrow: 'عن مجتمعنا', title: 'نؤمن أن النمو المهني يبدأ بمساحة آمنة.', intro: 'مجتمع السيطرة مجتمع مهني متعدد التخصصات للمهنيين والباحثين والطلاب الطموحين في الصحة والعلوم والتقنية والبيانات. ومعنى السيطرة هنا هو امتلاك قرارك المهني ووقتك وحدودك، لا التحكم بالآخرين؛ نكمّل المصادر الرسمية ولا نستبدلها، ونحوّل التفكير إلى خطوات قابلة للاختبار.', points: [['الأمان قبل الظهور', 'احترام وسرية وميثاق واضح، مع منع مشاركة معلومات المرضى.'], ['الدليل قبل الوعد', 'أدوات وقوالب ومحتوى يوضح مصادره وحدوده؛ لا نضمن وظيفة أو ترقية.'], ['الإنسان خلف الدور', 'مساحة للتفكير في المسار والمناوبات والحدود المهنية دون أحكام.'], ['تكامل لا منافسة', 'أحِل إلى متطلبات الجهات الرسمية، وتحقق من الشروط الحالية قبل اتخاذ القرار.']] },
   coaching: { eyebrow: 'الكوتشنج المهني', title: 'مساحة للتفكير. وخطوة تنبع منك.', intro: 'الكوتشنج حوار مهني يساعدك على توضيح أهدافك وخياراتك، واستكشاف الخطوات التي تناسبك في مسيرتك.', points: [['تطوير المسار', 'رؤية أوضح لأهدافك وخياراتك المهنية.'], ['إدارة الضغط', 'مساحة للتأمل في التحديات وحدودك.'], ['اتخاذ القرار', 'تحويل الأفكار إلى خطوات قابلة للتجربة.']] },
-  coaches: { eyebrow: 'الكوتشات', title: 'تعرّف على من يصغي إلى رحلتك.', intro: 'كوتشات بخبرات متنوعة ومساحات حوار مهنية، مع ملفات واضحة وشارة توثيق عند اكتمال المراجعة.', points: [['أ. عمر السبيعي', 'كوتش مهني · صيدلة إكلينيكية · جدة'], ['د. سارة العتيبي', 'كوتش مهني · طب الأسرة · الرياض'], ['أ. ريم القحطاني', 'كوتش مهني · تمريض · الخبر']] },
+  coaches: { eyebrow: 'الكوتشات', title: 'تعرّف على من يصغي إلى رحلتك.', intro: 'ستظهر الملفات المهنية العامة بعد اكتمال مراجعة البيانات وموافقة أصحابها؛ لا نعرض ملفات تجريبية.', points: [['الملفات المنشورة', 'لا توجد ملفات كوتش عامة منشورة بعد.'], ['مراجعة واضحة', 'تُنشر المعلومات العامة بعد مراجعتها وبموافقة أصحابها.']] },
   articles: { eyebrow: 'مكتبة المجتمع', title: 'معرفة تساعدك على التقدّم.', intro: 'مقالات مختارة حول التطور المهني، التوازن، وإدارة الضغط في بيئة الرعاية الصحية.', points: [['من أين تبدأ مراجعة مسارك؟', 'خطوات للتفكير في خياراتك المهنية.'], ['حدود صحية في بيئة العمل', 'كيف تبني حدوداً مهنية واضحة؟'], ['الإنهاك: إشارات تستحق الإصغاء', 'تأملات حول الرفاه المهني وطلب الدعم.']] },
-  events: { eyebrow: 'فعاليات قادمة', title: 'نتعلّم معاً، ونصنع مساحة للحوار.', intro: 'لقاءات ومجالس مهنية يقودها أعضاء موثّقون وكوتشات. المشاركة المجتمعية متاحة للأعضاء.', points: [['جلسة: وضوح المسار المهني', 'الأربعاء · لقاء افتراضي · ٧:٣٠ مساءً'], ['مجلس ممارسي الرعاية الحرجة', 'السبت · حوار مجتمعي · ٥:٠٠ مساءً'], ['ورشة: حدود مهنية أكثر صحة', '١٥ أكتوبر · بقيادة كوتش موثّق']] },
+  events: { eyebrow: 'الفعاليات', title: 'نتعلّم معاً، ونصنع مساحة للحوار.', intro: 'ستظهر الفعاليات بعد اعتماد المواعيد والتفاصيل ونشرها؛ لا نعرض مواعيد أو فعاليات تجريبية.', points: [['الفعاليات القادمة', 'لا توجد فعاليات عامة قادمة حالياً.'], ['تفاصيل مؤكّدة', 'لن يُعلن عن التسجيل أو الإتاحة قبل تأكيد التفاصيل.']] },
   faq: { eyebrow: 'الأسئلة الشائعة', title: 'إجابات واضحة، قبل أن تبدأ.', intro: 'إجابات عملية عن هدف المجتمع، والأمان، والتوثيق، والأدوات، والعضوية.', points: [
     ['لماذا اسم «مجتمع السيطرة»؟', 'السيطرة تعني امتلاك قرارك المهني ووقتك وحدودك، لا التحكم بالآخرين.'],
     ['لمن صُمم المجتمع؟', 'للمهنيين الصحيين وطلاب الامتياز والخريجين والباحثين في السعودية ممن يريدون بناء مسار مهني بأدلة وخطوات قابلة للاختبار.'],
@@ -99,7 +148,7 @@ function PublicPage({ page }: { page: keyof typeof publicCopy }) {
 }
 
 const publicSeo: Record<string, { title: string; description: string }> = {
-  '/': { title: 'مجتمع السيطرة | مجتمع مهني ورحلة مهنية', description: 'مجتمع مهني للقطاع الصحي يجمع التواصل والكوتشنج ومركز التعلم، مع بوصلة وأدوات وورش ومحتوى لمسارك المهني.' },
+  '/': { title: 'مجتمع السيطرة المهنية | Professional Mastery Community', description: 'مجتمع مهني يربط التقدم المهني والابتكار والبحث، ويحوّل الخبرة إلى قيمة واضحة وتعاون وأثر.' },
   '/about': { title: 'عن مجتمع السيطرة | مساحة مهنية آمنة', description: 'تعرّف على مجتمع مهني للمهنيين الصحيين يجمع التواصل الهادف والكوتشنج والخصوصية.' },
   '/coaching': { title: 'كوتشنج مهني للقطاع الصحي | مجتمع السيطرة', description: 'مساحة حوار مهني تساعد العاملين في الرعاية الصحية على توضيح أهدافهم وخياراتهم.' },
   '/coaches': { title: 'دليل الكوتشات | مجتمع السيطرة', description: 'تعرّف على الكوتشات والملفات المهنية العامة المنشورة في مجتمع السيطرة.' },
@@ -355,7 +404,13 @@ function App() {
   const accountStatus = user && accountStatusRecord.userId === user.id ? accountStatusRecord.status : null
   const [role, setRoleState] = useState<Role>(() => demoMode ? (localStorage.getItem('saytara-role') as Role || 'member') : 'member')
   const [displayName, setDisplayName] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true' ? 'نورة العبدالله' : 'حسابي')
-  const [dark, setDark] = useState(localStorage.getItem('saytara-dark') === 'true')
+  const [dark, setDark] = useState(() => { try { return localStorage.getItem('saytara-dark') !== 'false' } catch { return true } })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    const themeColor = document.querySelector('meta[name="theme-color"]')
+    themeColor?.setAttribute('content', dark ? '#171717' : '#f7faf9')
+  }, [dark])
   const [unread, setUnread] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null)
