@@ -21,6 +21,6 @@ function validPublicKey(value: string): boolean {
 }
 
 export const isSupabaseConfigured = validProjectUrl(url) && validPublicKey(anonKey)
-// Registration stays closed unless both the site build flag and Supabase Auth allow it.
-export const isPublicSignupEnabled = import.meta.env.VITE_PUBLIC_SIGNUP_ENABLED === 'true'
+// Public signup is the product default. Set the build flag to "false" only for an intentional maintenance pause.
+export const isPublicSignupEnabled = import.meta.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
 export const supabaseConfig = Object.freeze({ url, anonKey })
