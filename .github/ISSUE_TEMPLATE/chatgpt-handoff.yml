@@ -1,0 +1,67 @@
+name: ChatGPT handoff
+description: Prepare a bounded task for independent ChatGPT review or implementation.
+title: "[AI Handoff → ChatGPT] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        استخدم هذا القالب لتسليم مهمة محددة إلى ChatGPT عبر رابط Issue.
+        هذا القالب لا يرسل المهمة تلقائياً إلى محادثة ChatGPT ولا يراقب الردود في الخلفية.
+        لا تضف كلمات مرور أو مفاتيح أو JWT أو بيانات شخصية حقيقية.
+  - type: textarea
+    id: goal
+    attributes:
+      label: الهدف والنتيجة المطلوبة
+      description: ما الذي ينبغي أن يتغير أو ما القرار المطلوب؟
+      placeholder: اكتب النتيجة المراد التحقق منها.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: السياق والحالة الحالية
+      description: أضف أدلة أو أخطاء فعلية وتاريخ الفحص، لا افتراضات.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: الملفات والمسارات ذات الصلة
+      placeholder: اذكر المسارات أو الروابط إلى الملفات/PRs.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: معيار القبول
+      description: كيف نثبت أن المهمة نجحت؟
+    validations:
+      required: true
+  - type: textarea
+    id: checks
+    attributes:
+      label: الاختبارات المنفذة ونتائجها
+      description: اكتب الأوامر التي شُغّلت فعلاً والنتائج. اذكر ما لم يتم اختباره.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: قيود وهوية المجتمع ومخاطر الأمان
+      description: ما الذي يجب عدم تغييره؟ لا تضع أسراراً أو بيانات حقيقية.
+    validations:
+      required: true
+  - type: textarea
+    id: requested
+    attributes:
+      label: الجزء المطلوب تحديداً من ChatGPT
+      description: مراجعة، تصميم، خطة اختبار، محتوى، أو patch/PR.
+    validations:
+      required: true
+  - type: textarea
+    id: codex_return
+    attributes:
+      label: خطة Codex بعد عودة المراجعة
+      description: من سيطبق التعديلات؟ وما الاختبارات التي سيشغّلها Codex؟
+    validations:
+      required: true
