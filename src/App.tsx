@@ -355,7 +355,7 @@ function App() {
   const accountStatus = user && accountStatusRecord.userId === user.id ? accountStatusRecord.status : null
   const [role, setRoleState] = useState<Role>(() => demoMode ? (localStorage.getItem('saytara-role') as Role || 'member') : 'member')
   const [displayName, setDisplayName] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true' ? 'نورة العبدالله' : 'حسابي')
-  const [dark, setDark] = useState(localStorage.getItem('saytara-dark') === 'true')
+  const [dark, setDark] = useState(localStorage.getItem('saytara-dark') !== 'false')
   const [unread, setUnread] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null)
