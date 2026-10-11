@@ -118,7 +118,7 @@ for (const route of privateRoutes) {
   try {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
-    if (route.path === '/register/' && !html.includes('أنشئ حسابك وابدأ مباشرة')) fail.push('Pre-rendered registration page must explain that public signup is open.')
+    if (route.path === '/register/' && (!html.includes('التسجيل مفتوح للجميع') || !html.includes('بعد الاعتماد'))) fail.push('Pre-rendered registration page must explain that signup is open but member access requires account approval.')
     if (/<main[^>]*>\s*<(?:article|h1)[^>]*>[^<]{8,}/i.test(html) && !html.includes('هذه المساحة تتطلب الدخول')) fail.push(`Private content appears in static HTML: ${route.path}`)
   } catch { fail.push(`Missing private SPA shell for ${route.path}`) }
 }

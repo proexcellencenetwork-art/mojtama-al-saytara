@@ -107,7 +107,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
         } else {
           if (data.session) await supabase.auth.signOut({ scope: 'local' })
           setCanResendConfirmation(true)
-          setMessage('أُنشئ الحساب. أكّد بريدك من الرسالة ثم سجّل الدخول للوصول إلى المنصة.')
+          setMessage('أُنشئ الحساب. أكّد بريدك الإلكتروني ثم سجّل الدخول لمتابعة حالة الطلب؛ يتاح دخول مساحة الأعضاء بعد اعتماد الحساب.')
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : undefined })

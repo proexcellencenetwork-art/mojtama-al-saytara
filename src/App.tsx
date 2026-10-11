@@ -358,7 +358,7 @@ function PendingReviewPage({ authReady, authenticated, demoMode, accountStatus, 
   const loadingStatus = accountStatus === null
   return <main className="auth-wrap"><section className="auth-card account-review-card">
     <div className="auth-intro"><span className="eyebrow">حماية مجتمعنا المهني</span><h1>{loadingStatus ? 'جارٍ التحقق من حالة الحساب…' : rejected ? 'لم يُعتمد طلب الانضمام.' : unknown ? 'تعذر التحقق من حالة الحساب.' : accountStatus === 'pending' ? 'حسابك قيد المراجعة.' : 'تحقق من بريدك أولاً.'}</h1>
-      <p>{loadingStatus ? 'جارٍ تجهيز مساحة العضوية.' : rejected ? 'لا تتوفر صلاحيات العضوية لهذا الحساب. إذا كنت ترى أن القرار يحتاج مراجعة، تواصل مع إدارة المجتمع.' : unknown ? 'تعذر تجهيز مساحة العضوية الآن. أعد المحاولة بعد قليل.' : accountStatus === 'pending' ? 'أكد بريدك الإلكتروني ثم أعد تسجيل الدخول لإكمال إنشاء حسابك.' : 'أكد بريدك الإلكتروني ثم سجّل الدخول للمتابعة.'}</p>
+      <p>{loadingStatus ? 'جارٍ تجهيز مساحة العضوية.' : rejected ? 'لا تتوفر صلاحيات العضوية لهذا الحساب. إذا كنت ترى أن القرار يحتاج مراجعة، تواصل مع إدارة المجتمع.' : unknown ? 'تعذر تجهيز مساحة العضوية الآن. أعد المحاولة بعد قليل.' : accountStatus === 'pending' ? 'وصل طلبك إلى مراجعة الإدارة. سيُفتح دخول مساحة الأعضاء بعد الاعتماد؛ أعد التحقق من الحالة لاحقاً.' : 'أكد بريدك الإلكتروني ثم سجّل الدخول للمتابعة.'}</p>
     </div>
     <div className="account-review-actions"><button className="btn btn-outline" type="button" onClick={() => void onRefreshStatus()} disabled={loadingStatus}>إعادة التحقق من الحالة</button><button className="btn btn-primary" type="button" onClick={() => void onSignOut()}>تسجيل الخروج</button></div>
   </section></main>
