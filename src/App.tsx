@@ -404,7 +404,7 @@ function App() {
   const accountStatus = user && accountStatusRecord.userId === user.id ? accountStatusRecord.status : null
   const [role, setRoleState] = useState<Role>(() => demoMode ? (localStorage.getItem('saytara-role') as Role || 'member') : 'member')
   const [displayName, setDisplayName] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true' ? 'نورة العبدالله' : 'حسابي')
-  const [dark, setDark] = useState(() => { try { return localStorage.getItem('saytara-dark') !== 'false' } catch { return true } })
+  const [dark, setDark] = useState(() => { try { const saved = localStorage.getItem('saytara-dark'); return saved !== null ? saved !== 'false' : localStorage.getItem('mojtama-theme') !== 'light' } catch { return true } })
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light'
@@ -526,7 +526,7 @@ function App() {
   }, [signedIn, user, supabaseClient, accountStatus])
 
   const setRole = (next: Role) => { if (demo && next !== 'owner') { setRoleState(next); localStorage.setItem('saytara-role', next) } }
-  const toggleTheme = () => { setDark(value => { localStorage.setItem('saytara-dark', String(!value)); return !value }) }
+  const toggleTheme = () => { setDark(value => { const next = !value; try { localStorage.setItem('saytara-dark', String(next)); localStorage.setItem('mojtama-theme', next ? 'dark' : 'light') } catch { /* Theme switching still works when storage is unavailable. */ } return next }) }
   const onDemo = () => { if (!demoMode) return; setDemo(true); setSignedIn(true); const savedRole = localStorage.getItem('saytara-role') as Role; setRoleState(savedRole && savedRole !== 'owner' ? savedRole : 'member'); setDisplayName('نورة العبدالله'); localStorage.setItem('saytara-demo', 'true') }
   const onSignedIn = (signedInUser: User) => {
     if (!hasConfirmedEmail(signedInUser)) { setSignedIn(false); return }
