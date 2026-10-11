@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, Users } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, UserPlus, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 type Row = Record<string, unknown>
 type ProfileForm = { display_name: string; headline: string; profession: string; specialty: string; city: string; bio: string }
 const emptyProfile: ProfileForm = { display_name: '', headline: '', profession: '', specialty: '', city: '', bio: '' }
-const titles: Record<string, string> = { profile: 'الملف الشخصي', connections: 'الاتصالات', messages: 'الرسائل', notifications: 'الإشعارات', groups: 'المجموعات', verification: 'طلب التوثيق', moderation: 'لوحة الإشراف', admin: 'لوحة إدارة المجتمع' }
+const titles: Record<string, string> = { profile: 'الملف الشخصي', discover: 'اكتشف الأعضاء', connections: 'الاتصالات', messages: 'الرسائل', notifications: 'الإشعارات', groups: 'المجموعات', verification: 'طلب التوثيق', moderation: 'لوحة الإشراف', admin: 'لوحة إدارة المجتمع' }
 const str = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback
 const canReview = (role: Role) => role === 'moderator' || role === 'manager' || role === 'owner'
 
@@ -16,6 +16,8 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
   const [rows, setRows] = useState<Row[]>([])
   const [pendingAccounts, setPendingAccounts] = useState<Row[]>([])
   const [reportRows, setReportRows] = useState<Row[]>([])
+  const [memberConnections, setMemberConnections] = useState<Row[]>([])
+  const [memberQuery, setMemberQuery] = useState('')
   const [recipients, setRecipients] = useState<{ id: string; name: string }[]>([])
   const [selectedRecipient, setSelectedRecipient] = useState('')
   const [draftMessage, setDraftMessage] = useState('')
@@ -30,7 +32,7 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
 
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('لا يوجد اتصال Supabase؛ تُعرض المؤشرات غير المتاحة بوضوح.'); return }
-    setLoading(true); setError(''); setRows([]); setPendingAccounts([])
+    setLoading(true); setError(''); setRows([]); setPendingAccounts([]); setMemberConnections([])
     try {
       if (page === 'profile') {
         const { data, error: queryError } = await supabase.from('profiles').select('display_name,headline,profession,specialty,city,bio').eq('user_id', userId).maybeSingle()
@@ -44,6 +46,35 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
         const { data: people } = otherIds.length ? await supabase.from('profiles').select('user_id,display_name,headline,profession,city').in('user_id', otherIds) : { data: [] as Row[] }
         const names = new Map((people ?? []).map(person => [str(person.user_id), person]))
         setRows(connectionRows.map(row => ({ ...row, person: names.get(str(row.requester_id) === userId ? str(row.recipient_id) : str(row.requester_id)) })))
+      } else if (page === 'discover') {
+        const [
+          { data: people, error: peopleError },
+          { data: connections, error: connectionsError },
+          { data: blocks, error: blocksError },
+        ] = await Promise.all([
+          supabase.from('profiles')
+            .select('user_id,display_name,headline,profession,specialty,city,photo_url')
+            .eq('account_status', 'approved')
+            .eq('visibility', 'public')
+            .neq('user_id', userId)
+            .order('display_name', { ascending: true })
+            .limit(250),
+          supabase.from('connections')
+            .select('requester_id,recipient_id,status')
+            .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`)
+            .limit(500),
+          supabase.from('user_blocks')
+            .select('blocker_id,blocked_id')
+            .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`),
+        ])
+        if (peopleError) throw peopleError
+        if (connectionsError) throw connectionsError
+        if (blocksError) throw blocksError
+        const hiddenIds = new Set((blocks ?? []).map(block =>
+          str(block.blocker_id) === userId ? str(block.blocked_id) : str(block.blocker_id),
+        ))
+        setRows(((people ?? []) as Row[]).filter(person => !hiddenIds.has(str(person.user_id))))
+        setMemberConnections((connections ?? []) as Row[])
       } else if (page === 'messages') {
         const [{ data, error: queryError }, { data: accepted, error: connectionError }] = await Promise.all([
           supabase.from('messages').select('id,sender_id,recipient_id,body,created_at,read_at').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
@@ -154,6 +185,27 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
     else { setNotice(status === 'accepted' ? 'قُبل طلب الاتصال.' : 'رُفض طلب الاتصال.'); await load() }
   }
 
+  async function requestConnection(person: Row) {
+    const personId = str(person.user_id)
+    if (!supabase || !personId || personId === userId || busy) return
+    setBusy(true); setError(''); setNotice('')
+    const { error: insertError } = await supabase.from('connections').insert({
+      requester_id: userId,
+      recipient_id: personId,
+      status: 'pending',
+    })
+    setBusy(false)
+    if (insertError) {
+      await load()
+      setError(insertError.code === '23505'
+        ? 'يوجد طلب اتصال سابق بينكما. افتح صفحة الاتصالات لمراجعة حالته.'
+        : 'تعذر إرسال طلب الاتصال. تحقق من حالة الحساب أو إعدادات الصلاحيات ثم أعد المحاولة.')
+      return
+    }
+    setMemberConnections(current => [...current, { requester_id: userId, recipient_id: personId, status: 'pending' }])
+    setNotice('تم إرسال طلب الاتصال. سيظهر للطرف الآخر ليقبله من صفحة الاتصالات.')
+  }
+
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!supabase || !selectedRecipient || !draftMessage.trim()) return
@@ -229,11 +281,51 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
     if (!query) return pendingAccounts
     return pendingAccounts.filter(row => [str(row.display_name), str(row.email), str(row.profession), str(row.specialty)].join(' ').toLocaleLowerCase('ar').includes(query))
   }, [accountQuery, pendingAccounts])
+  const filteredMembers = useMemo(() => {
+    const query = memberQuery.trim().toLocaleLowerCase('ar')
+    return rows.filter(person => [str(person.display_name), str(person.headline), str(person.profession), str(person.specialty), str(person.city)].join(' ').toLocaleLowerCase('ar').includes(query))
+  }, [memberQuery, rows])
   return <><main className="app-main wrap"><div className="page-title-row"><div><span className="eyebrow">بيانات مرتبطة بحسابك</span><h1>{title}</h1></div><button className="btn btn-outline btn-small" onClick={() => void load()}>تحديث البيانات</button></div>
     <div className="dashboard-layout"><aside className="dash-nav"><Link to="/profile"><Users size={16}/> ملفي الشخصي</Link><Link to="/connections"><Users size={16}/> الاتصالات</Link><Link to="/messages"><MessageCircle size={16}/> الرسائل</Link><Link to="/groups"><Users size={16}/> المجموعات</Link><Link to="/notifications"><Check size={16}/> الإشعارات</Link><Link to="/verification"><BadgeCheck size={16}/> طلب التوثيق</Link>{staff && <Link to="/moderation"><Shield size={16}/> الإشراف</Link>}{(role === 'manager' || role === 'owner') && <Link to="/admin"><Shield size={16}/> مراجعة الحسابات</Link>}{role === 'owner' && <Link to="/owner"><Shield size={16}/> مركز المالك</Link>}<Link to="/settings">الإعدادات</Link></aside>
       <section className="dashboard-content">{notice && <div className="inline-message" role="status">{notice}</div>}{error && <div className="inline-message live-error" role="alert">{error}</div>}
         {loading ? <div className="panel-card live-state">جارٍ تحميل البيانات المرتبطة بحسابك…</div> : page === 'profile' ? <div className="panel-card"><div className="panel-icon"><Users/></div><h2>ملفك المهني</h2><p>هذه الحقول محفوظة في ملفك الخاص ويمكنك تعديلها.</p><form className="verification-form" onSubmit={saveProfile}><div className="form-grid"><label>الاسم المعروض<input required maxLength={100} value={profile.display_name} onChange={event => setProfile({ ...profile, display_name: event.target.value })}/></label><label>المهنة<input maxLength={100} value={profile.profession} onChange={event => setProfile({ ...profile, profession: event.target.value })}/></label><label>العنوان المهني<input maxLength={160} value={profile.headline} onChange={event => setProfile({ ...profile, headline: event.target.value })}/></label><label>التخصص<input maxLength={120} value={profile.specialty} onChange={event => setProfile({ ...profile, specialty: event.target.value })}/></label><label>المدينة<input maxLength={100} value={profile.city} onChange={event => setProfile({ ...profile, city: event.target.value })}/></label><label className="full-field">نبذة مهنية<textarea maxLength={1200} value={profile.bio} onChange={event => setProfile({ ...profile, bio: event.target.value })}/></label></div><button className="btn btn-primary" disabled={busy}>{busy ? 'جارٍ الحفظ…' : 'حفظ الملف'}</button></form></div>
         : page === 'verification' ? <div className="panel-card"><div className="panel-icon gold"><BadgeCheck/></div><h2>طلب التوثيق المهني</h2><p>يُخزن الملف في bucket خاص. لا يُسمح إلا للمشرفين والمدير بتنزيله.</p>{rows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.profession)} · {str(row.full_name)}</b><small>{str(row.status)} · {new Date(str(row.requested_at)).toLocaleDateString('ar')}</small>{Boolean(row.decision_reason) && <small>{str(row.decision_reason)}</small>}</div></div>)}<form className="verification-form" onSubmit={event => void submitVerification(event)}><div className="form-grid"><label>الاسم الكامل<input required minLength={2} maxLength={160} value={verification.full_name} onChange={event => setVerification({ ...verification, full_name: event.target.value })}/></label><label>المهنة<input required minLength={2} maxLength={120} value={verification.profession} onChange={event => setVerification({ ...verification, profession: event.target.value })}/></label><label>التخصص<input maxLength={160} value={verification.specialty} onChange={event => setVerification({ ...verification, specialty: event.target.value })}/></label><label>جهة العمل<input maxLength={200} value={verification.workplace} onChange={event => setVerification({ ...verification, workplace: event.target.value })}/></label><label className="full-field">رقم التسجيل أو التصنيف المهني<input required minLength={2} maxLength={100} value={verification.professional_registration_no} onChange={event => setVerification({ ...verification, professional_registration_no: event.target.value })}/></label><label className="file-field full-field">مستند مهني خاص<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" required onChange={event => setFile(event.target.files?.[0] ?? null)}/><small>JPG أو PNG أو WebP أو PDF، بحد أقصى ١٠ ميغابايت. لا ترفع أي بيانات تخص المرضى.</small></label></div><button className="btn btn-primary" disabled={busy}>{busy ? 'جارٍ رفع الطلب…' : 'إرسال للمراجعة'} <ArrowLeft size={15}/></button></form></div>
+        : page === 'discover' ? <div className="panel-card member-directory">
+          <div className="member-directory-heading">
+            <div><h2>اكتشف أعضاء المجتمع</h2><p>تظهر الملفات العامة للأعضاء المعتمدين فقط. يمكنك إرسال طلب اتصال، ومراجعة الطلبات الواردة من صفحة الاتصالات.</p></div>
+            <span className="member-directory-count">{filteredMembers.length} عضو</span>
+          </div>
+          <label className="member-directory-search">
+            <Search size={17}/>
+            <input value={memberQuery} maxLength={100} onChange={event => setMemberQuery(event.target.value)} placeholder="ابحث بالاسم أو المهنة أو التخصص أو المدينة" aria-label="البحث عن أعضاء المجتمع"/>
+          </label>
+          {filteredMembers.length === 0 ? <div className="member-directory-empty"><Users size={24}/><b>{memberQuery.trim() ? 'لا توجد نتائج مطابقة' : 'لا توجد ملفات عامة متاحة حالياً'}</b><span>{memberQuery.trim() ? 'جرّب كلمة مختلفة.' : 'ستظهر هنا الملفات التي وافق أصحابها على عرضها للعامة.'}</span></div> :
+            <div className="member-directory-list">{filteredMembers.map(person => {
+              const personId = str(person.user_id)
+              const relation = memberConnections.find(edge =>
+                (str(edge.requester_id) === userId && str(edge.recipient_id) === personId) ||
+                (str(edge.requester_id) === personId && str(edge.recipient_id) === userId),
+              )
+              const relationStatus = str(relation?.status)
+              const outgoing = str(relation?.requester_id) === userId
+              return <article className="member-directory-row" key={personId}>
+                <span className="member-directory-avatar" aria-hidden="true">{str(person.display_name, 'ع').trim().charAt(0) || 'ع'}</span>
+                <div className="member-directory-main">
+                  <h3>{str(person.display_name, 'عضو في المجتمع')}</h3>
+                  <p>{[str(person.headline), str(person.profession), str(person.specialty), str(person.city)].filter(Boolean).join(' · ') || 'ملف مهني عام'}</p>
+                </div>
+                <div className="member-directory-actions">
+                  {!relation ? <button type="button" className="btn btn-primary btn-small" disabled={busy} onClick={() => void requestConnection(person)}>{busy ? 'جارٍ الإرسال…' : 'إضافة اتصال'}</button>
+                    : relationStatus === 'accepted' ? <span className="member-connection-state"><Check size={14}/> متصلان</span>
+                    : relationStatus === 'pending' ? outgoing
+                      ? <span className="member-connection-state">تم إرسال الطلب</span>
+                      : <Link className="btn btn-outline btn-small" to="/connections">مراجعة الطلب الوارد</Link>
+                    : <span className="member-connection-state">يوجد طلب سابق</span>}
+                </div>
+              </article>
+            })}</div>}
+          <small className="member-directory-note">للحفاظ على الخصوصية، لا تظهر الحسابات المعلّقة أو الملفات الخاصة، كما تُخفى الحسابات المحظورة بين الطرفين.</small>
+        </div>
         : page === 'connections' ? <div className="panel-card"><h2>اتصالاتك</h2>{rows.length === 0 ? <p>لا توجد اتصالات أو طلبات مسجلة بعد.</p> : rows.map(row => { const person = row.person as Row | undefined; const incoming = str(row.recipient_id) === userId; return <div className="review-row" key={str(row.id)}><div><b>{str(person?.display_name, 'عضو في المجتمع')}</b><small>{str(person?.headline || person?.profession, 'مهني صحي')} · {str(row.status)}</small></div>{incoming && row.status === 'pending' && <span className="live-actions"><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void changeConnection(row, 'accepted')}>قبول</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void changeConnection(row, 'declined')}>رفض</button></span>}</div> })}</div>
         : page === 'messages' ? <div className="panel-card"><div className="panel-icon"><MessageCircle/></div><h2>رسائلك الخاصة</h2><p>يمكنك مراسلة اتصال مقبول. سيطبق الخادم حدود المعدل ويتحقق من الحظر وصلاحية المحادثة.</p><form className="verification-form message-compose" onSubmit={event => void sendMessage(event)}><label>إلى<select required value={selectedRecipient} onChange={event => setSelectedRecipient(event.target.value)}><option value="">اختر اتصالاً مقبولاً</option>{recipients.map(person => <option value={person.id} key={person.id}>{person.name}</option>)}</select></label><label>الرسالة<textarea required maxLength={5000} value={draftMessage} onChange={event => setDraftMessage(event.target.value)} placeholder="رسالة مهنية خاصة…"/></label><button className="btn btn-primary" disabled={busy || !selectedRecipient || !draftMessage.trim()}>{busy ? 'جارٍ الإرسال…' : 'إرسال الرسالة'} <ArrowLeft size={15}/></button>{recipients.length === 0 && <small>لا توجد اتصالات مقبولة بعد. يمكنك قبول اتصال من صفحة الاتصالات أولاً.</small>}</form>{rows.length === 0 ? <p>لا توجد رسائل لهذا الحساب بعد.</p> : rows.map(row => <div className="message-thread" key={str(row.id)}><span className="avatar avatar-0 avatar-md">{str(row.sender_id) === userId ? 'أنا' : 'ز'}</span><span><b>{str(row.sender_id) === userId ? 'رسالة أرسلتها' : 'رسالة واردة'}</b><small>{str(row.body)}</small><small>{new Date(str(row.created_at)).toLocaleString('ar')}</small></span></div>)}</div>
         : page === 'notifications' ? <div className="panel-card"><div className="panel-icon"><Check/></div><h2>إشعاراتك</h2>{rows.length === 0 ? <p>لا توجد إشعارات.</p> : rows.map(row => <div className={`review-row ${row.is_read ? '' : 'notification-unread'}`} key={str(row.id)}><div><b>{str(row.body, 'إشعار من المجتمع')}</b><small>{new Date(str(row.created_at)).toLocaleString('ar')} · {str(row.kind)}</small></div>{!row.is_read && <button className="btn btn-small btn-outline" onClick={() => void markRead(row)}>تحديد كمقروء</button>}</div>)}</div>
@@ -250,6 +342,6 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
       </section>
     </div>
   </main>
-  <nav className="mobile-dashboard-nav" aria-label="تنقل سريع">{staff ? <><Link className={page === 'admin' ? 'current' : ''} to="/admin"><Shield size={18}/><span>الإدارة</span></Link><Link className={page === 'moderation' ? 'current' : ''} to="/moderation"><AlertTriangle size={18}/><span>البلاغات</span></Link><Link className={page === 'notifications' ? 'current' : ''} to="/notifications"><Check size={18}/><span>التنبيهات</span></Link><Link className={page === 'profile' ? 'current' : ''} to="/profile"><Users size={18}/><span>ملفي</span></Link><Link className={page === 'owner' ? 'current' : ''} to={role === 'owner' ? '/owner' : '/settings'}><ArrowUpRight size={18}/><span>{role === 'owner' ? 'المالك' : 'المزيد'}</span></Link></> : <><Link className={page === 'profile' ? 'current' : ''} to="/feed"><Users size={18}/><span>المجتمع</span></Link><Link to="/learning"><BadgeCheck size={18}/><span>التعلّم</span></Link><Link className={page === 'notifications' ? 'current' : ''} to="/notifications"><Check size={18}/><span>التنبيهات</span></Link><Link className={page === 'profile' ? 'current' : ''} to="/profile"><Users size={18}/><span>ملفي</span></Link><Link to="/settings"><ArrowUpRight size={18}/><span>المزيد</span></Link></>}</nav>
+  <nav className="mobile-dashboard-nav" aria-label="تنقل سريع">{staff ? <><Link className={page === 'admin' ? 'current' : ''} to="/admin"><Shield size={18}/><span>الإدارة</span></Link><Link className={page === 'moderation' ? 'current' : ''} to="/moderation"><AlertTriangle size={18}/><span>البلاغات</span></Link><Link className={page === 'discover' ? 'current' : ''} to="/discover"><UserPlus size={18}/><span>اكتشف</span></Link><Link className={page === 'notifications' ? 'current' : ''} to="/notifications"><Check size={18}/><span>التنبيهات</span></Link><Link className={page === 'profile' ? 'current' : ''} to="/profile"><Users size={18}/><span>ملفي</span></Link><Link className={page === 'owner' ? 'current' : ''} to={role === 'owner' ? '/owner' : '/settings'}><ArrowUpRight size={18}/><span>{role === 'owner' ? 'المالك' : 'المزيد'}</span></Link></> : <><Link className={page === 'feed' ? 'current' : ''} to="/feed"><Users size={18}/><span>الخلاصة</span></Link><Link className={page === 'discover' ? 'current' : ''} to="/discover"><UserPlus size={18}/><span>اكتشف</span></Link><Link className={page === 'learning' ? 'current' : ''} to="/learning"><BadgeCheck size={18}/><span>التعلّم</span></Link><Link className={page === 'notifications' ? 'current' : ''} to="/notifications"><Check size={18}/><span>التنبيهات</span></Link><Link className={page === 'profile' ? 'current' : ''} to="/profile"><Users size={18}/><span>ملفي</span></Link><Link to="/settings"><ArrowUpRight size={18}/><span>المزيد</span></Link></>}</nav>
   </>
 }
