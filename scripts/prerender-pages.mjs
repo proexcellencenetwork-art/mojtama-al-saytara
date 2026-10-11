@@ -262,9 +262,9 @@ for (const [collection,records] of Object.entries(recordsByPage)) {
   }
 }
 for (const route of protectedRoutes) {
-  const page = { title: `${route === '/login' ? 'تسجيل الدخول' : route === '/register' ? 'إنشاء حساب' : route === '/reset-password' ? 'استعادة كلمة المرور' : route === '/owner/100ms' ? 'إعداد البث للمالك' : route === '/owner' ? 'بوابة المالك' : route === '/learning' ? 'مركز التعلّم للأعضاء' : 'مساحة الأعضاء'} | مجتمع السيطرة`, description: route === '/register' ? 'التسجيل العام متوقف مؤقتاً؛ راجع طريقة الدخول والدعوات في مجتمع السيطرة.' : 'صفحة خاصة بأعضاء مجتمع السيطرة.' }
+  const page = { title: `${route === '/login' ? 'تسجيل الدخول' : route === '/register' ? 'إنشاء حساب' : route === '/reset-password' ? 'استعادة كلمة المرور' : route === '/owner/100ms' ? 'إعداد البث للمالك' : route === '/owner' ? 'بوابة المالك' : route === '/learning' ? 'مركز التعلّم للأعضاء' : 'مساحة الأعضاء'} | مجتمع السيطرة`, description: route === '/register' ? 'أنشئ حساباً وانضم مباشرة إلى مجتمع السيطرة بعد تأكيد بريدك الإلكتروني.' : 'صفحة خاصة بأعضاء مجتمع السيطرة.' }
   const privateBody = route === '/register'
-    ? `${header()}<main class="public-page wrap"><span class="eyebrow">الدخول عبر الدعوة فقط</span><h1>التسجيل العام متوقف مؤقتاً.</h1><p>هذه المساحة تتطلب الدخول. نوقف إنشاء الحسابات الجديدة حتى اكتمال اختبارات القبول والأمان؛ إذا وصلتك دعوة رسمية، احتفظ بها واستخدم تعليماتها.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`
+    ? `${header()}<main class="public-page wrap"><span class="eyebrow">انضم إلينا</span><h1>أنشئ حسابك وابدأ مباشرة.</h1><p>التسجيل مفتوح للجميع. أدخل بياناتك في النموذج بعد تحميل الصفحة، ثم أكّد بريدك الإلكتروني للوصول إلى مساحة الأعضاء.</p>${htmlLink('/login','لديك حساب؟ سجّل الدخول','btn btn-outline')}</main>${footer()}`
     : route === '/owner/100ms'
       ? `${header()}<main class="public-page wrap"><h1>إعداد البث للمالك فقط.</h1><p>هذه المساحة تتطلب الدخول بحساب المالك المعتمد.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`
       : `${header()}<main class="public-page wrap"><h1>هذه المساحة تتطلب الدخول.</h1><p>سيحوّلك التطبيق إلى صفحة تسجيل الدخول.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`
