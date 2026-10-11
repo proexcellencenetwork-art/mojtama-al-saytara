@@ -95,6 +95,7 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
         <NavLink to="/coaches" onClick={() => setOpen(false)}>الكوتشات</NavLink>
         <NavLink to="/articles" onClick={() => setOpen(false)}>المقالات</NavLink>
         <NavLink to="/events" onClick={() => setOpen(false)}>الفعاليات</NavLink>
+        {!authenticated && <NavLink className="mobile-auth-link" to="/login" onClick={() => setOpen(false)}>تسجيل الدخول</NavLink>}
       </>}
     </nav>
     <div className="header-actions">
