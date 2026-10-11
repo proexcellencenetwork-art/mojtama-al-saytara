@@ -4,22 +4,37 @@
   const menuButton = document.getElementById('menu-toggle')
   const publicNav = document.getElementById('public-nav')
 
-  let savedTheme = ''
+  let dark = true
   try {
-    savedTheme = localStorage.getItem('mojtama-theme') || ''
+    const saved = localStorage.getItem('saytara-dark')
+    const legacy = localStorage.getItem('mojtama-theme')
+    dark = saved !== null ? saved !== 'false' : legacy !== 'light'
   } catch {
-    // Storage may be disabled; the public site still works with its light default.
+    // Keep a usable dark default if storage is disabled.
   }
-  if (app && savedTheme === 'dark') app.classList.add('dark')
-  if (themeButton) themeButton.setAttribute('aria-pressed', String(app?.classList.contains('dark') || false))
+  if (app) app.classList.toggle('dark', dark)
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  const syncThemeMetadata = (isDark) => {
+    const meta = document.querySelector('meta[name="theme-color"]')
+    meta?.setAttribute('content', isDark ? '#171717' : '#f7faf9')
+    if (themeButton) {
+      themeButton.setAttribute('aria-pressed', String(isDark))
+      themeButton.setAttribute('aria-label', isDark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن')
+      themeButton.setAttribute('title', isDark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن')
+      themeButton.textContent = isDark ? '☼' : '◐'
+    }
+  }
+  syncThemeMetadata(dark)
 
   themeButton?.addEventListener('click', () => {
     if (!app) return
-    const dark = app.classList.toggle('dark')
-    themeButton.setAttribute('aria-pressed', String(dark))
-    themeButton.setAttribute('aria-label', dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن')
+    const nextDark = !app.classList.contains('dark')
+    app.classList.toggle('dark', nextDark)
+    document.documentElement.dataset.theme = nextDark ? 'dark' : 'light'
+    syncThemeMetadata(nextDark)
     try {
-      localStorage.setItem('mojtama-theme', dark ? 'dark' : 'light')
+      localStorage.setItem('saytara-dark', String(nextDark))
+      localStorage.setItem('mojtama-theme', nextDark ? 'dark' : 'light')
     } catch {
       // Theme switching remains available for this page even without storage.
     }
