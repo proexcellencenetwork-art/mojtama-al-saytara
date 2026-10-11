@@ -2,7 +2,7 @@
   "routes": [
     {
       "path": "/",
-      "title": "مجتمع السيطرة | مجتمع مهني ورحلة مهنية"
+      "title": "مجتمع السيطرة المهنية | Professional Mastery Community"
     },
     {
       "path": "/about/",
