@@ -1,0 +1,66 @@
+/* ملف الهوية البصرية الموحد — مجتمع السيطرة المهنية
+   مستوحى من اللوجو الرسمي (og-social.png): أزرق عميق، ذهبي دافئ، أخضر فاتح، بيج.
+   يستخدمه التطبيق في كل الصفحات والأوضاع. */
+
+:root {
+  /* الألوان الرئيسية (من اللوجو) */
+  --brand-teal: #087f7d;       /* الأزرق العميق */
+  --brand-teal-dark: #006b6e;
+  --brand-gold: #b88b4a;       /* الذهبي الدافئ */
+  --brand-gold-soft: #e1bd7d;
+  --brand-mint: #d4ece7;       /* الأخضر الفاتح */
+  --brand-mint-soft: #eaf5f2;
+  --brand-beige: #f4e4d2;     /* البيج الدافئ */
+  --brand-beige-soft: #f8f6f1;
+
+  /* ألوان الطباعة والأسطح */
+  --ink: #183f43;
+  --ink-soft: #52696b;
+  --muted: #718684;
+  --line: #dce9e4;
+  --paper: #ffffff;
+  --bg: #f7faf9;
+  --shadow: 0 16px 45px rgb(25 70 67 / 8%);
+  --teal: var(--brand-teal);
+  --teal-dark: var(--brand-teal-dark);
+
+  /* المسافات والحجم */
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --content-max: 74rem;
+  --touch: 2.75rem;
+
+  /* الخط */
+  --font-body: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* الهيدر */
+  --topbar-bg: var(--paper);
+  --topbar-height: 4.75rem;
+  --topbar-border: var(--line);
+}
+
+.app.dark {
+  --ink: #e9f1ef;
+  --ink-soft: #a9bebb;
+  --muted: #9aafaa;
+  --line: #2a4649;
+  --paper: #142b31;
+  --bg: #102429;
+  --brand-teal: #55d6b0;
+  --brand-teal-dark: #10a37f;
+  --brand-gold: #e6c37d;
+  --brand-gold-soft: #e1bd7d;
+  --brand-mint: #1f3b37;
+  --brand-mint-soft: #173b39;
+  --brand-beige: #3b3428;
+  --brand-beige-soft: #2c2a21;
+  --teal: var(--brand-teal);
+  --teal-dark: var(--brand-teal-dark);
+  --shadow: 0 18px 60px rgb(0 0 0 / 28%);
+  --topbar-bg: #142b31;
+  --topbar-border: #2a4649;
+}
