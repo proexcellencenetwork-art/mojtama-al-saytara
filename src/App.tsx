@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-js'
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, ChevronDown, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, X } from 'lucide-react'
+import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
 import type { Role } from './appTypes'
 import { MarkdownBody } from './lib/markdown'
