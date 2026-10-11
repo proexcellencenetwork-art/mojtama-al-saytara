@@ -1,7 +1,13 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
   <head>
-    <script>\n      (() => {\n        let dark = true;\n        try { dark = localStorage.getItem("saytara-dark") !== "false"; } catch {}\n        document.documentElement.dataset.theme = dark ? "dark" : "light";\n      })();\n    </script>
+    <script>
+      (() => {
+        let dark = true;
+        try { dark = localStorage.getItem("saytara-dark") !== "false"; } catch {}
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+      })();
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
