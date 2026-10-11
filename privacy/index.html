@@ -4,7 +4,11 @@
     <script>
       (() => {
         let dark = true;
-        try { dark = localStorage.getItem("saytara-dark") !== "false"; } catch {}
+        try {
+          const saved = localStorage.getItem("saytara-dark");
+          const legacy = localStorage.getItem("mojtama-theme");
+          dark = saved === "true" ? true : saved === "false" ? false : legacy === "light" ? false : true;
+        } catch {}
         document.documentElement.dataset.theme = dark ? "dark" : "light";
       })();
     </script>
