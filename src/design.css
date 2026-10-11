@@ -209,3 +209,26 @@ button, .btn, .dash-nav a, .mobile-dashboard-nav a { min-height: var(--touch); }
 @media(prefers-reduced-motion:reduce) {
  *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important; }
 }
+
+
+/* Accessible theme action for non-hydrated public HTML. */
+.public-theme-toggle {
+  display:inline-grid;
+  flex:0 0 auto;
+  width:2.45rem;
+  height:2.45rem;
+  place-items:center;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:.8rem;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:1.2rem;
+  line-height:1;
+  cursor:pointer;
+  transition:border-color .18s ease,background-color .18s ease,transform .18s ease;
+}
+.public-theme-toggle:hover { border-color:var(--brand); transform:translateY(-1px); }
+:root[data-theme="dark"] .public-theme-toggle,.app.dark .public-theme-toggle { border-color:#3a3b3d; background:#292a2c; color:#ececec; }
+.public-theme-toggle:focus-visible { outline:3px solid #68e5c3!important; outline-offset:3px!important; }
+@media(prefers-reduced-motion:reduce) { .public-theme-toggle { transition:none; } }
