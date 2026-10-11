@@ -69,7 +69,7 @@ function Header({ demo, authenticated, displayName, role, toggleTheme, dark, rol
     { to: '/feed', label: 'الخلاصة' }, { to: '/connections', label: 'الاتصالات' },
     { to: '/messages', label: 'الرسائل' }, { to: '/groups', label: 'المجموعات' },
     { to: '/career-journey', label: 'الرحلة المهنية' }, { to: '/events', label: 'الفعاليات' },
-    { to: '/learning', label: 'مركز التعلّم' },
+    { to: '/notifications', label: 'الإشعارات' }, { to: '/learning', label: 'مركز التعلّم' },
   ]
   const navBadge = (to: string) => to === '/notifications' && roleContext === 'member' && unread > 0 ? <span className="nav-count">{unread}</span> : to === '/messages' && roleContext === 'member' && unreadMessages > 0 ? <span className="nav-count">{unreadMessages}</span> : null
   const adminLinks = [] as { to: string; label: string }[]
@@ -91,15 +91,15 @@ function Header({ demo, authenticated, displayName, role, toggleTheme, dark, rol
     </nav>
     <div className="header-actions">
       <button type="button" className="icon-btn theme-toggle" aria-label={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} aria-pressed={dark} title={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>
-      {onSignOut && <button type="button" className="icon-btn" aria-label="تسجيل الخروج" title="تسجيل الخروج" onClick={() => void onSignOut()}><Settings size={16}/></button>}
+      {authenticated && onSignOut && <button type="button" className="icon-btn" aria-label="تسجيل الخروج" title="تسجيل الخروج" onClick={() => void onSignOut()}><Settings size={16}/></button>}
       {authenticated ? <Link className="user-chip" to="/profile"><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span><ChevronDown size={14}/></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}
-      <button type="button" className="icon-btn menu-btn" aria-controls="primary-navigation" aria-expanded={open} aria-label={open ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل'} onClick={() => setOpen(value => !value)}>{open ? <X size={20}/> : <Menu size={20}/>}</button>
+      <button type="button" className="icon-btn menu-btn" aria-controls={authenticated ? 'member-nav' : 'primary-navigation'} aria-expanded={open} aria-label={open ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل'} onClick={() => setOpen(value => !value)}>{open ? <X size={20}/> : <Menu size={20}/>}</button>
     </div>
-    <nav id="member-nav" aria-label="تنقل الأعضاء" className={`member-nav ${open ? 'nav-open' : ''}`}>
-      {authenticated && memberLinks.map(link => <NavLink key={link.to} to={link.to} onClick={() => setOpen(false)}>{link.label}{navBadge(link.to)}</NavLink>)}
-      {authenticated && adminLinks.length > 0 && <><span className="nav-separator"/><span className="member-nav-heading">الإدارة</span></>}
-      {authenticated && adminLinks.map(link => <NavLink key={link.to} to={link.to} onClick={() => setOpen(false)}>{link.label}</NavLink>)}
-    </nav>
+    {authenticated && <nav id="member-nav" aria-label="تنقل الأعضاء" className={`member-nav ${open ? 'nav-open' : ''}`}>
+      {memberLinks.map(link => <NavLink key={link.to} to={link.to} onClick={() => setOpen(false)}>{link.label}{navBadge(link.to)}</NavLink>)}
+      {adminLinks.length > 0 && <><span className="nav-separator"/><span className="member-nav-heading">الإدارة</span></>}
+      {adminLinks.map(link => <NavLink key={link.to} to={link.to} onClick={() => setOpen(false)}>{link.label}</NavLink>)}
+    </nav>}
   </div></header>
 }
 

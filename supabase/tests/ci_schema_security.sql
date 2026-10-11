@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(24);
+select plan(32);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
@@ -31,6 +31,22 @@ select ok(not has_table_privilege('authenticated', 'public.platform_owner_audit'
 select ok(not has_function_privilege('anon', 'public.is_staff(uuid)', 'EXECUTE'), 'anonymous users cannot execute internal staff lookup');
 select ok(not has_function_privilege('anon', 'public.is_account_approved()', 'EXECUTE'), 'anonymous users cannot execute approval helper');
 select ok(not has_function_privilege('authenticated', 'public.guard_message_update()', 'EXECUTE'), 'authenticated users cannot directly execute trigger-only message guard');
+
+
+-- 20261011010000_learning_external_link: new schema objects and privileges
+select ok(to_regclass('public.learning_links') is not null, 'learning_links table exists');
+select ok(coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.learning_links')), false), 'RLS is enabled on learning_links');
+select ok((select count(*) from information_schema.columns where table_schema='public' and table_name='learning_workshops' and column_name='external_link') = 1, 'external_link column exists on learning_workshops');
+
+-- anon must not read or write the new table or execute the new RPCs
+select ok(not has_table_privilege('anon', 'public.learning_links', 'SELECT'), 'anonymous users cannot read learning_links');
+select ok(not has_table_privilege('anon', 'public.learning_links', 'INSERT'), 'anonymous users cannot insert learning_links');
+select ok(not has_function_privilege('anon', 'public.create_learning_link(text, text, text)', 'EXECUTE'), 'anonymous users cannot create learning links');
+select ok(not has_function_privilege('anon', 'public.delete_learning_link(uuid)', 'EXECUTE'), 'anonymous users cannot delete learning links');
+
+-- create_learning_workshop 8-param overload must be explicitly granted to authenticated only
+select ok(has_function_privilege('authenticated', 'public.create_learning_workshop(text, text, text, timestamptz, integer, text, public.app_role[], text)', 'EXECUTE'), 'authenticated can execute the new 8-param create_learning_workshop');
+select ok(not has_function_privilege('anon', 'public.create_learning_workshop(text, text, text, timestamptz, integer, text, public.app_role[], text)', 'EXECUTE'), 'anonymous users cannot create learning workshops via the new overload');
 
 select * from finish();
 rollback;

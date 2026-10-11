@@ -117,7 +117,7 @@ CREATE OR REPLACE FUNCTION public.create_learning_workshop(
   p_duration_minutes integer,
   p_cover_url text,
   p_audience_roles public.app_role[],
-  p_external_link text DEFAULT null
+  p_external_link text
 ) RETURNS public.learning_workshops
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE result public.learning_workshops;
