@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Activity, ArrowLeft, CalendarDays, Check, Clock3, FileVideo2, LockKeyhole, Play, Radio, ShieldCheck, Users, X } from 'lucide-react'
+import { Activity, ArrowLeft, CalendarDays, Check, Clock3, ExternalLink, FileVideo2, Link2, LockKeyhole, Play, Radio, ShieldCheck, Trash2, Users, X } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { isSupabaseConfigured } from '../lib/supabase-config'
 import { supabase } from '../lib/supabase'
@@ -17,6 +17,14 @@ type Workshop = {
   cover_url: string | null
   audience_roles: Role[]
   status: WorkshopStatus
+  external_link?: string | null
+}
+type LearningLink = {
+  id: string
+  title: string
+  description: string
+  url: string
+  created_at: string
 }
 type Recording = {
   recording_id: string
@@ -48,31 +56,41 @@ function StateMessage({ children, tone = 'neutral' }: { children: React.ReactNod
 export default function LearningCenterPage({ role }: { role: Role }) {
   const [workshops, setWorkshops] = useState<Workshop[]>([])
   const [recordings, setRecordings] = useState<Recording[]>([])
+  const [links, setLinks] = useState<LearningLink[]>([])
   const configured = Boolean(supabase && isSupabaseConfigured)
   const [loading, setLoading] = useState(configured)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(configured ? '' : 'يتطلب مركز التعلم إعداد اتصال Supabase أولاً.')
   const [notice, setNotice] = useState('')
-  const [tab, setTab] = useState<'workshops' | 'library'>(() => typeof window !== 'undefined' && window.location.hash === '#library' ? 'library' : 'workshops')
+  const [tab, setTab] = useState<'workshops' | 'links' | 'library'>(() => {
+    if (typeof window === 'undefined') return 'workshops'
+    if (window.location.hash === '#library') return 'library'
+    if (window.location.hash === '#links') return 'links'
+    return 'workshops'
+  })
   const [showForm, setShowForm] = useState(false)
+  const [showLinkForm, setShowLinkForm] = useState(false)
   const [audience, setAudience] = useState<Role[]>(['member', 'verified', 'coach', 'moderator', 'manager'])
-  const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
+  const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60', external_link: '' })
+  const [linkForm, setLinkForm] = useState({ title: '', description: '', url: '' })
   const navigate = useNavigate()
 
   const load = useCallback(async () => {
     if (!supabase || !isSupabaseConfigured) return
     setError('')
-    const [workshopResult, recordingResult] = await Promise.all([
-      supabase.from('learning_workshops').select('id,title,description,instructor_name,scheduled_at,duration_minutes,cover_url,audience_roles,status').order('scheduled_at', { ascending: false }).limit(100),
+    // كل مصدر مستقل: فشل المكتبة أو الروابط لا يمنع عرض الورش
+    const [workshopResult, recordingResult, linkResult] = await Promise.all([
+      supabase.from('learning_workshops').select('id,title,description,instructor_name,scheduled_at,duration_minutes,cover_url,audience_roles,status,external_link').order('scheduled_at', { ascending: false }).limit(100),
       supabase.rpc('list_learning_library'),
+      supabase.from('learning_links').select('id,title,description,url,created_at').order('created_at', { ascending: false }).limit(50),
     ])
-    if (workshopResult.error || recordingResult.error) {
-      setError('تعذر تحميل مركز التعلم. قد تحتاج قاعدة البيانات إلى ترحيل learning center أو قد لا تملك صلاحية الوصول.')
-      setWorkshops([]); setRecordings([])
-    } else {
-      setWorkshops((workshopResult.data || []) as Workshop[])
-      setRecordings((recordingResult.data || []) as Recording[])
+    const firstError = workshopResult.error || recordingResult.error || linkResult.error
+    if (firstError) {
+      setError('تعذر تحميل بعض أقسام مركز التعلم. تحقق من تطبيق migration روابط التعلّم والورش وصلاحية الوصول.')
     }
+    if (!workshopResult.error) setWorkshops((workshopResult.data || []) as Workshop[])
+    if (!recordingResult.error) setRecordings((recordingResult.data || []) as Recording[])
+    if (!linkResult.error) setLinks((linkResult.data || []) as LearningLink[])
     setLoading(false)
   }, [])
 
@@ -90,13 +108,42 @@ export default function LearningCenterPage({ role }: { role: Role }) {
       p_duration_minutes: Number(form.duration_minutes),
       p_cover_url: null,
       p_audience_roles: audience,
+      p_external_link: form.external_link.trim() || null,
     })
     setSaving(false)
     if (createError) { setError('لم تُحفظ الورشة. تأكد من اكتمال الحقول وتطبيق migration مركز التعلم.'); return }
-    setForm({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
+    setForm({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60', external_link: '' })
     setShowForm(false)
     setNotice('تمت جدولة الورشة. يظهر محتواها للمستخدمين الموافق عليهم ضمن الجمهور الذي اخترته.')
     await load()
+  }
+
+  const createLink = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!supabase || !canManage(role)) return
+    const url = linkForm.url.trim()
+    if (!/^https:\/\//i.test(url)) { setError('يجب أن يبدأ الرابط بـ https://'); return }
+    setSaving(true); setError(''); setNotice('')
+    const { error: createError } = await supabase.rpc('create_learning_link', {
+      p_title: linkForm.title,
+      p_url: url,
+      p_description: linkForm.description,
+    })
+    setSaving(false)
+    if (createError) { setError('لم يُحفظ رابط التعلّم. تحقق من تطبيق migration روابط التعلّم وصلاحيتك.'); return }
+    setLinkForm({ title: '', description: '', url: '' })
+    setShowLinkForm(false)
+    setNotice('أُضيف رابط التعلّم. يظهر لجميع الأعضاء المعتمدين دون اشتراط جاهزية البث.')
+    await load()
+  }
+
+  const removeLink = async (link: LearningLink) => {
+    if (!supabase || !canManage(role)) return
+    setSaving(true)
+    const { error: removeError } = await supabase.rpc('delete_learning_link', { p_link_id: link.id })
+    setSaving(false)
+    if (removeError) { setError('تعذر حذف الرابط. تحقق من الصلاحية ثم أعد المحاولة.'); return }
+    setLinks(current => current.filter(item => item.id !== link.id))
   }
 
   const startWorkshop = async (workshop: Workshop) => {
@@ -134,9 +181,13 @@ export default function LearningCenterPage({ role }: { role: Role }) {
     <div className="learning-toolbar">
       <div className="learning-tabs" role="tablist" aria-label="أقسام مركز التعلم">
         <button type="button" role="tab" aria-selected={tab === 'workshops'} className={tab === 'workshops' ? 'active' : ''} onClick={() => setTab('workshops')}><CalendarDays size={16}/> الورش</button>
+        <button type="button" role="tab" aria-selected={tab === 'links'} className={tab === 'links' ? 'active' : ''} onClick={() => setTab('links')}><Link2 size={16}/> روابط التعلّم <span>{links.length}</span></button>
         <button type="button" role="tab" aria-selected={tab === 'library'} className={tab === 'library' ? 'active' : ''} onClick={() => setTab('library')}><FileVideo2 size={16}/> مكتبة التسجيلات <span>{recordings.length}</span></button>
       </div>
-      {canManage(role) && tab === 'workshops' && <button className="btn btn-primary btn-small" onClick={() => setShowForm(value => !value)}>{showForm ? <X size={16}/> : <CalendarDays size={16}/>} {showForm ? 'إغلاق' : 'جدولة ورشة'}</button>}
+      <div className="learning-toolbar-actions">
+        {canManage(role) && tab === 'workshops' && <button className="btn btn-primary btn-small" onClick={() => setShowForm(value => !value)}>{showForm ? <X size={16}/> : <CalendarDays size={16}/>} {showForm ? 'إغلاق' : 'جدولة ورشة'}</button>}
+        {canManage(role) && tab === 'links' && <button className="btn btn-primary btn-small" onClick={() => setShowLinkForm(value => !value)}>{showLinkForm ? <X size={16}/> : <Link2 size={16}/>} {showLinkForm ? 'إغلاق' : 'إضافة رابط'}</button>}
+      </div>
     </div>
     {showForm && canManage(role) && <form className="learning-form" onSubmit={createWorkshop}>
       <div className="learning-form-heading"><span className="eyebrow">إعداد جلسة جديدة</span><h2>جدولة ورشة مهنية</h2></div>
@@ -145,15 +196,25 @@ export default function LearningCenterPage({ role }: { role: Role }) {
         <label>اسم المدرب/ة<input required minLength={2} maxLength={120} value={form.instructor_name} onChange={e => setForm({ ...form, instructor_name: e.target.value })} placeholder="الاسم الظاهر للمشاركين"/></label>
         <label>الموعد المحلي<input required type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })}/></label>
         <label>المدة المتوقعة بالدقائق<select value={form.duration_minutes} onChange={e => setForm({ ...form, duration_minutes: e.target.value })}>{[30,45,60,75,90,120,180].map(value => <option key={value} value={value}>{value} دقيقة</option>)}</select></label>
+        <label className="learning-form-wide">رابط خارجي (اختياري)<input type="url" value={form.external_link} onChange={e => setForm({ ...form, external_link: e.target.value })} placeholder="https://meet.example.com/… — يُستخدم عند عدم جاهزية البث"/></label>
         <label className="learning-form-wide">وصف الورشة<textarea maxLength={6000} rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="الأهداف ومحاور النقاش. لا تُضمّن معلومات مرضى."/></label>
         <fieldset className="learning-audience learning-form-wide"><legend>الجمهور المسموح له بعد اعتماد الحساب</legend>{roleOptions.map(option => <label key={option.id}><input type="checkbox" checked={audience.includes(option.id)} onChange={e => setAudience(current => e.target.checked ? [...current, option.id] : current.filter(value => value !== option.id))}/>{option.label}</label>)}</fieldset>
       </div>
-      <div className="learning-form-actions"><span>التسجيل الحي لا يتاح قبل ضبط أسرار 100ms وتخزين التسجيلات.</span><button className="btn btn-primary" disabled={saving || audience.length === 0}>{saving ? 'جارٍ الحفظ…' : 'حفظ الموعد'} <ArrowLeft size={15}/></button></div>
+      <div className="learning-form-actions"><span>التسجيل الحي لا يتاح قبل ضبط أسرار 100ms وتخزين التسجيلات. يمكن استخدام الرابط الخارجي كبديل.</span><button className="btn btn-primary" disabled={saving || audience.length === 0}>{saving ? 'جارٍ الحفظ…' : 'حفظ الموعد'} <ArrowLeft size={15}/></button></div>
+    </form>}
+    {showLinkForm && canManage(role) && tab === 'links' && <form className="learning-form" onSubmit={createLink}>
+      <div className="learning-form-heading"><span className="eyebrow">رابط تعلّم مستقل</span><h2>إضافة رابط تعلّم</h2></div>
+      <div className="learning-form-grid">
+        <label>عنوان الرابط<input required minLength={3} maxLength={140} value={linkForm.title} onChange={e => setLinkForm({ ...linkForm, title: e.target.value })} placeholder="مثال: ورشة LinkedIn على Zoom"/></label>
+        <label>الرابط (https)<input required type="url" value={linkForm.url} onChange={e => setLinkForm({ ...linkForm, url: e.target.value })} placeholder="https://…"/></label>
+        <label className="learning-form-wide">وصف (اختياري)<textarea maxLength={2000} rows={3} value={linkForm.description} onChange={e => setLinkForm({ ...linkForm, description: e.target.value })} placeholder="ما الذي يجده العضو في الرابط؟"/></label>
+      </div>
+      <div className="learning-form-actions"><span>يظهر الرابط لجميع الأعضاء المعتمدين فوراً دون اشتراط جاهزية البث.</span><button className="btn btn-primary" disabled={saving}>{saving ? 'جارٍ الحفظ…' : 'حفظ الرابط'} <ArrowLeft size={15}/></button></div>
     </form>}
     {loading ? <StateMessage>جارٍ تحميل الورش…</StateMessage> : tab === 'workshops' ? ordered.length === 0 ? <div className="learning-empty"><CalendarDays size={24}/><h2>لا توجد ورش مجدولة</h2><p>{canManage(role) ? 'أنشئ أول ورشة من زر «جدولة ورشة» أعلاه.' : 'تظهر الورش هنا عندما يجدولها مالك المنصة أو المدير.'}</p></div> : <div className="learning-grid">{ordered.map(item => <article className="learning-card" key={item.id}>
       <div className={`learning-card-art ${item.status === 'live' ? 'is-live' : ''}`}><span className={`learning-status status-${item.status}`}>{item.status === 'live' && <i/>}{statusNames[item.status]}</span><div className="learning-card-symbol"><Activity size={28}/></div></div>
-      <div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(item.scheduled_at)}</span><span><Clock3 size={14}/>{item.duration_minutes} دقيقة</span></div><h2>{item.title}</h2><p className="learning-instructor">المدرب/ة: {item.instructor_name}</p><p className="learning-description">{item.description || 'ورشة تعليمية مهنية لأعضاء مجتمع السيطرة.'}</p><div className="learning-card-actions">{canEnter(item) ? <button className="btn btn-primary btn-small" onClick={() => navigate(`/learning-room/${item.id}`)}><Play size={15}/> دخول الورشة</button> : item.status === 'recorded' ? <button className="btn btn-outline btn-small" onClick={() => setTab('library')}><FileVideo2 size={15}/> مشاهدة التسجيل</button> : canManage(role) && item.status === 'scheduled' ? <button className="btn btn-primary btn-small" disabled={saving} onClick={() => void startWorkshop(item)}><Radio size={15}/> {saving ? 'جارٍ التجهيز…' : 'بدء الورشة'}</button> : <span className="learning-access"><LockKeyhole size={14}/> {item.status === 'ended' ? 'سيظهر التسجيل بعد اكتماله' : 'بانتظار موعد الورشة'}</span>}{canManage(role) && <small className="learning-audience-summary"><Users size={13}/> الجمهور: {item.audience_roles.map(id => roleOptions.find(option => option.id === id)?.label || id).join('، ')}</small>}</div></div>
-    </article>)}</div> : recordings.length === 0 ? <div className="learning-empty"><FileVideo2 size={25}/><h2>مكتبة التسجيلات فارغة</h2><p>تظهر التسجيلات بعد انتهاء الورشة وتأكيد رفع الأصل إلى مخزن الفيديو.</p></div> : <div className="learning-grid">{recordings.map(recording => <article className="learning-card" key={recording.recording_id}><div className="learning-card-art archive-art"><span className="learning-status status-recorded">تسجيل متاح</span><div className="learning-card-symbol"><Play size={25}/></div></div><div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(recording.scheduled_at)}</span><span><Clock3 size={14}/>{mins(recording.recording_duration_seconds)}</span></div><h2>{recording.title}</h2><p className="learning-instructor">المدرب/ة: {recording.instructor_name}</p><p className="learning-description">{recording.description || 'تسجيل ورشة مجتمع السيطرة.'}</p><button className="btn btn-primary btn-small" disabled={saving} onClick={() => void openPlayback(recording)}><Play size={15}/> مشاهدة خاصة <LockKeyhole size={13}/></button></div></article>)}</div>}
+      <div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(item.scheduled_at)}</span><span><Clock3 size={14}/>{item.duration_minutes} دقيقة</span></div><h2>{item.title}</h2><p className="learning-instructor">المدرب/ة: {item.instructor_name}</p><p className="learning-description">{item.description || 'ورشة تعليمية مهنية لأعضاء مجتمع السيطرة.'}</p><div className="learning-card-actions">{canEnter(item) ? <button className="btn btn-primary btn-small" onClick={() => navigate(`/learning-room/${item.id}`)}><Play size={15}/> دخول الورشة</button> : item.status === 'recorded' ? <button className="btn btn-outline btn-small" onClick={() => setTab('library')}><FileVideo2 size={15}/> مشاهدة التسجيل</button> : canManage(role) && item.status === 'scheduled' ? <button className="btn btn-primary btn-small" disabled={saving} onClick={() => void startWorkshop(item)}><Radio size={15}/> {saving ? 'جارٍ التجهيز…' : 'بدء الورشة'}</button> : <span className="learning-access"><LockKeyhole size={14}/> {item.status === 'ended' ? 'سيظهر التسجيل بعد اكتماله' : 'بانتظار موعد الورشة'}</span>}{item.external_link && <a className="btn btn-outline btn-small" href={item.external_link} target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> انضم عبر الرابط</a>}{canManage(role) && <small className="learning-audience-summary"><Users size={13}/> الجمهور: {item.audience_roles.map(id => roleOptions.find(option => option.id === id)?.label || id).join('، ')}</small>}</div></div>
+    </article>)}</div> : tab === 'links' ? (links.length === 0 && !canManage(role) ? <div className="learning-empty"><Link2 size={24}/><h2>لا توجد روابط تعلّم بعد</h2><p>تظهر هنا روابط الورش والجلسات الخارجية التي يضيفها المالك أو المدير، وتكون متاحة لجميع الأعضاء المعتمدين.</p></div> : <div className="learning-links-grid">{links.map(link => <article className="learning-link-card" key={link.id}><div className="learning-link-icon"><Link2 size={22}/></div><div className="learning-link-body"><h2>{link.title}</h2>{link.description && <p>{link.description}</p>}<div className="learning-card-actions"><a className="btn btn-primary btn-small" href={link.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> انضم عبر الرابط</a>{canManage(role) && <button className="icon-btn" aria-label={`حذف ${link.title}`} disabled={saving} onClick={() => void removeLink(link)}><Trash2 size={15}/></button>}</div></div></article>)}</div>) : recordings.length === 0 ? <div className="learning-empty"><FileVideo2 size={25}/><h2>مكتبة التسجيلات فارغة</h2><p>تظهر التسجيلات بعد انتهاء الورشة وتأكيد رفع الأصل إلى مخزن الفيديو.</p></div> : <div className="learning-grid">{recordings.map(recording => <article className="learning-card" key={recording.recording_id}><div className="learning-card-art archive-art"><span className="learning-status status-recorded">تسجيل متاح</span><div className="learning-card-symbol"><Play size={25}/></div></div><div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(recording.scheduled_at)}</span><span><Clock3 size={14}/>{mins(recording.recording_duration_seconds)}</span></div><h2>{recording.title}</h2><p className="learning-instructor">المدرب/ة: {recording.instructor_name}</p><p className="learning-description">{recording.description || 'تسجيل ورشة مجتمع السيطرة.'}</p><button className="btn btn-primary btn-small" disabled={saving} onClick={() => void openPlayback(recording)}><Play size={15}/> مشاهدة خاصة <LockKeyhole size={13}/></button></div></article>)}</div>}
     <footer className="learning-footer"><span><ShieldCheck size={15}/> الوصول يظل محكوماً بصلاحيات Supabase وليس بإخفاء الروابط فقط.</span><Link to="/profile">العودة إلى مساحتي <ArrowLeft size={14}/></Link></footer>
   </main>
 }
