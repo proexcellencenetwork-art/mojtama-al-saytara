@@ -232,3 +232,9 @@ button, .btn, .dash-nav a, .mobile-dashboard-nav a { min-height: var(--touch); }
 :root[data-theme="dark"] .public-theme-toggle,.app.dark .public-theme-toggle { border-color:#3a3b3d; background:#292a2c; color:#ececec; }
 .public-theme-toggle:focus-visible { outline:3px solid #68e5c3!important; outline-offset:3px!important; }
 @media(prefers-reduced-motion:reduce) { .public-theme-toggle { transition:none; } }
+
+/* On private member pages, keep one mobile menu control for the member navigation. */
+@media (max-width: 639px) {
+  .app:has(.signed-shell) > .topbar .menu-btn { display: none; }
+  .signed-top .member-menu-btn { margin-inline-start: 0; }
+}
