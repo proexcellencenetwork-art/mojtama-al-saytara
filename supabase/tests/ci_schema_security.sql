@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(32);
+select plan(33);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
