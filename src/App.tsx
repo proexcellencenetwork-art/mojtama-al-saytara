@@ -265,7 +265,7 @@ function FeedPage({ role, demoMode, userId, displayName }: { role: Role; demoMod
 }
 
 function DashboardPage(props: { page: string; role: Role; setRole: (role: Role) => void; demoMode: boolean; userId: string; client: SupabaseClient | null }) {
-  if (!props.demoMode && props.page !== 'settings' && props.userId) return <LiveDashboardPage page={props.page} role={props.role} userId={props.userId} />
+  if (props.page === 'admin' || (!props.demoMode && props.page !== 'settings' && props.userId)) return <LiveDashboardPage page={props.page} role={props.role} userId={props.userId} />
   return <DemoDashboardPage page={props.page} role={props.role} setRole={props.setRole} demoMode={props.demoMode} client={props.client} />
 }
 function DemoDashboardPage({ page, role, setRole, demoMode, client }: { page: string; role: Role; setRole: (role:Role)=>void; demoMode: boolean; client: SupabaseClient | null }) {
