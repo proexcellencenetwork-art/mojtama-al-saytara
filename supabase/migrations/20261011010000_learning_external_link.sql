@@ -36,15 +36,19 @@ REVOKE ALL ON public.learning_links FROM anon;
 GRANT SELECT ON public.learning_links TO authenticated;
 GRANT INSERT, UPDATE, DELETE ON public.learning_links TO authenticated;
 
--- قراءة: أي عضو معتمد ضمن الجمهور
+-- قراءة: أي عضو معتمد (تمت الموافقة على حسابه) ضمن الجمهور
+-- ملاحظة: has_role لا يتحقق من حالة الموافقة، لذا نضيف صراحةً is_account_approved().
 DROP POLICY IF EXISTS learning_links_authorized_read ON public.learning_links;
 CREATE POLICY learning_links_authorized_read ON public.learning_links
   FOR SELECT TO authenticated
   USING (
-    public.can_manage_learning()
-    OR EXISTS (
-      SELECT 1 FROM unnest(learning_links.audience_roles) AS audience(role)
-      WHERE public.has_role(auth.uid(), audience.role)
+    public.is_account_approved()
+    AND (
+      public.can_manage_learning()
+      OR EXISTS (
+        SELECT 1 FROM unnest(learning_links.audience_roles) AS audience(role)
+        WHERE public.has_role(auth.uid(), audience.role)
+      )
     )
   );
 
@@ -56,10 +60,11 @@ CREATE POLICY learning_links_manage ON public.learning_links
   WITH CHECK (public.can_manage_learning());
 
 -- 3) دالة إضافة رابط تعلّم
+-- ملاحظة: لا نضع DEFAULT على p_description قبل p_url (قاعدة PostgreSQL: أي باراميتر بعد باراميتر له DEFAULT يجب أن يكون له DEFAULT أيضًا).
 CREATE OR REPLACE FUNCTION public.create_learning_link(
   p_title text,
-  p_description text DEFAULT '',
-  p_url text
+  p_url text,
+  p_description text DEFAULT ''
 ) RETURNS public.learning_links
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE result public.learning_links;
@@ -103,17 +108,15 @@ REVOKE ALL ON FUNCTION public.delete_learning_link(uuid) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.delete_learning_link(uuid) TO authenticated;
 
 -- 5) تحديث create_learning_workshop لقبول رابط خارجي (توقيع جديد دون كسر القديم)
+-- ملاحظة: هذا يعمل overload — لا يستبدل الدالة السبعة-باراميتر. نستخدم الأنواع صراحةً في REVOKE/GRANT.
 CREATE OR REPLACE FUNCTION public.create_learning_workshop(
   p_title text,
   p_description text,
   p_instructor_name text,
   p_scheduled_at timestamptz,
   p_duration_minutes integer,
-  p_cover_url text DEFAULT null,
-  p_audience_roles public.app_role[] DEFAULT array[
-    'member'::public.app_role,'verified'::public.app_role,'coach'::public.app_role,
-    'moderator'::public.app_role,'manager'::public.app_role
-  ],
+  p_cover_url text,
+  p_audience_roles public.app_role[],
   p_external_link text DEFAULT null
 ) RETURNS public.learning_workshops
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
@@ -141,8 +144,12 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_learning_workshop FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.create_learning_workshop TO authenticated;
+REVOKE ALL ON FUNCTION public.create_learning_workshop(text, text, text, timestamptz, integer, text, public.app_role[], text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.create_learning_workshop(text, text, text, timestamptz, integer, text, public.app_role[], text) TO authenticated;
+
+-- تحديث دالة create_learning_link أيضاً بنفس الأنواع صراحةً
+REVOKE ALL ON FUNCTION public.create_learning_link(text, text, text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.create_learning_link(text, text, text) TO authenticated;
 
 -- 6) إتاحة القراءة الآمنة للروابط عبر RLS على الورش (العمود الجديد)
 -- لا نغير سياسة الورش الحالية؛ القراءة عبر audience_roles + can_access_learning_workshop.

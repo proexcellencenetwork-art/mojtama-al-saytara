@@ -126,8 +126,8 @@ export default function LearningCenterPage({ role }: { role: Role }) {
     setSaving(true); setError(''); setNotice('')
     const { error: createError } = await supabase.rpc('create_learning_link', {
       p_title: linkForm.title,
-      p_description: linkForm.description,
       p_url: url,
+      p_description: linkForm.description,
     })
     setSaving(false)
     if (createError) { setError('لم يُحفظ رابط التعلّم. تحقق من تطبيق migration روابط التعلّم وصلاحيتك.'); return }
