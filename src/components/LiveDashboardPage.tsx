@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, Users } from 'lucide-react'
+import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, UserPlus, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
