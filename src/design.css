@@ -330,3 +330,17 @@ button, .btn, .dash-nav a, .mobile-dashboard-nav a { min-height: var(--touch); }
   .topbar .header-actions { gap: .2rem; }
   .topbar .theme-toggle { width: 2.35rem; height: 2.35rem; }
 }
+
+/* Provide a direct sign-in destination in the mobile public menu. */
+.topbar-inner > .public-nav:not(.workspace-navigation) .mobile-auth-link { display: none; }
+@media (max-width: 800px) {
+  .topbar-inner > .public-nav:not(.workspace-navigation).nav-open .mobile-auth-link {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line);
+    margin-top: .2rem;
+    padding-top: .8rem;
+    color: var(--teal);
+    font-weight: 800;
+  }
+}
