@@ -45,6 +45,20 @@ try {
     if (!html.includes('name="robots" content="noindex,nofollow"')) throw new Error(`Private learning shell must be noindex: ${relative}`)
   }
   if (!routes.some(route=>route.path==='/learning-room/:id/')) throw new Error('Dynamic workshop room route missing from the route manifest.')
+  const signupReady = env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false' && Boolean(env.VITE_TURNSTILE_SITE_KEY?.trim()) && env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
+  const registerHtml = await readFile(resolve(root,'dist/register/index.html'),'utf8')
+  const faqHtml = await readFile(resolve(root,'dist/faq/index.html'),'utf8')
+  if (!signupReady) {
+    if (!registerHtml.includes('التسجيل العام موقوف مؤقتًا') && !registerHtml.includes('التسجيل العام متوقف مؤقتًا')) {
+      throw new Error('Registration HTML must fail closed until both Turnstile and Supabase Auth CAPTCHA are configured.')
+    }
+    if (registerHtml.includes('التسجيل مفتوح للجميع')) {
+      throw new Error('Registration HTML must not advertise open registration while signup security is unconfigured.')
+    }
+    if (!faqHtml.includes('التسجيل العام موقوف مؤقتًا') && !faqHtml.includes('التسجيل العام مغلق مؤقتًا')) {
+      throw new Error('Static FAQ must match the current closed or paused public-signup state.')
+    }
+  }
   const sitemap = await readFile(resolve(root,'dist/sitemap.xml'),'utf8')
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
   if (!sitemap.includes('<lastmod>2026-02-01T12:30:00.000Z</lastmod>')) throw new Error('Sitemap must expose the verified updated_at timestamp for a synthetic published article.')

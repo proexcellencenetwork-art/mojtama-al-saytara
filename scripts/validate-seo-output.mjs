@@ -118,7 +118,23 @@ for (const route of privateRoutes) {
   try {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
-    if (route.path === '/register/' && (!html.includes('التسجيل مفتوح للجميع') || !html.includes('بعد الاعتماد'))) fail.push('Pre-rendered registration page must explain that signup is open but member access requires account approval.')
+    if (route.path === '/register/') {
+      const signupReady = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
+        && Boolean(process.env.VITE_TURNSTILE_SITE_KEY?.trim())
+        && process.env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
+      if (signupReady) {
+        if (!html.includes('أنشئ حسابك وأكّد بريدك الإلكتروني') || !html.includes('اعتماد الإدارة')) {
+          fail.push('Pre-rendered registration page must explain email confirmation and manager approval when signup security is configured.')
+        }
+      } else {
+        const pausedCopyPresent = html.includes('التسجيل العام متوقف مؤقتًا')
+          || html.includes('التسجيل العام مغلق حاليًا')
+          || html.includes('التسجيل العام مغلق مؤقتًا')
+        if (!pausedCopyPresent || html.includes('التسجيل مفتوح للجميع')) {
+          fail.push('Pre-rendered registration page must pause public signup when Turnstile or Supabase Auth CAPTCHA is not configured.')
+        }
+      }
+    }
     if (/<main[^>]*>\s*<(?:article|h1)[^>]*>[^<]{8,}/i.test(html) && !html.includes('هذه المساحة تتطلب الدخول')) fail.push(`Private content appears in static HTML: ${route.path}`)
   } catch { fail.push(`Missing private SPA shell for ${route.path}`) }
 }
