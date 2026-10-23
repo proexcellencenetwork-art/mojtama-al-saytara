@@ -47,6 +47,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          # Set true only after CAPTCHA is enabled in Supabase Auth and verified with a test signup.
+          VITE_SUPABASE_CAPTCHA_ENFORCED: ${{ vars.VITE_SUPABASE_CAPTCHA_ENFORCED }}
           # Public registration is enabled; email confirmation remains required by Auth.
           VITE_PUBLIC_SIGNUP_ENABLED: 'true'
       - name: Stage root files for branch-based Pages
