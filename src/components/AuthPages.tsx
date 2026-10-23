@@ -76,8 +76,14 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage('الحسابات الحقيقية غير مفعّلة بعد. استكشف نسخة التجربة الآن، أو أضف إعدادات Supabase كما في دليل الإعداد.')
       return
     }
-    // CAPTCHA remains optional. Email confirmation and Supabase Auth rate limits
-    // continue to protect the simple public registration flow.
+    // Fail closed for public registration when the Turnstile site key is absent.
+    // Supabase Auth CAPTCHA must also be enabled server-side; this client guard alone
+    // cannot prevent direct requests to the Auth API.
+    if (mode === 'register' && !isTurnstileConfigured) {
+      setIsError(true)
+      setMessage('التسجيل العام متوقف مؤقتًا حتى تفعيل التحقق الأمني. يمكنك تسجيل الدخول إذا كان لديك حساب.')
+      return
+    }
     const captchaTokenForRequest = requireCaptchaToken()
     if (captchaTokenForRequest === null) return
     setBusy(true)
@@ -190,6 +196,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   }
 
   if (mode === 'register' && !isPublicSignupEnabled) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">الدخول بالدعوة فقط</span><h1>التسجيل العام متوقف مؤقتاً.</h1><p>أوقفنا إنشاء الحسابات الجديدة حتى اكتمال اختبارات القبول والأمان. لن تُقبل حسابات عامة في هذه المرحلة.</p></div><div className="inline-message" role="status">إذا وصلتك دعوة على بريدك، افتح رسالة Supabase ثم أكّد البريد. للحسابات الموجودة، استخدم تسجيل الدخول أو استعادة كلمة المرور.</div><Link className="btn btn-primary btn-full" to="/login">الانتقال إلى تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch">وصلتك دعوة؟ افتح رابطها من بريدك الإلكتروني، ثم سجّل الدخول هنا إذا طُلب منك ذلك.</p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو روابط التأكيد لأحد.</small></div></main>
+  if (mode === 'register' && isPublicSignupEnabled && !isTurnstileConfigured) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">التسجيل الآمن</span><h1>نحمي مجتمعنا قبل فتح الحسابات.</h1><p>التسجيل العام متوقف مؤقتًا لأن التحقق الأمني لم يُهيّأ بعد. سيعود التسجيل بعد إعداد Cloudflare Turnstile وتفعيل التحقق المقابل في Supabase.</p></div><div className="inline-message" role="status">الحسابات الحالية لا تتأثر. يمكنك تسجيل الدخول أو استعادة كلمة المرور كالمعتاد.</div><Link className="btn btn-primary btn-full" to="/login">تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch"><Link to="/privacy">سياسة الخصوصية</Link></p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو رموز التحقق لأحد.</small></div></main>
   const heading = forgot ? 'استعادة كلمة المرور' : mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'
   return <main className="auth-wrap"><div className="auth-card">
     <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div>
