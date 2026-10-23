@@ -3,6 +3,7 @@ import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-j
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
+import { isSignupSecurityConfigured } from './lib/turnstile-config'
 import type { Role } from './appTypes'
 import { MarkdownBody } from './lib/markdown'
 import { findEditorialArticleRow } from './lib/editorialFallback'
@@ -100,7 +101,7 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
     </nav>
     <div className="header-actions">
       <button type="button" className="icon-btn theme-toggle" aria-label={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} aria-pressed={dark} title={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الداكن'} onClick={toggleTheme}>{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>
-      {authenticated ? <Link className="user-chip header-user-chip" to="/profile" aria-label={`الملف الشخصي: ${displayName}`} title={displayName}><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to="/register">انضم للمجتمع <ArrowLeft size={15}/></Link></>}
+      {authenticated ? <Link className="user-chip header-user-chip" to="/profile" aria-label={`الملف الشخصي: ${displayName}`} title={displayName}><Avatar letter={displayName.trim().charAt(0) || 'ع'} size="sm"/><span>{displayName} · {demo ? 'تجربة' : roleNames[role]}</span></Link> : <><Link className="login-link" to="/login">تسجيل الدخول</Link><Link className="btn btn-primary btn-small" to={isSignupSecurityConfigured ? "/register" : "/career-journey"}>{isSignupSecurityConfigured ? "انضم للمجتمع" : "ابدأ رحلتك المهنية"} <ArrowLeft size={15}/></Link></>}
       <button type="button" className={`icon-btn menu-btn ${workspaceActive ? 'workspace-menu-button' : ''}`} aria-controls="primary-navigation" aria-expanded={open} aria-label={open ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل'} title={open ? 'إغلاق القائمة' : 'فتح القائمة'} onClick={() => setOpen(value => !value)}>{open ? <X size={20}/> : <Menu size={20}/>}</button>
     </div>
   </div></header>
@@ -113,8 +114,8 @@ function PublicHome() {
     <div className="eyebrow"><span className="eyebrow-dot"/> Professional Mastery Community · One Network</div>
     <h1>ابنِ قيمتك المهنية،<br/><em>وأوصلها بالأثر.</em></h1>
     <p className="hero-lead">مجتمع مهني يربط التقدم المهني والابتكار والبحث، لتحوّل خبرتك إلى قيمة واضحة وتعاون وأثر حقيقي.</p>
-    <div className="hero-actions"><Link className="btn btn-primary" to="/register">أنشئ حسابك مجانًا <ArrowLeft size={17}/></Link><Link className="btn btn-quiet" to="/about">كيف يعمل المجتمع؟ <ArrowUpLeft size={17}/></Link></div>
-    <div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>تسجيل مفتوح وبسيط</b><small>أكد بريدك وابدأ بعضوية عادية</small></span></div>
+    <div className="hero-actions"><Link className="btn btn-primary" to={isSignupSecurityConfigured ? "/register" : "/career-journey"}>{isSignupSecurityConfigured ? "أنشئ حسابك مجانًا" : "ابدأ رحلتك المهنية"} <ArrowLeft size={17}/></Link><Link className="btn btn-quiet" to="/about">كيف يعمل المجتمع؟ <ArrowUpLeft size={17}/></Link></div>
+    <div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>{isSignupSecurityConfigured ? "التسجيل متاح مع مراجعة الحساب" : "التسجيل العام متوقف مؤقتًا"}</b><small>{isSignupSecurityConfigured ? "أكد بريدك الإلكتروني وانتظر اعتماد الإدارة" : "يعود التسجيل بعد تهيئة Turnstile وCAPTCHA في Supabase Auth"}</small></span></div>
    </div>
    <div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><HeartHandshake size={65} strokeWidth={1.2}/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Sparkles size={16}/></span><span><b>خطوة صغيرة</b><small>تصنع فرقاً مستمراً</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>مصداقية وتعاون وأثر</b><small>مصادر واضحة وخطوات قابلة للمراجعة</small></span></div><div className="art-ring-label">تطوّر · تواصل · توازن</div></div>
   </section>
@@ -134,7 +135,7 @@ function PublicHome() {
    </div>
   </section>
   <section className="quote-section"><div className="wrap quote-inner"><span className="quote-mark">“</span><div><p>حين نمنح أنفسنا مساحة للتفكير، نصبح أقرب إلى الطريق الذي نختاره بوعي.</p><small>مجتمع السيطرة المهنية · مساحتك المهنية الآمنة</small></div><Link to="/charter" className="btn btn-outline">ميثاقنا المهني <ArrowLeft size={15}/></Link></div></section>
-  <section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>خبرتك هي البداية. قيمتك المهنية ما تبنيه وتوصله بالأثر.</h2><p>انضم إلى شبكة مهنية تربط التقدم والابتكار والبحث.</p></div><Link className="btn btn-primary" to="/register">انضم إلى مجتمع السيطرة المهنية <ArrowLeft size={16}/></Link></section>
+  <section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>خبرتك هي البداية. قيمتك المهنية ما تبنيه وتوصله بالأثر.</h2><p>انضم إلى شبكة مهنية تربط التقدم والابتكار والبحث.</p></div><Link className="btn btn-primary" to={isSignupSecurityConfigured ? "/register" : "/career-journey"}>{isSignupSecurityConfigured ? "انضم إلى مجتمع السيطرة المهنية" : "استكشف الرحلة المهنية"} <ArrowLeft size={16}/></Link></section>
   <Footer/>
  </>
 }
