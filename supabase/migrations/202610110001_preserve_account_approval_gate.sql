@@ -1,6 +1,6 @@
--- Public signup mode: new accounts can join immediately after email confirmation.
--- Existing pending/rejected accounts are not changed by this migration.
--- Apply only after confirming that open membership is the intended community policy.
+-- Keep public registration open only when security controls are configured.
+-- New accounts must remain pending until email confirmation and manager approval.
+-- Do not automatically approve public signups.
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
@@ -30,7 +30,7 @@ BEGIN
   END IF;
 
   INSERT INTO public.profiles(user_id, display_name, photo_url, account_status)
-  VALUES (NEW.id, profile_name, profile_photo, 'approved')
+  VALUES (NEW.id, profile_name, profile_photo, 'pending')
   ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO public.user_roles(user_id, role)
