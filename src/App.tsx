@@ -3,6 +3,7 @@ import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-j
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Activity, ArrowLeft, ArrowUpLeft, BadgeCheck, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
+import { supabase } from './lib/supabase'
 import { isSignupSecurityConfigured } from './lib/turnstile-config'
 import type { Role } from './appTypes'
 import { MarkdownBody } from './lib/markdown'
@@ -107,6 +108,32 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
   </div></header>
 }
 
+function PublicCommunityMetric() {
+ const [metric, setMetric] = useState<{ visible: boolean; mode: 'actual' | 'goal'; actual_count: number; goal: number } | null>(null)
+ useEffect(() => {
+  let active = true
+  if (!supabase) return () => { active = false }
+  void supabase.rpc('get_public_community_metric').then(({ data, error }) => {
+   if (!active || error || !data || typeof data !== 'object') return
+   const value = data as { visible?: unknown; mode?: unknown; actual_count?: unknown; goal?: unknown }
+   if (value.visible !== true) return
+   setMetric({
+    visible: true,
+    mode: value.mode === 'goal' ? 'goal' : 'actual',
+    actual_count: Number.isFinite(Number(value.actual_count)) ? Math.max(0, Number(value.actual_count)) : 0,
+    goal: Number.isFinite(Number(value.goal)) ? Math.max(0, Number(value.goal)) : 100,
+   })
+  })
+  return () => { active = false }
+ }, [])
+ if (!metric?.visible) return null
+ const goalMode = metric.mode === 'goal'
+ return <section className="community-member-metric wrap" aria-label="مؤشر المجتمع">
+  <div className="community-member-metric-copy"><span className="eyebrow">{goalMode ? 'وجهتنا القادمة' : 'عضوية فعلية'}</span><h2>{goalMode ? 'هدفنا القادم' : 'أعضاء معتمدون في المجتمع'}</h2><p>{goalMode ? 'هدف نعمل للوصول إليه، وليس عدد الأعضاء الحالي.' : 'يُحسب العدد من الحسابات التي أكدت البريد واعتمدتها الإدارة.'}</p></div>
+  <div className="community-member-metric-value"><strong>{(goalMode ? metric.goal : metric.actual_count).toLocaleString('ar')}</strong><span>{goalMode ? 'عضوًا مستهدفًا' : 'عضوًا معتمدًا'}</span></div>
+ </section>
+}
+
 function PublicHome() {
  return <>
   <section className="hero wrap">
@@ -127,7 +154,8 @@ function PublicHome() {
     <article className="feature-card"><span className="feature-icon"><FileText/></span><h3>Research · المصداقية والأثر</h3><p>اربط البحث والبيانات والتعاون العلمي بأثر مهني قابل للتواصل.</p><Link to="/articles" className="card-link">تصفّح المحتوى والمصادر <ArrowLeft size={14}/></Link></article>
    </div>
   </section>
-  <section className="community-home-direction wrap" aria-labelledby="home-community-vision">
+  <PublicCommunityMetric />
+    <section className="community-home-direction wrap" aria-labelledby="home-community-vision">
     <div className="community-home-copy"><span className="eyebrow"><Flag size={15}/> رؤيتنا واتجاهنا</span><h2 id="home-community-vision">مجتمع واحد. هوية واحدة. شبكة تصنع أثرًا.</h2><p>نساعد الأفراد على بناء مسار مهني أوضح، وتحويل الخبرة إلى ابتكار وبحث وقيمة قابلة للإثبات — بمحتوى مسؤول وخطوات عملية تناسب واقع السوق السعودي.</p><Link className="text-link" to="/about">اقرأ الرؤية والرسالة والأهداف <ArrowLeft size={15}/></Link></div>
     <div className="community-home-pillars"><span><Compass size={16}/> Professional · التقدم المهني</span><span><Sparkles size={16}/> Innovation · البناء والابتكار</span><span><BookOpen size={16}/> Research · البحث والأثر</span></div>
    </section>
