@@ -294,6 +294,19 @@ for (const route of protectedRoutes) {
   await writeRoute(route,shell(route,page,privateBody,null,true,true))
   routes.push({ path: normalizeRoute(route) })
 }
+// Friendly aliases prevent common alternate links from landing on a GitHub Pages 404.
+const routeAliases = [
+  { path: '/saudi-labor-market', target: '/saudi-labor-market-radar', title: 'رادار سوق العمل السعودي | مجتمع السيطرة', description: 'انتقل إلى رادار سوق العمل السعودي في مجتمع السيطرة.', heading: 'رادار سوق العمل السعودي' },
+  { path: '/learning-center', target: '/learning', title: 'مركز التعلّم | مجتمع السيطرة', description: 'انتقل إلى مركز التعلّم الخاص بأعضاء مجتمع السيطرة.', heading: 'مركز التعلّم' },
+]
+for (const alias of routeAliases) {
+  const page = { title: alias.title, description: alias.description, heading: alias.heading }
+  const targetUrl = urlFor(alias.target)
+  const aliasUrl = urlFor(alias.path)
+  const body = header() + '<main class="public-page wrap">' + breadcrumb(alias.path, page) + '<div class="public-page-copy"><h1>يتم فتح الصفحة الصحيحة…</h1><p class="hero-lead">إذا لم يتم التحويل تلقائياً، استخدم الرابط التالي.</p>' + htmlLink(alias.target, 'فتح الصفحة', 'btn btn-primary') + '</div></main>' + footer() + '<script>location.replace(' + JSON.stringify(targetUrl) + ')</script>'
+  const html = shell(alias.path, page, body, null, true, true).replaceAll(aliasUrl, targetUrl)
+  await writeRoute(alias.path, html)
+}
 const notFoundPage = { title: 'صفحة غير موجودة | مجتمع السيطرة', description: 'الصفحة المطلوبة غير متاحة في مجتمع السيطرة.' }
 const deepRouteRecovery = `<script>(function(){const target=location.pathname+location.search+location.hash;const appShell=new URL('learning-room/',${JSON.stringify(siteRoot.toString())});appShell.searchParams.set('__saytara_route',target);location.replace(appShell.toString())})()</script>`
 await writeFile(resolve(distDir,'404.html'),shell('/404',notFoundPage,`${header()}<main class="public-page wrap"><h1>جارٍ فتح الصفحة المطلوبة…</h1><p>لحظة واحدة.</p>${deepRouteRecovery}</main>${footer()}`,null,true,true))
