@@ -25,7 +25,7 @@ type OwnerAudit = {
   action: 'owner_bootstrap' | 'role_granted' | 'role_revoked' | string
   role: ManagedRole | null
   setting_key: string | null
-  setting_value: boolean | null
+  setting_value: boolean | string | number | null
   reason: string
   created_at: string
 }
@@ -246,7 +246,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
 
     <section className="owner-card owner-wide-card">
       <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>سجل تغييرات المالك</h2><p>تُسجل عمليات نقل الملكية ومنح الأدوار وإزالتها مع السبب والوقت.</p></div></div>
-      {audit.length === 0 ? <p className="owner-empty">لا توجد تغييرات مسجلة بعد.</p> : <div className="owner-audit-list">{audit.map(entry => <article className="owner-audit-row" key={entry.id}><div><b>{entry.action === 'owner_bootstrap' ? 'تهيئة المالك الأول' : entry.action === 'owner_transferred' ? 'نقل ملكية المنصة' : entry.action === 'role_granted' ? 'منح دور' : entry.action === 'role_revoked' ? 'إزالة دور' : entry.action === 'account_suspended' ? 'تعليق حساب' : entry.action === 'account_restored' ? 'استعادة حساب' : `تغيير إعداد: ${entry.setting_key || 'منصة'}`}{entry.role ? ` · ${roleLabels[entry.role]}` : ''}{entry.action === 'setting_changed' ? ` · ${entry.setting_value ? 'مفعّل' : 'متوقف'}` : ''}</b><span dir="ltr">{entry.target_email}</span><small>{entry.reason}</small></div><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('ar')}</time></article>)}</div>}
+      {audit.length === 0 ? <p className="owner-empty">لا توجد تغييرات مسجلة بعد.</p> : <div className="owner-audit-list">{audit.map(entry => <article className="owner-audit-row" key={entry.id}><div><b>{entry.action === 'owner_bootstrap' ? 'تهيئة المالك الأول' : entry.action === 'owner_transferred' ? 'نقل ملكية المنصة' : entry.action === 'role_granted' ? 'منح دور' : entry.action === 'role_revoked' ? 'إزالة دور' : entry.action === 'account_suspended' ? 'تعليق حساب' : entry.action === 'account_restored' ? 'استعادة حساب' : `تغيير إعداد: ${entry.setting_key || 'منصة'}`}{entry.role ? ` · ${roleLabels[entry.role]}` : ''}{entry.action === 'setting_changed' ? ` · ${entry.setting_key === 'public_member_metric_visible' ? (entry.setting_value ? 'ظاهر' : 'مخفي') : entry.setting_key === 'public_member_metric_mode' ? (entry.setting_value === 'goal' ? 'هدف معلن' : 'عدد فعلي') : entry.setting_key === 'public_member_metric_goal' ? `هدف ${String(entry.setting_value)} عضو` : entry.setting_value ? 'مفعّل' : 'متوقف'}` : ''}</b><span dir="ltr">{entry.target_email}</span><small>{entry.reason}</small></div><time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString('ar')}</time></article>)}</div>}
       <p className="owner-footnote"><ArrowLeft size={13}/> استعادة كلمة مرور المالك تتم عبر رابط استعادة Supabase إلى البريد الموثّق. لا تُرسل كلمة مرور أو رمز دخول في المحادثة.</p>
     </section>
   </main>
