@@ -16,7 +16,7 @@ type PlatformAccount = {
   roles: Role[]
   created_at: string
 }
-type OwnerAudit = {
+type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }\ntype OwnerAudit = {
   id: number
   actor_id: string
   target_user_id: string | null
@@ -51,7 +51,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
   const [action, setAction] = useState<'grant' | 'revoke'>('grant')
   const [reason, setReason] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)
+  const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)\n  const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
 
   const eligibleAccounts = useMemo(
     () => accounts.filter(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner),
@@ -87,7 +87,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
     ])
-    if (accountsResult.error || auditResult.error || invitationSettingResult.error) {
+    if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error) {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
       setAccounts([])
       setAudit([])
@@ -153,6 +153,23 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     else { setNotice(next ? 'فُعّلت دعوات المالك وسُجل التغيير.' : 'أُوقفت دعوات المالك وسُجل التغيير.'); await load() }
   }
 
+  async function saveCommunityMetric(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase) return
+    const changeReason = window.prompt('اكتب سبب تحديث مؤشر المجتمع العام:', '')
+    if (!changeReason?.trim()) return
+    setBusy(true); setError(''); setNotice('')
+    const { error: rpcError } = await supabase.rpc('set_owner_community_metric', {
+      p_visible: communityMetric.visible,
+      p_mode: communityMetric.mode,
+      p_goal: communityMetric.goal,
+      p_reason: changeReason.trim(),
+    })
+    setBusy(false)
+    if (rpcError) setError('تعذر حفظ إعداد مؤشر المجتمع. لم يُعتمد التغيير؛ تحقق من تطبيق migration ثم أعد المحاولة.')
+    else { setNotice('حُفظ إعداد مؤشر المجتمع وسُجل في سجل التدقيق.'); await load() }
+  }
+
   async function changeAccountAccess(account: PlatformAccount) {
     if (!supabase || !account.email_confirmed || account.is_platform_owner) return
     const nextAction = account.account_status === 'approved' ? 'suspend' : account.account_status === 'rejected' ? 'restore' : null
@@ -200,8 +217,18 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     <section className="owner-card owner-settings-card">
       <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>إعدادات المنصة</h2><p>الإعدادات الداخلية الحساسة لا تُغيّر إلا من حساب المالك وتُسجّل في سجل التدقيق.</p></div></div>
       <div className="owner-setting-row"><div><b>دعوات الحسابات</b><small>تشغيل دعوات البريد من لوحة المالك فقط؛ تعطيلها يمنع وظيفة الدعوة على الخادم.</small></div><span className={`owner-pill ${ownerInvitationsEnabled ? 'owner-setting-on' : 'owner-setting-off'}`}>{ownerInvitationsEnabled ? 'مفعّلة' : 'متوقفة'}</span><button className="btn btn-outline btn-small" type="button" disabled={busy} onClick={() => void toggleOwnerInvitations()}>{ownerInvitationsEnabled ? 'إيقاف الدعوات' : 'تفعيل الدعوات'}</button></div>
-      <div className="owner-setting-row"><div><b>التسجيل العام</b><small>مفتوح للجميع؛ يتطلب الحساب تأكيد البريد الإلكتروني، ويبدأ بدور عضو عادي.</small></div><span className="owner-pill owner-setting-on">مفتوح</span></div>
-      <p className="owner-note">إنشاء الحساب يمنح عضوية عادية بعد تأكيد البريد؛ التوثيق المهني منفصل وقد يلزم لبعض الميزات.</p>
+      <div className="owner-setting-row"><div><b>التسجيل العام</b><small>إنشاء الحساب يتطلب تأكيد البريد واعتماد الإدارة قبل دخول مساحة الأعضاء.</small></div><span className="owner-pill owner-setting-off">موقوف حتى اكتمال إعدادات الأمان</span></div>
+      <p className="owner-note">لا نعرض عددًا مختلقًا على أنه أعضاء حقيقيون. يمكنك إظهار العدد الفعلي المعتمد من قاعدة البيانات أو إظهار هدف مجتمعي معلن بوضوح.</p>
+      <div className="owner-community-metric">
+        <div className="owner-card-heading"><span><Users size={18}/></span><div><h2>مؤشر المجتمع في الصفحة الرئيسية</h2><p>تحكم بما يراه الزائر، دون كشف بيانات الحسابات أو عرض أرقام غير حقيقية.</p></div></div>
+        <form className="owner-form" onSubmit={event => void saveCommunityMetric(event)}>
+          <label className="owner-metric-toggle"><input type="checkbox" checked={communityMetric.visible} onChange={event => setCommunityMetric(current => ({ ...current, visible: event.target.checked }))}/> إظهار مؤشر المجتمع في الصفحة الرئيسية</label>
+          <label>نوع الرقم المعروض<select value={communityMetric.mode} onChange={event => setCommunityMetric(current => ({ ...current, mode: event.target.value as 'actual' | 'goal' }))}><option value="actual">عدد الأعضاء الحقيقيين المعتمدين فقط</option><option value="goal">هدف المجتمع (يوضح للزائر أنه هدف)</option></select></label>
+          {communityMetric.mode === 'goal' && <label>الهدف الذي تريد إعلانه<input type="number" min={0} max={1000000} step={1} required value={communityMetric.goal} onChange={event => setCommunityMetric(current => ({ ...current, goal: Math.max(0, Math.min(1000000, Number(event.target.value) || 0)) }))}/></label>}
+          <p className="owner-note">{communityMetric.mode === 'goal' ? `سيظهر للزوار «هدفنا القادم: ${communityMetric.goal} عضوًا» وليس على أنه عدد الأعضاء الحالي.` : 'سيُحسب العدد من الحسابات التي أكدت البريد واعتمدتها الإدارة، ولن يتاح إدخاله يدويًا.'}</p>
+          <button className="btn btn-primary" type="submit" disabled={busy}><BadgeCheck size={15}/>{busy ? 'جارٍ الحفظ…' : 'حفظ إعداد المؤشر'}</button>
+        </form>
+      </div>
     </section>
 
     <section className="owner-card owner-wide-card">
