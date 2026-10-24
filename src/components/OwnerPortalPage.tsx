@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, RefreshCw, Send, ShieldCheck, UserCog, UserPlus } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, RefreshCw, Send, ShieldCheck, UserCog, UserPlus, Users } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './OwnerPortalPage.css'
