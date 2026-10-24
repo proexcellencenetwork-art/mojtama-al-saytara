@@ -16,7 +16,8 @@ type PlatformAccount = {
   roles: Role[]
   created_at: string
 }
-type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }\ntype OwnerAudit = {
+type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }
+type OwnerAudit = {
   id: number
   actor_id: string
   target_user_id: string | null
@@ -51,7 +52,8 @@ export function OwnerPortalPage({ role }: { role: Role }) {
   const [action, setAction] = useState<'grant' | 'revoke'>('grant')
   const [reason, setReason] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
-  const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)\n  const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
+  const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)
+  const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
 
   const eligibleAccounts = useMemo(
     () => accounts.filter(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner),
@@ -82,10 +84,11 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       return
     }
     setAuthorized(true)
-    const [accountsResult, auditResult, invitationSettingResult] = await Promise.all([
+    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult] = await Promise.all([
       supabase.rpc('list_platform_accounts'),
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
+      supabase.rpc('get_owner_community_metric_settings'),
     ])
     if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error) {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
@@ -93,6 +96,8 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       setAudit([])
     } else {
       setOwnerInvitationsEnabled(invitationSettingResult.data === true)
+      const metricData = communityMetricResult.data as Partial<CommunityMetricSettings> | null
+      setCommunityMetric({ visible: metricData?.visible === true, mode: metricData?.mode === 'goal' ? 'goal' : 'actual', goal: Number.isInteger(metricData?.goal) ? Math.max(0, Math.min(1000000, metricData!.goal!)) : 100 })
       const nextAccounts = safeRows<PlatformAccount>(accountsResult.data)
       setAccounts(nextAccounts)
       setAudit(safeRows<OwnerAudit>(auditResult.data))
