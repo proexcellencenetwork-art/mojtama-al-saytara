@@ -78,7 +78,7 @@ BEGIN
   IF auth.uid() IS NULL OR NOT public.is_platform_owner() THEN
     RAISE EXCEPTION 'Owner access required';
   END IF;
-  IF p_visible IS NULL OR p_mode NOT IN ('actual','goal') OR p_goal IS NULL OR p_goal < 0 OR p_goal > 1000000 THEN
+  IF p_visible IS NULL OR p_mode IS NULL OR p_mode NOT IN ('actual','goal') OR p_goal IS NULL OR p_goal < 0 OR p_goal > 1000000 THEN
     RAISE EXCEPTION 'Invalid community metric settings';
   END IF;
   IF COALESCE(NULLIF(btrim(p_reason), ''), '') = '' OR length(p_reason) > 1000 THEN
