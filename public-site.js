@@ -131,7 +131,7 @@
   }
 
   const showAnalyticsConsent = () => {
-    if (readAnalyticsConsent() !== null || document.querySelector('.analytics-consent-banner')) return
+    if (!supabaseUrl || !publicKey || readAnalyticsConsent() !== null || document.querySelector('.analytics-consent-banner')) return
     const banner = document.createElement('aside')
     banner.className = 'analytics-consent-banner'
     banner.setAttribute('dir','rtl')
