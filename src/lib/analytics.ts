@@ -36,8 +36,24 @@ export async function trackSiteEvent(eventName: SiteEventName, pagePath: string,
   const visitorId = getVisitorId()
   if (!visitorId) return
   let referrerHost: string | null = null
-  try { if (document.referrer) referrerHost = new URL(document.referrer).hostname.slice(0, 160) } catch { /* Ignore invalid referrer. */ }
+  try {
+    if (document.referrer) {
+      const referrer = new URL(document.referrer)
+      if (referrer.hostname !== window.location.hostname) referrerHost = referrer.hostname.slice(0, 160)
+    }
+  } catch { /* Ignore invalid referrer. */ }
   const params = new URLSearchParams(window.location.search)
+  const currentAttribution = {
+    source: params.get('utm_source')?.slice(0, 120) || null,
+    medium: params.get('utm_medium')?.slice(0, 120) || null,
+    campaign: params.get('utm_campaign')?.slice(0, 160) || null,
+  }
+  let attribution = currentAttribution
+  try {
+    const stored = localStorage.getItem('saytara-analytics-attribution')
+    if (stored) attribution = { ...JSON.parse(stored), ...Object.fromEntries(Object.entries(currentAttribution).filter(([, value]) => value)) } as typeof currentAttribution
+    if (!stored || Object.values(currentAttribution).some(Boolean)) localStorage.setItem('saytara-analytics-attribution', JSON.stringify(attribution))
+  } catch { /* Attribution is optional and never blocks the page. */ }
   const timezone = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null } catch { return null } })()
   try {
     await supabase.rpc('record_site_analytics_event', {
@@ -46,9 +62,9 @@ export async function trackSiteEvent(eventName: SiteEventName, pagePath: string,
       p_visitor_id: visitorId,
       p_event_label: eventLabel?.slice(0, 160) || null,
       p_referrer_host: referrerHost,
-      p_source: params.get('utm_source')?.slice(0, 120) || null,
-      p_medium: params.get('utm_medium')?.slice(0, 120) || null,
-      p_campaign: params.get('utm_campaign')?.slice(0, 160) || null,
+      p_source: attribution.source || referrerHost,
+      p_medium: attribution.medium,
+      p_campaign: attribution.campaign,
       p_timezone: timezone,
       p_locale: navigator.language?.slice(0, 24) || null,
       p_device_category: getDeviceCategory(),
