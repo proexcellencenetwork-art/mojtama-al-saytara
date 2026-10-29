@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, RefreshCw, Send, ShieldCheck, UserCog, UserPlus, Users } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, BarChart3, RefreshCw, Send, ShieldCheck, UserCog, UserPlus, Users } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './OwnerPortalPage.css'
@@ -196,7 +197,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
   if (authorized !== true) return <main className="app-main wrap owner-portal"><section className="owner-card owner-denied"><ShieldCheck size={30}/><h1>تعذر إثبات صلاحية المالك.</h1><p>{error || 'لا تملك هذه الصفحة صلاحية إدارة المنصة.'}</p><button className="btn btn-outline" type="button" onClick={() => void load()}><RefreshCw size={15}/> إعادة التحقق</button></section></main>
 
   return <main className="app-main wrap owner-portal" dir="rtl">
-    <div className="page-title-row owner-heading"><div><span className="eyebrow">صلاحية منفصلة عن المدير</span><h1>مركز مالك المنصة</h1><p>هذه الأدوات تتحقق من المالك في قاعدة البيانات، ولا تكفي معرفة رابط الصفحة للوصول إليها.</p></div><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15}/> تحديث</button></div>
+    <div className="page-title-row owner-heading"><div><span className="eyebrow">صلاحية منفصلة عن المدير</span><h1>مركز مالك المنصة</h1><p>هذه الأدوات تتحقق من المالك في قاعدة البيانات، ولا تكفي معرفة رابط الصفحة للوصول إليها.</p></div><div className="owner-heading-actions"><Link className="btn btn-primary btn-small" to="/owner/analytics"><BarChart3 size={15}/> مؤشرات الأداء</Link><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15}/> تحديث</button></div></div>
     {notice && <div className="inline-message" role="status">{notice}</div>}
     {error && <div className="inline-message live-error" role="alert">{error}</div>}
     <section className="owner-grid">
