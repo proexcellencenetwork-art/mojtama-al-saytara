@@ -2,3 +2,5 @@
 
 
 .owner-community-metric{border-top:1px solid #e8edf2;margin-top:16px;padding-top:18px}.owner-metric-toggle{display:flex!important;align-items:center;gap:10px}.owner-metric-toggle input{width:20px!important;min-height:20px!important;accent-color:#d7263d}.dark .owner-community-metric{border-color:#30425c}
+
+.owner-heading-actions{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}.owner-heading-actions .btn{white-space:nowrap}@media(max-width:760px){.owner-heading-actions{width:100%}.owner-heading-actions .btn{flex:1;justify-content:center}}
