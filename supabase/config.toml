@@ -27,3 +27,7 @@ verify_jwt = true
 # 100ms webhooks use a high-entropy custom header rather than a Supabase user JWT.
 [functions.learning-webhook]
 verify_jwt = false
+
+# Public newsletter opt-in endpoint with origin checks and hashed-IP rate limiting.
+[functions.newsletter-subscribe]
+verify_jwt = false
