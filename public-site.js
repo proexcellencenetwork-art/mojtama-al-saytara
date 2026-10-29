@@ -77,6 +77,9 @@
   const consentKey = 'saytara-analytics-consent'
   const visitorKey = 'saytara-analytics-visitor'
   const attributionKey = 'saytara-analytics-attribution'
+  const readAnalyticsConsent = () => { try { return localStorage.getItem(consentKey) } catch { return 'declined' } }
+  const saveAnalyticsConsent = (value) => { try { localStorage.setItem(consentKey, value) } catch {} }
+  const clearAnalyticsConsent = () => { try { localStorage.removeItem(consentKey) } catch {} }
 
   const currentPath = () => {
     let path = window.location.pathname
@@ -92,7 +95,7 @@
     } catch { return null }
   }
   const trackStaticPageView = async () => {
-    if (!supabaseUrl || !publicKey || localStorage.getItem(consentKey) !== 'accepted') return
+    if (!supabaseUrl || !publicKey || readAnalyticsConsent() !== 'accepted') return
     const id = visitorId()
     if (!id) return
     const params = new URLSearchParams(window.location.search)
@@ -128,7 +131,7 @@
   }
 
   const showAnalyticsConsent = () => {
-    if (localStorage.getItem(consentKey) !== null || document.querySelector('.analytics-consent-banner')) return
+    if (readAnalyticsConsent() !== null || document.querySelector('.analytics-consent-banner')) return
     const banner = document.createElement('aside')
     banner.className = 'analytics-consent-banner'
     banner.setAttribute('dir','rtl')
@@ -136,15 +139,15 @@
     banner.innerHTML = '<div class="analytics-consent-icon" aria-hidden="true">✓</div><div class="analytics-consent-copy"><b>ساعدنا نحسّن مجتمع السيطرة</b><p>يمكنك السماح بقياس مشاهدات الصفحات ومصدر الزيارة بشكل محدود. لا نجمع إجابات الأدوات أو نصوص النماذج، ولا نستنتج المدينة أو الدولة من المنطقة الزمنية.</p><a href="' + basePath.replace(/\\/$/,'') + '/privacy/">اقرأ سياسة الخصوصية</a></div><div class="analytics-consent-actions"><button type="button" class="btn btn-primary btn-small" data-analytics-accept>موافقة</button><button type="button" class="btn btn-outline btn-small" data-analytics-decline>رفض</button></div>'
     document.body.appendChild(banner)
     banner.querySelector('[data-analytics-accept]')?.addEventListener('click', () => {
-      localStorage.setItem(consentKey,'accepted'); banner.remove(); void trackStaticPageView()
+      saveAnalyticsConsent('accepted'); banner.remove(); void trackStaticPageView()
     })
     banner.querySelector('[data-analytics-decline]')?.addEventListener('click', () => {
-      localStorage.setItem(consentKey,'declined'); banner.remove()
+      saveAnalyticsConsent('declined'); banner.remove()
     })
   }
 
   showAnalyticsConsent()
-  if (localStorage.getItem(consentKey) === 'accepted') void trackStaticPageView()
+  if (readAnalyticsConsent() === 'accepted') void trackStaticPageView()
 
   if (window.location.pathname.replace(/\\/+$/,'').endsWith('/privacy')) {
     const points = document.querySelector('.public-points')
@@ -154,7 +157,7 @@
       controls.innerHTML = '<p>يمكنك إعادة فتح خيارات الموافقة على التحليلات في أي وقت.</p><button type="button" class="btn btn-outline btn-small" data-reset-analytics-consent>تغيير تفضيل التحليلات</button>'
       points.after(controls)
       controls.querySelector('[data-reset-analytics-consent]')?.addEventListener('click', () => {
-        localStorage.removeItem(consentKey); document.querySelector('.analytics-consent-banner')?.remove(); showAnalyticsConsent()
+        clearAnalyticsConsent(); document.querySelector('.analytics-consent-banner')?.remove(); showAnalyticsConsent()
       })
     }
   }
