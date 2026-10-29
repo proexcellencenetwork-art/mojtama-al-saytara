@@ -15,6 +15,7 @@ type PlatformAccount = {
   is_platform_owner: boolean
   roles: Role[]
   created_at: string
+  last_sign_in_at: string | null
 }
 type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }
 type OwnerAudit = {
@@ -85,7 +86,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     }
     setAuthorized(true)
     const [accountsResult, auditResult, invitationSettingResult, communityMetricResult] = await Promise.all([
-      supabase.rpc('list_platform_accounts'),
+      supabase.rpc('list_platform_accounts_activity'),
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
       supabase.rpc('get_owner_community_metric_settings'),
@@ -239,7 +240,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     <section className="owner-card owner-wide-card">
       <div className="owner-card-heading"><span><ShieldCheck size={18}/></span><div><h2>الحسابات</h2><p>البيانات المعروضة محدودة لمالك المنصة، ومؤكدة عبر RPC محمي في قاعدة البيانات.</p></div></div>
       {loading ? <p role="status">جارٍ تحميل الحسابات…</p> : accounts.length === 0 ? <p className="owner-empty">لا توجد حسابات ظاهرة.</p> : <div className="owner-account-list">{accounts.map(account => <article className="owner-account" key={account.user_id}>
-        <div className="owner-account-main"><b>{account.display_name || 'عضو جديد'}</b><span dir="ltr">{account.email}</span><small>{account.email_confirmed ? 'البريد مؤكد' : 'البريد غير مؤكد'} · {statusLabels[account.account_status] || account.account_status} · {new Date(account.created_at).toLocaleDateString('ar')}</small></div>
+        <div className="owner-account-main"><b>{account.display_name || 'عضو جديد'}</b><span dir="ltr">{account.email}</span><small>{account.email_confirmed ? 'البريد مؤكد' : 'البريد غير مؤكد'} · {statusLabels[account.account_status] || account.account_status} · التسجيل: {new Date(account.created_at).toLocaleDateString('ar')} · آخر دخول: {account.last_sign_in_at ? new Date(account.last_sign_in_at).toLocaleString('ar') : 'لم يسجل دخول'}</small></div>
         <div className="owner-role-pills">{account.is_platform_owner ? <span className="owner-pill owner-pill-root">مالك المنصة</span> : account.roles.map(value => <span className="owner-pill" key={value}>{value === 'owner' ? 'مالك المنصة' : value in roleLabels ? roleLabels[value as ManagedRole] : 'عضو'}</span>)}{!account.is_platform_owner && account.email_confirmed && (account.account_status === 'approved' || account.account_status === 'rejected') && <button className="btn btn-outline btn-small" type="button" disabled={busy} onClick={() => void changeAccountAccess(account)}>{account.account_status === 'approved' ? 'تعليق الوصول' : 'استعادة الوصول'}</button>}</div>
       </article>)}</div>}
     </section>
