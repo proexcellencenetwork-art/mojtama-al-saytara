@@ -98,3 +98,101 @@
  .public-point h2 { font-size: 1.1rem; line-height: 1.7; }
  .public-point p { font-size: 1rem; line-height: 2; }
 }
+
+
+/* Professional article brand palette: clear navy text, confident community blue, and a visible page surface. */
+:root {
+  --article-ink: #102b4e;
+  --article-blue: #1769d2;
+  --article-blue-deep: #124fa8;
+  --article-wash: #edf5ff;
+  --article-border: #c9dcf7;
+}
+.public-article {
+  color: var(--article-ink);
+  padding: clamp(1.15rem, 3vw, 2.25rem);
+  border: 1px solid var(--article-border);
+  border-radius: 1.25rem;
+  background: linear-gradient(145deg, #ffffff 0%, var(--article-wash) 100%);
+  box-shadow: 0 16px 42px rgb(23 75 145 / 8%);
+}
+.public-article h1,
+.public-article h2,
+.public-article h3 {
+  color: #123d78;
+}
+.public-article h2 {
+  padding-inline-start: .8rem;
+  border-inline-start: 4px solid var(--article-blue);
+}
+.public-article p,
+.public-article li {
+  color: #183754;
+}
+.public-article strong {
+  color: #0c3977;
+}
+.public-article a:not(.btn) {
+  color: var(--article-blue);
+  font-weight: 700;
+}
+.public-article a:not(.btn):hover {
+  color: var(--article-blue-deep);
+}
+.public-article blockquote {
+  background: #e1efff;
+  border-inline-start-color: var(--article-blue);
+  color: #123d78;
+}
+.public-article time {
+  color: #45678f;
+}
+.public-article .eyebrow {
+  color: var(--article-blue);
+}
+:root[data-theme="dark"] .public-article,
+.app.dark .public-article {
+  color: #eaf2ff;
+  border-color: #315b91;
+  background: linear-gradient(145deg, #111e31 0%, #142b47 100%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 24%);
+}
+:root[data-theme="dark"] .public-article h1,
+:root[data-theme="dark"] .public-article h2,
+:root[data-theme="dark"] .public-article h3,
+.app.dark .public-article h1,
+.app.dark .public-article h2,
+.app.dark .public-article h3 {
+  color: #d8e8ff;
+}
+:root[data-theme="dark"] .public-article p,
+:root[data-theme="dark"] .public-article li,
+.app.dark .public-article p,
+.app.dark .public-article li {
+  color: #d5e3f7;
+}
+:root[data-theme="dark"] .public-article strong,
+.app.dark .public-article strong {
+  color: #ffffff;
+}
+:root[data-theme="dark"] .public-article a:not(.btn),
+.app.dark .public-article a:not(.btn) {
+  color: #80b8ff;
+}
+:root[data-theme="dark"] .public-article a:not(.btn):hover,
+.app.dark .public-article a:not(.btn):hover {
+  color: #b5d7ff;
+}
+:root[data-theme="dark"] .public-article blockquote,
+.app.dark .public-article blockquote {
+  background: #1b3656;
+  border-inline-start-color: #69aaff;
+  color: #e4efff;
+}
+:root[data-theme="dark"] .public-article time,
+.app.dark .public-article time {
+  color: #a9c8ef;
+}
+@media (max-width: 640px) {
+  .public-article { padding: 1rem; border-radius: .9rem; }
+}
