@@ -22,7 +22,7 @@ const OwnerPortalPage = lazy(() => import('./components/OwnerPortalPage').then(m
 const LearningProviderSetupPage = lazy(() => import('./components/LearningProviderSetupPage').then(module => ({ default: module.LearningProviderSetupPage })))
 const LearningCenterPage = lazy(() => import('./components/LearningCenterPage'))
 const LearningRoomPage = lazy(() => import('./components/LearningRoomPage'))
-const AnalyticsDashboardPage = lazy(() => import('./components/AnalyticsDashboardPage'))
+const AnalyticsDashboardPage = lazy(() => import('./components/AnalyticsDashboardPage').then(module => ({ default: module.AnalyticsDashboardPage })))
 
 const CareerJourneyHome = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerJourneyHome })))
 const CareerCompassPage = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerCompassPage })))
