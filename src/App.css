@@ -40,3 +40,37 @@
 
 
 .community-member-metric{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-block:28px;padding:24px 28px;border:1px solid var(--line,#dce3eb);border-radius:22px;background:linear-gradient(120deg,rgba(29,78,216,.07),rgba(16,185,129,.06))}.community-member-metric-copy{max-width:640px}.community-member-metric-copy h2{margin:6px 0 8px;font-size:clamp(20px,3vw,28px)}.community-member-metric-copy p{margin:0;color:var(--muted,#64748b);line-height:1.7}.community-member-metric-value{display:grid;gap:4px;min-width:150px;text-align:center;padding:14px 18px;border:1px solid var(--line,#dce3eb);border-radius:16px;background:var(--surface,#fff)}.community-member-metric-value strong{font-size:clamp(30px,5vw,42px);line-height:1.1;font-variant-numeric:tabular-nums}.community-member-metric-value span{font-size:13px;color:var(--muted,#64748b)}.dark .community-member-metric{background:linear-gradient(120deg,rgba(29,78,216,.12),rgba(16,185,129,.08));border-color:#30425c}.dark .community-member-metric-value{background:#17243a;border-color:#30425c}@media(max-width:600px){.community-member-metric{align-items:stretch;flex-direction:column;padding:20px;gap:16px}.community-member-metric-value{min-width:0}}
+
+
+/* Article readability refresh — Arabic typography, contrast, and mobile rhythm */
+.public-article { max-width: 850px; margin-inline: auto; font-family: "Tajawal", "Segoe UI", Tahoma, Arial, sans-serif; font-size: 17px; line-height: 1.95; letter-spacing: 0; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+.public-article h1 { max-width: 22ch; margin: .65rem 0 1rem; font-size: clamp(2rem, 4.2vw, 3.15rem); line-height: 1.42; letter-spacing: -.02em; }
+.public-article > p { font-size: 1.12rem; line-height: 2; }
+.public-article time { display: inline-block; margin: .15rem 0 .9rem; color: #596579; font-size: .9rem; }
+.public-article h2 { margin: 2.1rem 0 .8rem; font-size: clamp(1.35rem, 2.6vw, 1.75rem); line-height: 1.55; font-weight: 800; }
+.public-article h3 { margin: 1.6rem 0 .55rem; font-size: 1.2rem; line-height: 1.6; }
+.public-article p, .public-article li { color: #293642; font-size: 1.04rem; line-height: 2.05; }
+.public-article p { margin: 0 0 1.2rem; }
+.public-article li { margin-block: .35rem; }
+.public-article strong { color: #102a36; font-weight: 800; }
+.public-article a:not(.btn) { color: #087f8c; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.public-article a:not(.btn):hover { color: #075e68; }
+.public-article blockquote { margin: 1.25rem 0; padding: 1rem 1.25rem; border-inline-start: 4px solid #10a37f; border-radius: .65rem; background: #eef8f5; }
+.public-article-body { margin-top: 1.3rem; }
+.formatted-article { max-width: 74ch; margin-inline: auto; font-family: "Tajawal", "Segoe UI", Tahoma, Arial, sans-serif; font-size: 17px; line-height: 1.95; }
+.related-links { margin-top: 2.5rem; }
+:root[data-theme="dark"] .public-article time, .app.dark .public-article time { color: #c0c7d0; }
+:root[data-theme="dark"] .public-article p, :root[data-theme="dark"] .public-article li, .app.dark .public-article p, .app.dark .public-article li { color: #e1e6eb; }
+:root[data-theme="dark"] .public-article strong, .app.dark .public-article strong { color: #ffffff; }
+:root[data-theme="dark"] .public-article a:not(.btn), .app.dark .public-article a:not(.btn) { color: #65d9cf; }
+:root[data-theme="dark"] .public-article a:not(.btn):hover, .app.dark .public-article a:not(.btn):hover { color: #a0fff0; }
+:root[data-theme="dark"] .public-article blockquote, .app.dark .public-article blockquote { background: #1b3534; border-inline-start-color: #39c7a7; }
+@media (max-width: 640px) {
+ .public-page { padding-top: 1.25rem; }
+ .public-article { width: 100%; }
+ .public-article h1 { font-size: clamp(1.8rem, 8vw, 2.4rem); line-height: 1.5; }
+ .public-article > p { font-size: 1.05rem; }
+ .public-article p, .public-article li { font-size: 1rem; line-height: 2.05; }
+ .public-article h2 { margin-top: 1.8rem; }
+ .formatted-article { max-width: 100%; }
+}
