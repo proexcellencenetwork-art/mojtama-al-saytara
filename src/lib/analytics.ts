@@ -44,8 +44,8 @@ export async function trackSiteEvent(eventName: SiteEventName, pagePath: string,
   } catch { /* Ignore invalid referrer. */ }
   const params = new URLSearchParams(window.location.search)
   const currentAttribution = {
-    source: params.get('utm_source')?.slice(0, 120) || null,
-    medium: params.get('utm_medium')?.slice(0, 120) || null,
+    source: params.get('utm_source')?.slice(0, 120) || referrerHost,
+    medium: params.get('utm_medium')?.slice(0, 120) || (referrerHost ? 'referral' : null),
     campaign: params.get('utm_campaign')?.slice(0, 160) || null,
   }
   let attribution = currentAttribution
