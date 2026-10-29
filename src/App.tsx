@@ -10,7 +10,7 @@ import { MarkdownBody } from './lib/markdown'
 import { findEditorialArticleRow } from './lib/editorialFallback'
 import { getAnalyticsConsent, trackSiteEvent } from './lib/analytics'
 import { NewsletterSignup } from './components/NewsletterSignup'
-import { AnalyticsConsentBanner } from './components/AnalyticsConsentBanner'
+import { AnalyticsConsentBanner, AnalyticsConsentSettingsButton } from './components/AnalyticsConsentBanner'
 import './App.css'
 
 const LoginPage = lazy(() => import('./components/AuthPages').then(module => ({ default: module.LoginPage })))
@@ -205,7 +205,7 @@ const publicCopy: Record<string, { title: string; eyebrow: string; intro: string
 function PublicPage({ page }: { page: keyof typeof publicCopy }) {
   if (isSupabaseConfigured && ['coaches', 'articles', 'events'].includes(page)) return <LivePublicPage page={page} />
   const item = publicCopy[page]
-  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>{item.eyebrow}</span></nav><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h2>{title}</h2><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div>{page === 'about' && <section className="community-direction" aria-label="رؤية ورسالة وأهداف مجتمع السيطرة">
+  return <><main className="public-page wrap"><nav className="breadcrumbs" aria-label="مسار التنقل"><Link to="/">الرئيسية</Link><span aria-hidden="true">/</span><span>{item.eyebrow}</span></nav><div className="public-page-copy"><span className="eyebrow">{item.eyebrow}</span><h1>{item.title}</h1><p className="hero-lead">{item.intro}</p></div><div className="public-points">{item.points.map(([title, text], i) => <article className="public-point" key={title}><span className="point-number">0{i + 1}</span><div><h2>{title}</h2><p>{text}</p></div><ArrowLeft size={17}/></article>)}</div>{page === 'privacy' && <div className="privacy-analytics-controls"><p>يمكنك إعادة فتح خيارات الموافقة على التحليلات في أي وقت.</p><AnalyticsConsentSettingsButton/></div>}{page === 'about' && <section className="community-direction" aria-label="رؤية ورسالة وأهداف مجتمع السيطرة">
   <div className="community-direction-heading"><span className="eyebrow"><Flag size={15}/> بوصلتنا</span><h2>لماذا وُجد المجتمع؟ وإلى أين يتجه؟</h2><p>نريد أن تصبح الخبرة المهنية نقطة انطلاق للتعلم والتعاون والابتكار والأثر — لا مجرد سيرة ذاتية أو محتوى متفرق.</p></div>
   <div className="community-direction-feature-grid">
    <article className="community-direction-feature"><span className="direction-icon"><Compass size={20}/></span><span className="direction-label">الرؤية</span><h3>شبكة مهنية سعودية مترابطة تصنع قيمة قابلة للإثبات.</h3><p>أن يجد الأفراد مساحة تساعدهم على النمو، وتحوّل المعرفة والخبرة إلى تقدم مهني وابتكار وبحث مسؤول.</p></article>
