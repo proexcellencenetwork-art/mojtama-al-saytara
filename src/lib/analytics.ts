@@ -78,3 +78,8 @@ export function getAnalyticsConsent(): 'accepted' | 'declined' | 'unset' {
     return value === 'accepted' || value === 'declined' ? value : 'unset'
   } catch { return 'unset' }
 }
+
+export function resetAnalyticsConsent(): void {
+  try { localStorage.removeItem(CONSENT_KEY) } catch { /* The consent banner can still be reopened for this session. */ }
+  window.dispatchEvent(new CustomEvent('saytara-analytics-consent', { detail: 'unset' }))
+}
