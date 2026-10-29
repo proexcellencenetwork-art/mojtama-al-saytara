@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Activity, ArrowLeft, CalendarDays, Check, Clock3, FileVideo2, LockKeyhole, Play, Radio, ShieldCheck, Users, X } from 'lucide-react'
+import { Activity, ArrowLeft, CalendarDays, Check, Clock3, ExternalLink, FileVideo2, LockKeyhole, Play, Radio, ShieldCheck, Users, X } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { isSupabaseConfigured } from '../lib/supabase-config'
 import { supabase } from '../lib/supabase'
@@ -15,6 +15,7 @@ type Workshop = {
   scheduled_at: string
   duration_minutes: number
   cover_url: string | null
+  resource_url: string | null
   audience_roles: Role[]
   status: WorkshopStatus
 }
@@ -38,6 +39,7 @@ const roleOptions: { id: Role; label: string }[] = [
   { id: 'manager', label: 'المديرون' },
 ]
 const canManage = (role: Role) => role === 'manager' || role === 'owner'
+const canCreateWorkshop = (role: Role) => canManage(role) || role === 'coach'
 const localDateTime = (value: string) => new Date(value).toLocaleString('ar', { dateStyle: 'medium', timeStyle: 'short' })
 const mins = (seconds: number | null) => seconds ? `${Math.floor(seconds / 60)} دقيقة` : 'تسجيل ورشة'
 
@@ -55,15 +57,15 @@ export default function LearningCenterPage({ role }: { role: Role }) {
   const [notice, setNotice] = useState('')
   const [tab, setTab] = useState<'workshops' | 'library'>(() => typeof window !== 'undefined' && window.location.hash === '#library' ? 'library' : 'workshops')
   const [showForm, setShowForm] = useState(false)
-  const [audience, setAudience] = useState<Role[]>(['member', 'verified', 'coach', 'moderator', 'manager'])
-  const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
+  const [audience, setAudience] = useState<Role[]>(() => role === 'coach' ? ['member', 'verified', 'coach'] : ['member', 'verified', 'coach', 'moderator', 'manager'])
+  const [form, setForm] = useState({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60', resource_url: '' })
   const navigate = useNavigate()
 
   const load = useCallback(async () => {
     if (!supabase || !isSupabaseConfigured) return
     setError('')
     const [workshopResult, recordingResult] = await Promise.all([
-      supabase.from('learning_workshops').select('id,title,description,instructor_name,scheduled_at,duration_minutes,cover_url,audience_roles,status').order('scheduled_at', { ascending: false }).limit(100),
+      supabase.from('learning_workshops').select('id,title,description,instructor_name,scheduled_at,duration_minutes,cover_url,resource_url,audience_roles,status').order('scheduled_at', { ascending: false }).limit(100),
       supabase.rpc('list_learning_library'),
     ])
     if (workshopResult.error || recordingResult.error) {
@@ -80,7 +82,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
 
   const createWorkshop = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!supabase || !canManage(role) || audience.length === 0) return
+    if (!supabase || !canCreateWorkshop(role) || audience.length === 0) return
     setSaving(true); setError(''); setNotice('')
     const { error: createError } = await supabase.rpc('create_learning_workshop', {
       p_title: form.title,
@@ -90,10 +92,11 @@ export default function LearningCenterPage({ role }: { role: Role }) {
       p_duration_minutes: Number(form.duration_minutes),
       p_cover_url: null,
       p_audience_roles: audience,
+      p_resource_url: form.resource_url.trim() || null,
     })
     setSaving(false)
     if (createError) { setError('لم تُحفظ الورشة. تأكد من اكتمال الحقول وتطبيق migration مركز التعلم.'); return }
-    setForm({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60' })
+    setForm({ title: '', instructor_name: '', description: '', scheduled_at: '', duration_minutes: '60', resource_url: '' })
     setShowForm(false)
     setNotice('تمت جدولة الورشة. يظهر محتواها للمستخدمين الموافق عليهم ضمن الجمهور الذي اخترته.')
     await load()
@@ -136,23 +139,24 @@ export default function LearningCenterPage({ role }: { role: Role }) {
         <button type="button" role="tab" aria-selected={tab === 'workshops'} className={tab === 'workshops' ? 'active' : ''} onClick={() => setTab('workshops')}><CalendarDays size={16}/> الورش</button>
         <button type="button" role="tab" aria-selected={tab === 'library'} className={tab === 'library' ? 'active' : ''} onClick={() => setTab('library')}><FileVideo2 size={16}/> مكتبة التسجيلات <span>{recordings.length}</span></button>
       </div>
-      {canManage(role) && tab === 'workshops' && <button className="btn btn-primary btn-small" onClick={() => setShowForm(value => !value)}>{showForm ? <X size={16}/> : <CalendarDays size={16}/>} {showForm ? 'إغلاق' : 'جدولة ورشة'}</button>}
+      {canCreateWorkshop(role) && tab === 'workshops' && <button className="btn btn-primary btn-small" onClick={() => setShowForm(value => !value)}>{showForm ? <X size={16}/> : <CalendarDays size={16}/>} {showForm ? 'إغلاق' : role === 'coach' ? 'إضافة ورشة أو رابط' : 'جدولة ورشة'}</button>}
     </div>
-    {showForm && canManage(role) && <form className="learning-form" onSubmit={createWorkshop}>
-      <div className="learning-form-heading"><span className="eyebrow">إعداد جلسة جديدة</span><h2>جدولة ورشة مهنية</h2></div>
+    {showForm && canCreateWorkshop(role) && <form className="learning-form" onSubmit={createWorkshop}>
+      <div className="learning-form-heading"><span className="eyebrow">إعداد جلسة جديدة</span><h2>{role === 'coach' ? 'إضافة ورشة أو قناة خاصة' : 'جدولة ورشة مهنية'}</h2><p>يمكن إضافة رابط HTTPS لاجتماع خارجي أو قناة خاصة؛ سيظهر فقط للحسابات المعتمدة التي يطابق دورها الجمهور المحدد هنا. اضبط خصوصية الرابط أيضًا لدى مزوده.</p></div>
       <div className="learning-form-grid">
         <label>عنوان الورشة<input required minLength={3} maxLength={140} value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="مثال: التوازن المهني أثناء المناوبات"/></label>
         <label>اسم المدرب/ة<input required minLength={2} maxLength={120} value={form.instructor_name} onChange={e => setForm({ ...form, instructor_name: e.target.value })} placeholder="الاسم الظاهر للمشاركين"/></label>
         <label>الموعد المحلي<input required type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })}/></label>
         <label>المدة المتوقعة بالدقائق<select value={form.duration_minutes} onChange={e => setForm({ ...form, duration_minutes: e.target.value })}>{[30,45,60,75,90,120,180].map(value => <option key={value} value={value}>{value} دقيقة</option>)}</select></label>
+        <label className="learning-form-wide">رابط الورشة أو القناة الخاصة (اختياري)<input type="url" pattern="https://.*" maxLength={2000} value={form.resource_url} onChange={e => setForm({ ...form, resource_url: e.target.value })} placeholder="https://…"/></label>
         <label className="learning-form-wide">وصف الورشة<textarea maxLength={6000} rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="الأهداف ومحاور النقاش. لا تُضمّن معلومات مرضى."/></label>
-        <fieldset className="learning-audience learning-form-wide"><legend>الجمهور المسموح له بعد اعتماد الحساب</legend>{roleOptions.map(option => <label key={option.id}><input type="checkbox" checked={audience.includes(option.id)} onChange={e => setAudience(current => e.target.checked ? [...current, option.id] : current.filter(value => value !== option.id))}/>{option.label}</label>)}</fieldset>
+        <fieldset className="learning-audience learning-form-wide"><legend>الجمهور المسموح له بعد اعتماد الحساب</legend>{roleOptions.filter(option => canManage(role) || !['moderator', 'manager'].includes(option.id)).map(option => <label key={option.id}><input type="checkbox" checked={audience.includes(option.id)} onChange={e => setAudience(current => e.target.checked ? [...current, option.id] : current.filter(value => value !== option.id))}/>{option.label}</label>)}</fieldset>
       </div>
       <div className="learning-form-actions"><span>التسجيل الحي لا يتاح قبل ضبط أسرار 100ms وتخزين التسجيلات.</span><button className="btn btn-primary" disabled={saving || audience.length === 0}>{saving ? 'جارٍ الحفظ…' : 'حفظ الموعد'} <ArrowLeft size={15}/></button></div>
     </form>}
-    {loading ? <StateMessage>جارٍ تحميل الورش…</StateMessage> : tab === 'workshops' ? ordered.length === 0 ? <div className="learning-empty"><CalendarDays size={24}/><h2>لا توجد ورش مجدولة</h2><p>{canManage(role) ? 'أنشئ أول ورشة من زر «جدولة ورشة» أعلاه.' : 'تظهر الورش هنا عندما يجدولها مالك المنصة أو المدير.'}</p></div> : <div className="learning-grid">{ordered.map(item => <article className="learning-card" key={item.id}>
+    {loading ? <StateMessage>جارٍ تحميل الورش…</StateMessage> : tab === 'workshops' ? ordered.length === 0 ? <div className="learning-empty"><CalendarDays size={24}/><h2>لا توجد ورش مجدولة</h2><p>{canCreateWorkshop(role) ? 'أنشئ أول ورشة أو أضف رابطًا من الزر أعلاه.' : 'تظهر الورش هنا عندما ينشرها كوتش معتمد أو مالك المنصة أو المدير.'}</p></div> : <div className="learning-grid">{ordered.map(item => <article className="learning-card" key={item.id}>
       <div className={`learning-card-art ${item.status === 'live' ? 'is-live' : ''}`}><span className={`learning-status status-${item.status}`}>{item.status === 'live' && <i/>}{statusNames[item.status]}</span><div className="learning-card-symbol"><Activity size={28}/></div></div>
-      <div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(item.scheduled_at)}</span><span><Clock3 size={14}/>{item.duration_minutes} دقيقة</span></div><h2>{item.title}</h2><p className="learning-instructor">المدرب/ة: {item.instructor_name}</p><p className="learning-description">{item.description || 'ورشة تعليمية مهنية لأعضاء مجتمع السيطرة.'}</p><div className="learning-card-actions">{canEnter(item) ? <button className="btn btn-primary btn-small" onClick={() => navigate(`/learning-room/${item.id}`)}><Play size={15}/> دخول الورشة</button> : item.status === 'recorded' ? <button className="btn btn-outline btn-small" onClick={() => setTab('library')}><FileVideo2 size={15}/> مشاهدة التسجيل</button> : canManage(role) && item.status === 'scheduled' ? <button className="btn btn-primary btn-small" disabled={saving} onClick={() => void startWorkshop(item)}><Radio size={15}/> {saving ? 'جارٍ التجهيز…' : 'بدء الورشة'}</button> : <span className="learning-access"><LockKeyhole size={14}/> {item.status === 'ended' ? 'سيظهر التسجيل بعد اكتماله' : 'بانتظار موعد الورشة'}</span>}{canManage(role) && <small className="learning-audience-summary"><Users size={13}/> الجمهور: {item.audience_roles.map(id => roleOptions.find(option => option.id === id)?.label || id).join('، ')}</small>}</div></div>
+      <div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(item.scheduled_at)}</span><span><Clock3 size={14}/>{item.duration_minutes} دقيقة</span></div><h2>{item.title}</h2><p className="learning-instructor">المدرب/ة: {item.instructor_name}</p><p className="learning-description">{item.description || 'ورشة تعليمية مهنية لأعضاء مجتمع السيطرة.'}</p><div className="learning-card-actions">{canEnter(item) ? <button className="btn btn-primary btn-small" onClick={() => navigate(`/learning-room/${item.id}`)}><Play size={15}/> دخول الورشة</button> : item.status === 'recorded' ? <button className="btn btn-outline btn-small" onClick={() => setTab('library')}><FileVideo2 size={15}/> مشاهدة التسجيل</button> : canManage(role) && item.status === 'scheduled' ? <button className="btn btn-primary btn-small" disabled={saving} onClick={() => void startWorkshop(item)}><Radio size={15}/> {saving ? 'جارٍ التجهيز…' : 'بدء الورشة'}</button> : <span className="learning-access"><LockKeyhole size={14}/> {item.status === 'ended' ? 'سيظهر التسجيل بعد اكتماله' : 'بانتظار موعد الورشة'}</span>}{item.resource_url && <a className="btn btn-outline btn-small" href={item.resource_url} target="_blank" rel="noopener noreferrer"><ExternalLink size={14}/> فتح رابط الورشة/القناة</a>}{canCreateWorkshop(role) && <small className="learning-audience-summary"><Users size={13}/> الجمهور: {item.audience_roles.map(id => roleOptions.find(option => option.id === id)?.label || id).join('، ')}</small>}</div></div>
     </article>)}</div> : recordings.length === 0 ? <div className="learning-empty"><FileVideo2 size={25}/><h2>مكتبة التسجيلات فارغة</h2><p>تظهر التسجيلات بعد انتهاء الورشة وتأكيد رفع الأصل إلى مخزن الفيديو.</p></div> : <div className="learning-grid">{recordings.map(recording => <article className="learning-card" key={recording.recording_id}><div className="learning-card-art archive-art"><span className="learning-status status-recorded">تسجيل متاح</span><div className="learning-card-symbol"><Play size={25}/></div></div><div className="learning-card-body"><div className="learning-meta"><span><CalendarDays size={14}/>{localDateTime(recording.scheduled_at)}</span><span><Clock3 size={14}/>{mins(recording.recording_duration_seconds)}</span></div><h2>{recording.title}</h2><p className="learning-instructor">المدرب/ة: {recording.instructor_name}</p><p className="learning-description">{recording.description || 'تسجيل ورشة مجتمع السيطرة.'}</p><button className="btn btn-primary btn-small" disabled={saving} onClick={() => void openPlayback(recording)}><Play size={15}/> مشاهدة خاصة <LockKeyhole size={13}/></button></div></article>)}</div>}
     <footer className="learning-footer"><span><ShieldCheck size={15}/> الوصول يظل محكوماً بصلاحيات Supabase وليس بإخفاء الروابط فقط.</span><Link to="/profile">العودة إلى مساحتي <ArrowLeft size={14}/></Link></footer>
   </main>
