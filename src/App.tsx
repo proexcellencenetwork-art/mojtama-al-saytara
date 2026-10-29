@@ -8,6 +8,9 @@ import { isSignupSecurityConfigured } from './lib/turnstile-config'
 import type { Role } from './appTypes'
 import { MarkdownBody } from './lib/markdown'
 import { findEditorialArticleRow } from './lib/editorialFallback'
+import { getAnalyticsConsent, trackSiteEvent } from './lib/analytics'
+import { NewsletterSignup } from './components/NewsletterSignup'
+import { AnalyticsConsentBanner } from './components/AnalyticsConsentBanner'
 import './App.css'
 
 const LoginPage = lazy(() => import('./components/AuthPages').then(module => ({ default: module.LoginPage })))
@@ -19,6 +22,7 @@ const OwnerPortalPage = lazy(() => import('./components/OwnerPortalPage').then(m
 const LearningProviderSetupPage = lazy(() => import('./components/LearningProviderSetupPage').then(module => ({ default: module.LearningProviderSetupPage })))
 const LearningCenterPage = lazy(() => import('./components/LearningCenterPage'))
 const LearningRoomPage = lazy(() => import('./components/LearningRoomPage'))
+const AnalyticsDashboardPage = lazy(() => import('./components/AnalyticsDashboardPage'))
 
 const CareerJourneyHome = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerJourneyHome })))
 const CareerCompassPage = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerCompassPage })))
@@ -60,7 +64,7 @@ function Brand({ light = false }: { light?: boolean }) {
 }
 function Verified({ role }: { role: Role }) { return role !== 'member' ? <span className={`verified-mark ${role === 'coach' ? 'coach-mark' : ''}`} title={roleNames[role]}><BadgeCheck size={14}/></span> : null }
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
-function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة للقطاع الصحي: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div></footer> }
+function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة للقطاع الصحي: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
 
 function Header({ demo, authenticated, accountStatus, displayName, role, toggleTheme, dark, unread, unreadMessages, onSignOut }: { demo: boolean; authenticated: boolean; accountStatus: AccountStatus | null; displayName: string; role: Role; toggleTheme: () => void; dark: boolean; unread: number; unreadMessages: number; onSignOut: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
@@ -472,6 +476,76 @@ function SupabaseCallbackRouter() {
   return null
 }
 
+const toolPaths = new Set(['/career-compass','/linkedin-audit','/fresh-graduate','/value-economy','/achievement-portfolio','/promotion-intelligence','/innovation-rd','/ai-career-leverage','/saudi-labor-market-radar'])
+const toolNames: Record<string,string> = {
+  '/career-compass':'البوصلة المهنية', '/linkedin-audit':'تدقيق LinkedIn', '/fresh-graduate':'جاهزية الخريج',
+  '/value-economy':'اقتصاد القيمة المهنية', '/achievement-portfolio':'ملف الإنجازات',
+  '/promotion-intelligence':'جاهزية الترقية', '/innovation-rd':'الابتكار والبحث والتطوير',
+  '/ai-career-leverage':'توظيف الذكاء الاصطناعي', '/saudi-labor-market-radar':'رادار سوق العمل السعودي',
+}
+
+function SiteAnalyticsTracker() {
+  const location = useLocation()
+  const [consent, setConsent] = useState(() => getAnalyticsConsent())
+  useEffect(() => {
+    const sync = (event: Event) => setConsent((event as CustomEvent).detail === 'accepted' ? 'accepted' : 'declined')
+    window.addEventListener('saytara-analytics-consent', sync)
+    return () => window.removeEventListener('saytara-analytics-consent', sync)
+  }, [])
+  useEffect(() => {
+    if (consent !== 'accepted') return
+    const path = location.pathname || '/'
+    const toolPath = [...toolPaths].find(value => path === value || path.startsWith(value + '/'))
+    const toolName = toolPath ? toolNames[toolPath] || toolPath : ''
+    void trackSiteEvent('page_view', path, document.title.slice(0, 160))
+    if (path === '/register') void trackSiteEvent('register_view', path, 'إنشاء حساب')
+    if (path === '/learning' || path.startsWith('/learning/')) void trackSiteEvent('workshop_view', path, 'مركز التعلّم')
+    let started = false
+    const handleFocus = (event: Event) => {
+      if (!toolPath || started) return
+      const target = event.target
+      if (!(target instanceof HTMLElement) || !target.closest('form, button, [role="button"]')) return
+      started = true
+      void trackSiteEvent('tool_start', path, toolName)
+    }
+    const handleSubmit = (event: Event) => {
+      if (!toolPath || !(event.target instanceof HTMLFormElement)) return
+      if (!started) { started = true; void trackSiteEvent('tool_start', path, toolName) }
+      void trackSiteEvent('tool_complete', path, toolName)
+    }
+    const handleClick = (event: Event) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement)) return
+      const anchor = target.closest('a[href]') as HTMLAnchorElement | null
+      if (anchor) {
+        try {
+          const destination = new URL(anchor.href, window.location.origin)
+          if (destination.origin === window.location.origin && ['/register','/learning','/coaching','/events','/membership'].includes(destination.pathname)) {
+            void trackSiteEvent('cta_click', path, destination.pathname)
+          }
+        } catch { /* Ignore malformed links. */ }
+      }
+      if (toolPath && !started && target.closest('button')) {
+        const label = (target.closest('button')?.textContent || '').trim()
+        if (/حلّل|احسب|اعرض نقطة البداية|كوّن مسودة|ابدأ التقييم|اعرض النتيجة/.test(label)) {
+          started = true
+          void trackSiteEvent('tool_start', path, toolName)
+          void trackSiteEvent('tool_complete', path, toolName)
+        }
+      }
+    }
+    document.addEventListener('focusin', handleFocus, true)
+    document.addEventListener('submit', handleSubmit, true)
+    document.addEventListener('click', handleClick, true)
+    return () => {
+      document.removeEventListener('focusin', handleFocus, true)
+      document.removeEventListener('submit', handleSubmit, true)
+      document.removeEventListener('click', handleClick, true)
+    }
+  }, [location.pathname, consent])
+  return null
+}
+
 function App() {
   const demoMode = !isSupabaseConfigured
   const [demo, setDemo] = useState(() => demoMode && localStorage.getItem('saytara-demo') === 'true')
@@ -642,7 +716,7 @@ function App() {
   }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} accountStatus={accountStatus} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark} unread={unread} unreadMessages={unreadMessages} onSignOut={onSignOut}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/><Route path="/saudi-labor-market" element={<Navigate replace to="/saudi-labor-market-radar"/>}/><Route path="/learning-center" element={<Navigate replace to="/learning"/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}{publicCareerRoutes.map(([path, Page]) => <Route path={path} key={path} element={<><Page/><Footer/></>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/pending-review" element={<PendingReviewPage authReady={authReady} authenticated={authenticated} demoMode={demo} accountStatus={accountStatus} onSignOut={onSignOut} onRefreshStatus={refreshAccountStatus}/>}/><Route path="/owner" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><OwnerPortalPage role={role}/></AppShell>}/><Route path="/owner/100ms" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningProviderSetupPage role={role}/></AppShell>}/><Route path="/content-studio" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><EditorialStudioPage role={role}/></AppShell>}/><Route path="/learning" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningCenterPage role={role}/></AppShell>}/><Route path="/learning-room/:id" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningRoomPage role={role} userId={user?.id || ''} displayName={displayName}/></AppShell>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','discover','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><SiteAnalyticsTracker/><AnalyticsConsentBanner/><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><Header demo={demo} authenticated={authenticated} accountStatus={accountStatus} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark} unread={unread} unreadMessages={unreadMessages} onSignOut={onSignOut}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/><Route path="/saudi-labor-market" element={<Navigate replace to="/saudi-labor-market-radar"/>}/><Route path="/learning-center" element={<Navigate replace to="/learning"/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}{publicCareerRoutes.map(([path, Page]) => <Route path={path} key={path} element={<><Page/><Footer/></>}/>)}<Route path="/articles/:slug" element={<LivePublicDetailPage page="articles" client={supabaseClient}/>}/><Route path="/events/:id" element={<LivePublicDetailPage page="events" client={supabaseClient}/>}/><Route path="/coaches/:id" element={<LivePublicDetailPage page="coaches" client={supabaseClient}/>}/><Route path="/login" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/register" element={<LoginPage onDemo={onDemo} onSignedIn={onSignedIn}/>}/><Route path="/reset-password" element={<ResetPasswordPage onSignedIn={onSignedIn}/>}/><Route path="/pending-review" element={<PendingReviewPage authReady={authReady} authenticated={authenticated} demoMode={demo} accountStatus={accountStatus} onSignOut={onSignOut} onRefreshStatus={refreshAccountStatus}/>}/><Route path="/owner" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><OwnerPortalPage role={role}/></AppShell>}/><Route path="/owner/analytics" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><AnalyticsDashboardPage role={role}/></AppShell>}/><Route path="/owner/100ms" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningProviderSetupPage role={role}/></AppShell>}/><Route path="/content-studio" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><EditorialStudioPage role={role}/></AppShell>}/><Route path="/learning" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningCenterPage role={role}/></AppShell>}/><Route path="/learning-room/:id" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><LearningRoomPage role={role} userId={user?.id || ''} displayName={displayName}/></AppShell>}/><Route path="/feed" element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><FeedPage role={role} demoMode={!isSupabaseConfigured} userId={user?.id || ''} displayName={displayName}/></AppShell>}/>{['profile','discover','connections','messages','notifications','groups','verification','moderation','admin','settings'].map(page => <Route path={`/${page}`} key={page} element={<AppShell role={role} authenticated={authenticated} authReady={authReady} demoMode={demo} accountStatus={accountStatus} unread={unread} unreadMessages={unreadMessages} displayName={displayName} onSignOut={onSignOut}><DashboardPage demoMode={demo} page={page} role={role} setRole={setRole} userId={user?.id || ''} client={supabaseClient}/></AppShell>}/>)}<Route path="*" element={<NotFoundPage/>}/></Routes></Suspense></div></BrowserRouter>
 }
 
 export default App
