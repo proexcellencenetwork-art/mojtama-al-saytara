@@ -19,6 +19,8 @@ type PlatformAccount = {
   last_sign_in_at: string | null
 }
 type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }
+type OnboardingLead = { id: string; full_name: string; email: string; specialty: string; goal: string; status: string; marketing_opt_in: boolean; source_path: string; created_at: string }
+type OnboardingOverview = { total: number; last_30_days: number; marketing_opt_ins: number; by_goal: { goal: string; count: number }[]; leads: OnboardingLead[] }
 type OwnerAudit = {
   id: number
   actor_id: string
@@ -56,6 +58,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
   const [inviteEmail, setInviteEmail] = useState('')
   const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)
   const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
+  const [onboardingOverview, setOnboardingOverview] = useState<OnboardingOverview | null>(null)
 
   const eligibleAccounts = useMemo(
     () => accounts.filter(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner),
@@ -86,13 +89,14 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       return
     }
     setAuthorized(true)
-    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult] = await Promise.all([
+    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult, onboardingResult] = await Promise.all([
       supabase.rpc('list_platform_accounts_activity'),
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
       supabase.rpc('get_owner_community_metric_settings'),
+      supabase.rpc('get_owner_onboarding_overview', { p_limit: 50 }),
     ])
-    if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error) {
+    if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error || onboardingResult.error) {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
       setAccounts([])
       setAudit([])
@@ -103,6 +107,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       const nextAccounts = safeRows<PlatformAccount>(accountsResult.data)
       setAccounts(nextAccounts)
       setAudit(safeRows<OwnerAudit>(auditResult.data))
+      setOnboardingOverview(onboardingResult.data as OnboardingOverview)
       setTarget(current => current && nextAccounts.some(account => account.user_id === current && account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)
         ? current
         : nextAccounts.find(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)?.user_id || '')
@@ -200,6 +205,19 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     <div className="page-title-row owner-heading"><div><span className="eyebrow">صلاحية منفصلة عن المدير</span><h1>مركز مالك المنصة</h1><p>هذه الأدوات تتحقق من المالك في قاعدة البيانات، ولا تكفي معرفة رابط الصفحة للوصول إليها.</p></div><div className="owner-heading-actions"><Link className="btn btn-primary btn-small" to="/owner/analytics"><BarChart3 size={15}/> مؤشرات الأداء</Link><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15}/> تحديث</button></div></div>
     {notice && <div className="inline-message" role="status">{notice}</div>}
     {error && <div className="inline-message live-error" role="alert">{error}</div>}
+    <section className="owner-card owner-onboarding-card">
+      <div className="owner-card-heading"><span><Users size={18}/></span><div><h2>بوابة السيطرة الذكية · المهتمون</h2><p>بيانات الإرشاد التي جمعها الموقع بموافقة أصحابها. هذه مؤشرات اهتمام وليست اشتراكات أو أعضاء مدفوعين.</p></div></div>
+      <div className="owner-onboarding-stats">
+        <div><b>{onboardingOverview?.total ?? '—'}</b><small>إجمالي طلبات الإرشاد</small></div>
+        <div><b>{onboardingOverview?.last_30_days ?? '—'}</b><small>آخر 30 يوماً</small></div>
+        <div><b>{onboardingOverview?.marketing_opt_ins ?? '—'}</b><small>موافقات المحتوى البريدي</small></div>
+      </div>
+      <div className="owner-onboarding-columns">
+        <div><h3>الاهتمامات حسب الهدف</h3>{(onboardingOverview?.by_goal ?? []).map(item => <div className="owner-onboarding-interest" key={item.goal}><span>{({job:'البحث عن وظيفة',skills:'تطوير المهارات',promotion:'الترقية وتحسين الدخل',transition:'الانتقال المهني',leadership:'التطور القيادي',explore:'استكشاف المحتوى'} as Record<string,string>)[item.goal] || item.goal}</span><b>{item.count}</b></div>)}{!onboardingOverview?.by_goal?.length && <p className="owner-empty">لا توجد طلبات إرشاد بعد.</p>}</div>
+        <div><h3>أحدث طلبات الإرشاد</h3>{(onboardingOverview?.leads ?? []).map(lead => <div className="owner-onboarding-lead" key={lead.id}><div><b>{lead.full_name}</b><small dir="ltr">{lead.email}</small><small>{lead.specialty} · {lead.goal}</small></div><span>{new Date(lead.created_at).toLocaleDateString('ar-SA')}</span></div>)}{!onboardingOverview?.leads?.length && <p className="owner-empty">ستظهر الطلبات هنا بعد بدء استقبالها.</p>}</div>
+      </div>
+    </section>
+
     <section className="owner-grid">
       <article className="owner-card">
         <div className="owner-card-heading"><span><UserPlus size={18}/></span><div><h2>دعوة بالبريد الإلكتروني</h2><p>ترسل دعوة Supabase؛ ينشأ دور العضو الأساسي فقط، بلا دور امتيازي أو تجاوز للموافقة.</p></div></div>
