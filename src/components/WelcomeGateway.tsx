@@ -44,10 +44,25 @@ export function WelcomeGateway({ children }: { children: ReactNode }) {
   const [savedGoal, setSavedGoal] = useState<Goal>('skills')
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem('saytara-welcome-completed') !== 'true') setVisible(true)
-    } catch { setVisible(true) }
+    let active = true
+    void (async () => {
+      if (supabase) {
+        const { data } = await supabase.auth.getSession()
+        if (!active || data.session) return
+      }
+      try {
+        if (active && localStorage.getItem('saytara-welcome-completed') !== 'true') setVisible(true)
+      } catch { if (active) setVisible(true) }
+    })()
+    return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    if (!visible) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [visible])
 
   function dismiss() {
     try { localStorage.setItem('saytara-welcome-completed', 'true') } catch { /* Session can continue without persistence. */ }
