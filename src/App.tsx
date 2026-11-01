@@ -40,7 +40,7 @@ const ProfessionalPositioningPage = lazy(() => import('./components/Professional
 const LinkedInWorkshopPage = lazy(() => import('./components/ProfessionalTrackPages').then(module => ({ default: module.LinkedInWorkshopPage })))
 const EditorialStudioPage = lazy(() => import('./components/EditorialStudioPage'))
 
-const whatsappChannelUrl = /^https:\/\/(?:www\\.)?whatsapp\\.com\/channel\/[A-Za-z0-9]+\/?$/i.test(communityLinks.whatsappChannelUrl) ? communityLinks.whatsappChannelUrl : ''
+const whatsappChannelUrl = /^https:\/\/(?:www\.)?whatsapp\.com\/channel\/[A-Za-z0-9]+\/?$/i.test(communityLinks.whatsappChannelUrl) ? communityLinks.whatsappChannelUrl : ''
 const roleNames: Record<Role, string> = { member: 'عضو', verified: 'عضو موثّق', coach: 'كوتش', moderator: 'مشرف', manager: 'مدير', owner: 'مالك المنصة' }
 type AccountStatus = 'pending' | 'approved' | 'rejected' | 'unknown'
 function hasConfirmedEmail(user: User | null | undefined) {
