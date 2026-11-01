@@ -94,6 +94,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
       supabase.rpc('get_owner_community_metric_settings'),
+      supabase.rpc('get_owner_onboarding_overview', { p_limit: 50 }),
     ])
     if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error || onboardingResult.error) {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
