@@ -61,6 +61,8 @@ export function WelcomeGateway({ children }: { children: ReactNode }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
+    const formData = new FormData(event.currentTarget)
+    if (String(formData.get('website') || '').trim()) return
     setSaving(true)
     try {
       await submitOnboardingLead({
