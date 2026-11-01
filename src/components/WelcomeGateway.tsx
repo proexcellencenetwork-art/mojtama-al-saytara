@@ -119,7 +119,7 @@ export function WelcomeGateway({ children }: { children: ReactNode }) {
             <h2 id="gateway-title">خلّنا نتعرف عليك بشكل بسيط.</h2>
             <p>نستخدم هذه المعلومات لتوجيهك إلى المسار المناسب. البريد يكفي حالياً، ولا نطلب رقم الجوال.</p>
           </div>
-          <form className="gateway-form" onSubmit={submit}>
+          <form className="gateway-form" onSubmit={submit}>\n            <label className="gateway-honeypot" aria-hidden="true">اترك هذا الحقل فارغاً<input tabIndex={-1} autoComplete="off" name="website" value="" readOnly/></label>
             <label>الاسم<input autoComplete="name" maxLength={100} required value={name} onChange={event => setName(event.target.value)} placeholder="اسمك"/></label>
             <label>البريد الإلكتروني<input autoComplete="email" type="email" maxLength={254} required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
             <label>التخصص أو المجال<select required value={specialty} onChange={event => setSpecialty(event.target.value)}><option value="">اختر مجالك</option>{specialties.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
