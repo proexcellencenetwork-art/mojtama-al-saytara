@@ -22,7 +22,7 @@ export async function submitOnboardingLead(input: OnboardingSubmission): Promise
       selectedPath: input.selectedPath,
       processingConsent: input.processingConsent,
       marketingOptIn: input.marketingOptIn,
-      sourcePath: input.sourcePath,
+      sourcePath: input.sourcePath,\n      website: input.website,
     },
   })
   if (error || !data?.ok) {
