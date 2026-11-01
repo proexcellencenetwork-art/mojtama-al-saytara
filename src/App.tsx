@@ -242,6 +242,8 @@ function PublicPage({ page }: { page: keyof typeof publicCopy }) {
   <div className="community-direction-measure"><span className="eyebrow">مبدأ التنفيذ</span><h2>نقيس التقدم بما يحدث فعلًا.</h2><p>في المرحلة الأولى نختبر احتياجات الجمهور من خلال مقابلات وتجارب وورش صغيرة، ثم نراجع التسجيل والحضور والرضا والمخرجات واهتمام الجهات. هذه مؤشرات سنجمعها وليست نتائج ندّعي تحققها مسبقًا.</p><div className="community-direction-actions"><Link className="btn btn-primary" to="/career-journey">ابدأ بخطوة مهنية <ArrowLeft size={15}/></Link><Link className="btn btn-outline" to="/articles">اقرأ محتوى المجتمع <ArrowLeft size={15}/></Link></div></div>
  </section>}{page === 'coaching' && <div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div>}<nav className="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b><Link to="/coaching">تعرّف على الكوتشنج المهني</Link><Link to="/articles">اقرأ مقالات المجتمع</Link><Link to="/faq">إجابات الأسئلة الشائعة</Link><Link to="/membership">العضوية والمزايا</Link></nav></main><Footer/></>
 
+}
+
 const publicSeo: Record<string, { title: string; description: string }> = {
   '/': { title: 'مجتمع السيطرة المهنية | Professional Mastery Community', description: 'مجتمع مهني يربط التقدم المهني والابتكار والبحث، ويحوّل الخبرة إلى قيمة واضحة وتعاون وأثر.' },
   '/about': { title: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية', description: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية: التقدم المهني والابتكار والبحث، ضمن شبكة سعودية تربط المعرفة بالتطبيق والأثر.' },
