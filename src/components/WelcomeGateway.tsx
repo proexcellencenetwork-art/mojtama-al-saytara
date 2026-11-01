@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowUpLeft, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, Crown, GraduationCap, MessageCircle, ShieldCheck, Sparkles, Wrench, X } from 'lucide-react'
-import { submitOnboardingLead } from '../lib/onboarding'
+import { submitOnboardingLead } from '../lib/onboarding'\nimport { supabase } from '../lib/supabase'
 import './WelcomeGateway.css'
 
 type Goal = 'job' | 'skills' | 'promotion' | 'transition' | 'leadership' | 'explore'
@@ -70,7 +70,7 @@ export function WelcomeGateway({ children }: { children: ReactNode }) {
         selectedPath: goal,
         processingConsent,
         marketingOptIn,
-        sourcePath: window.location.pathname,
+        sourcePath: window.location.pathname,\n        website: String(formData.get('website') || ''),
       })
       setSavedGoal(goal)
       setStep('done')
@@ -119,7 +119,7 @@ export function WelcomeGateway({ children }: { children: ReactNode }) {
             <h2 id="gateway-title">خلّنا نتعرف عليك بشكل بسيط.</h2>
             <p>نستخدم هذه المعلومات لتوجيهك إلى المسار المناسب. البريد يكفي حالياً، ولا نطلب رقم الجوال.</p>
           </div>
-          <form className="gateway-form" onSubmit={submit}>\n            <label className="gateway-honeypot" aria-hidden="true">اترك هذا الحقل فارغاً<input tabIndex={-1} autoComplete="off" name="website" value="" readOnly/></label>
+          <form className="gateway-form" onSubmit={submit}>\n            <label className="gateway-honeypot" aria-hidden="true">اترك هذا الحقل فارغاً<input tabIndex={-1} autoComplete="off" name="website" value=""/></label>
             <label>الاسم<input autoComplete="name" maxLength={100} required value={name} onChange={event => setName(event.target.value)} placeholder="اسمك"/></label>
             <label>البريد الإلكتروني<input autoComplete="email" type="email" maxLength={254} required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com"/></label>
             <label>التخصص أو المجال<select required value={specialty} onChange={event => setSpecialty(event.target.value)}><option value="">اختر مجالك</option>{specialties.map(item => <option key={item} value={item}>{item}</option>)}</select></label>
