@@ -32,6 +32,9 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin')
   if (!origin || !allowedOrigins.has(origin)) return json(req, { error: 'origin_not_allowed' }, 403)
 
+  // Keep collection disabled until the project's cross-border privacy review is approved.
+  if (Deno.env.get('ONBOARDING_COLLECTION_ENABLED') !== 'true') return json(req, { error: 'collection_paused' }, 503)
+
   let body: unknown
   try { body = await req.json() } catch { return json(req, { error: 'invalid_json' }, 400) }
   if (!body || typeof body !== 'object' || Array.isArray(body)) return json(req, { error: 'invalid_body' }, 400)
