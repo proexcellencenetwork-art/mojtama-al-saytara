@@ -9,6 +9,7 @@ export type OnboardingSubmission = {
   processingConsent: boolean
   marketingOptIn: boolean
   sourcePath: string
+  website: string
 }
 
 export async function submitOnboardingLead(input: OnboardingSubmission): Promise<void> {
