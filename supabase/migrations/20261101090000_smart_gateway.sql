@@ -56,3 +56,56 @@ grant all on public.onboarding_rate_limits to service_role;
 comment on table public.onboarding_leads is 'Private visitor onboarding requests. Accessible only through trusted server-side workflows.';
 comment on table public.onboarding_interest_events is 'Private onboarding interest signals; do not store raw contact details here.';
 comment on table public.onboarding_rate_limits is 'Hashed request fingerprints for onboarding anti-abuse limits.';
+
+-- Owner-only onboarding overview. No contact details are exposed to ordinary users or analytics RPCs.
+create or replace function public.get_owner_onboarding_overview(p_limit integer default 30)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  result jsonb;
+begin
+  if not public.is_platform_owner() then
+    raise exception 'insufficient_privilege' using errcode = '42501';
+  end if;
+
+  select jsonb_build_object(
+    'total', (select count(*) from public.onboarding_leads),
+    'last_30_days', (select count(*) from public.onboarding_leads where created_at >= now() - interval '30 days'),
+    'marketing_opt_ins', (select count(*) from public.onboarding_leads where marketing_opt_in is true),
+    'by_goal', coalesce((
+      select jsonb_agg(jsonb_build_object('goal', grouped.goal, 'count', grouped.total) order by grouped.total desc)
+      from (
+        select goal, count(*)::integer as total
+        from public.onboarding_leads
+        group by goal
+      ) grouped
+    ), '[]'::jsonb),
+    'leads', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', recent.id,
+        'full_name', recent.full_name,
+        'email', recent.email,
+        'specialty', recent.specialty,
+        'goal', recent.goal,
+        'status', recent.status,
+        'marketing_opt_in', recent.marketing_opt_in,
+        'source_path', recent.source_path,
+        'created_at', recent.created_at
+      ) order by recent.created_at desc)
+      from (
+        select id, full_name, email, specialty, goal, status, marketing_opt_in, source_path, created_at
+        from public.onboarding_leads
+        order by created_at desc
+        limit greatest(1, least(coalesce(p_limit, 30), 100))
+      ) recent
+    ), '[]'::jsonb)
+  ) into result;
+  return result;
+end;
+$$;
+
+revoke all on function public.get_owner_onboarding_overview(integer) from public, anon;
+grant execute on function public.get_owner_onboarding_overview(integer) to authenticated;
