@@ -1,0 +1,45 @@
+name: Quality checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Validate editorial content
+        run: npm run test:content
+      - name: Validate SEO fixtures
+        run: npm run test:seo-fixtures
+      - name: Build and validate static pages
+        run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
+          VITE_SITE_URL: ${{ vars.VITE_SITE_URL || 'https://proexcellencenetwork-art.github.io/mojtama-al-saytara/' }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          VITE_SUPABASE_CAPTCHA_ENFORCED: ${{ vars.VITE_SUPABASE_CAPTCHA_ENFORCED }}
+          VITE_PUBLIC_SIGNUP_ENABLED: 'true'
