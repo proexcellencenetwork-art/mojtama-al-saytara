@@ -29,6 +29,7 @@ export async function submitOnboardingLead(input: OnboardingSubmission): Promise
   })
   if (error || !data?.ok) {
     const code = typeof data?.error === 'string' ? data.error : ''
+    if (code === 'collection_paused') throw new Error('خدمة الإرشاد قيد الإطلاق بعد استكمال مراجعة الخصوصية. يمكنك التصفح واستكشاف المحتوى الآن.')
     if (code === 'rate_limited') throw new Error('وصلت إلى الحد المؤقت للطلبات. حاول بعد قليل.')
     if (code === 'origin_not_allowed') throw new Error('تعذر التحقق من مصدر الطلب.')
     if (code === 'consent_required') throw new Error('يرجى الموافقة على إشعار الخصوصية للمتابعة.')
