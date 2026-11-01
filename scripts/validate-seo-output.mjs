@@ -24,7 +24,7 @@ for (const route of manifest.routes) {
 }
 const privatePaths = new Set(['/login/','/register/','/reset-password/','/feed/','/profile/','/discover/','/connections/','/messages/','/notifications/','/groups/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
-const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/'])
+const interactiveRoutes = new Set(['/explore/','/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
 if (!publicRoutes.some(route => route.path === '/membership/')) fail.push('Public membership page missing from route manifest.')
@@ -77,6 +77,7 @@ for (const route of publicRoutes) {
   if (!html.includes('id="root">')) fail.push(`Rendered body content missing: ${route.path}`)
   const hydrated = interactiveRoutes.has(route.path) || /^\/articles\/[^/:]+\/$/.test(route.path)
   if (!html.includes('.css') || (!hydrated && !html.includes('public-site.js'))) fail.push(`Public page CSS or its required behavior script is missing: ${route.path}`)
+  if (route.path === '/explore/' && (!html.includes('data-knowledge-search') || !html.includes('data-knowledge-category') || !html.includes('data-search-item'))) fail.push('Knowledge hub search interface or searchable index is missing.')
   const moduleScript = html.match(/<script\b(?=[^>]*\btype="module")(?=[^>]*\bsrc="([^"]+)")[^>]*>/i)
   if (hydrated && !moduleScript) fail.push(`Interactive career route is missing its local application module: ${route.path}`)
   if (!hydrated && (/<script\b[^>]*\btype="module"/i.test(html) || /rel="modulepreload"/i.test(html))) fail.push(`Static public route unexpectedly loads the React/Supabase module bundle: ${route.path}`)

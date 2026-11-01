@@ -69,6 +69,32 @@
     menuButton.setAttribute('title', open ? 'إغلاق قائمة التنقل' : 'فتح قائمة التنقل')
   })
 
+  const knowledgeSearch = document.querySelector('[data-knowledge-search]')
+  const knowledgeCategory = document.querySelector('[data-knowledge-category]')
+  const knowledgeItems = [...document.querySelectorAll('[data-search-item]')]
+  const knowledgeCount = document.querySelector('[data-knowledge-count]')
+  const knowledgeEmpty = document.querySelector('[data-knowledge-empty]')
+  const normalizeArabicSearch = (value) => String(value || '').normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').toLocaleLowerCase('ar').trim()
+  const filterKnowledge = () => {
+    if (!knowledgeItems.length) return
+    const query = normalizeArabicSearch(knowledgeSearch?.value).split(/\s+/).filter(Boolean)
+    const category = knowledgeCategory?.value || 'all'
+    let visible = 0
+    for (const item of knowledgeItems) {
+      const text = normalizeArabicSearch(item.getAttribute('data-search-text'))
+      const matchesText = query.every(token => text.includes(token))
+      const matchesCategory = category === 'all' || item.getAttribute('data-search-category') === category
+      const show = matchesText && matchesCategory
+      item.hidden = !show
+      if (show) visible += 1
+    }
+    if (knowledgeCount) knowledgeCount.textContent = `يعرض ${visible} من ${knowledgeItems.length} نتيجة`
+    if (knowledgeEmpty) knowledgeEmpty.hidden = visible !== 0
+  }
+  knowledgeSearch?.addEventListener('input', filterKnowledge)
+  knowledgeCategory?.addEventListener('change', filterKnowledge)
+  filterKnowledge()
+
   publicNav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => closeMenu()))
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && publicNav?.classList.contains('nav-open')) closeMenu(true)
