@@ -105,7 +105,8 @@ export function OwnerPortalPage({ role }: { role: Role }) {
       setCommunityMetric({ visible: metricData?.visible === true, mode: metricData?.mode === 'goal' ? 'goal' : 'actual', goal: Number.isInteger(metricData?.goal) ? Math.max(0, Math.min(1000000, metricData!.goal!)) : 100 })
       const nextAccounts = safeRows<PlatformAccount>(accountsResult.data)
       setAccounts(nextAccounts)
-      setAudit(safeRows<OwnerAudit>(auditResult.data))\n      setOnboardingOverview(onboardingResult.data as OnboardingOverview)
+      setAudit(safeRows<OwnerAudit>(auditResult.data))
+      setOnboardingOverview(onboardingResult.data as OnboardingOverview)
       setTarget(current => current && nextAccounts.some(account => account.user_id === current && account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)
         ? current
         : nextAccounts.find(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)?.user_id || '')
