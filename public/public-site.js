@@ -74,10 +74,10 @@
   const knowledgeItems = [...document.querySelectorAll('[data-search-item]')]
   const knowledgeCount = document.querySelector('[data-knowledge-count]')
   const knowledgeEmpty = document.querySelector('[data-knowledge-empty]')
-  const normalizeArabicSearch = (value) => String(value || '').normalize('NFKD').replace(/[\\u064B-\\u065F\\u0670]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').toLocaleLowerCase('ar').trim()
+  const normalizeArabicSearch = (value) => String(value || '').normalize('NFKD').replace(/[\u064B-\u065F\u0670]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').toLocaleLowerCase('ar').trim()
   const filterKnowledge = () => {
     if (!knowledgeItems.length) return
-    const query = normalizeArabicSearch(knowledgeSearch?.value).split(/\\s+/).filter(Boolean)
+    const query = normalizeArabicSearch(knowledgeSearch?.value).split(/\s+/).filter(Boolean)
     const category = knowledgeCategory?.value || 'all'
     let visible = 0
     for (const item of knowledgeItems) {
