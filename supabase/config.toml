@@ -31,3 +31,7 @@ verify_jwt = false
 # Public newsletter opt-in endpoint with origin checks and hashed-IP rate limiting.
 [functions.newsletter-subscribe]
 verify_jwt = false
+
+# Public onboarding capture endpoint: strict origin checks, server-side validation and rate limits.
+[functions.onboarding-submit]
+verify_jwt = false
