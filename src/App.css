@@ -222,3 +222,9 @@
 .waitlist-success{text-align:center;padding:1.5rem}.waitlist-success svg{color:var(--teal)}.waitlist-success p{color:var(--muted);line-height:1.9}.auth-waitlist-note{margin:.8rem 0;text-align:center;color:var(--muted);font-size:.76rem;line-height:1.8}.auth-waitlist-note a{color:var(--teal);font-weight:800;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:900px){.journey-hero{grid-template-columns:1fr}.journey-hero .hero-art{min-height:19rem;max-width:40rem;margin:1.5rem auto 0}.journey-benefits .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.journey-trust{grid-template-columns:1fr}}
 @media(max-width:639px){.journey-hero{text-align:center;gap:1rem}.journey-hero .hero-actions{justify-content:center}.journey-hero .hero-proof{text-align:start}.journey-hero .hero-art{min-height:16rem}.journey-benefits .feature-grid,.journey-path-grid,.journey-step-grid{grid-template-columns:1fr}.journey-path-card{padding:1rem}.journey-trust{padding:1rem}.public-next-step>div,.empty-state-actions{display:grid;grid-template-columns:1fr}.waitlist-status{padding:1rem}.waitlist-form>.btn{width:100%}}
+
+.waitlist-preview{margin-top:1.1rem;padding:1rem;border:1px dashed var(--line);border-radius:.9rem;background:color-mix(in srgb,var(--teal) 4%,var(--paper))}
+.waitlist-preview h3{margin:0 0 .8rem;font-size:.9rem}
+.waitlist-preview fieldset{min-width:0;margin:0;padding:0;border:0}
+.waitlist-preview fieldset:disabled{opacity:.72}
+.waitlist-preview-note{margin:.8rem 0 0!important;font-size:.72rem!important;font-weight:700}
