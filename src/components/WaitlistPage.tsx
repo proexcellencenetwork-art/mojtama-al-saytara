@@ -21,7 +21,7 @@ export function WaitlistPage() {
   const {data,error:requestError}=await supabase.functions.invoke('onboarding-submit',{body:{fullName:fullName.trim(),email:email.trim().toLowerCase(),userType,specialty,goal,selectedPath:goal,sourcePath:location.pathname||'/waitlist',processingConsent,marketingOptIn,website}})
   let failureCode=typeof data?.error==='string'?data.error:''
   if(requestError&&'context' in requestError&&requestError.context instanceof Response){try{const detail=await requestError.context.clone().json() as {error?:string};failureCode=detail.error||failureCode}catch{/* Keep the available error code. */}}
-  if(!requestError&&data?.status==='submitted'){setSubmitted(true);setMessage('وصل طلب اهتمامك بنجاح. لم يتم إنشاء حساب أو تفعيل عضوية؛ سنتواصل فقط وفق الموافقات التي اخترتها.');void trackSiteEvent('waitlist_submit','/waitlist',userType+':'+goal);return}
+  if(!requestError&&data?.status==='submitted'){setSubmitted(true);setMessage('وصل طلب اهتمامك بنجاح. لم يتم إنشاء حساب أو تفعيل عضوية؛ سنتواصل فقط وفق الموافقات التي اخترتها.');void trackSiteEvent('waitlist_submit','/waitlist','interest_form');return}
   if(failureCode==='already_registered'){setMessage('هذا البريد مسجّل لدينا مسبقاً في قائمة الاهتمام. لم نُنشئ طلباً مكرراً.');setError(true)}
   else if(failureCode==='collection_paused'){setCollectionState('paused');setMessage('استقبال الطلبات متوقف حالياً. لم يتم حفظ بياناتك.');setError(true)}
   else if(failureCode==='rate_limited'){setMessage('وصلت إلى حد المحاولات المؤقت. حاول لاحقاً.');setError(true)}
