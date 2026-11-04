@@ -48,6 +48,9 @@ try {
   const waitlistHtml = await readFile(resolve(root,'dist/waitlist/index.html'),'utf8')
   if (!waitlistHtml.includes('<h1>') || !waitlistHtml.includes('rel="canonical"') || !waitlistHtml.includes('twitter:card')) throw new Error('Waitlist route must be rendered with metadata and an H1.')
   if (!waitlistHtml.includes('src=') || !routes.some(route => route.path === '/waitlist/')) throw new Error('Waitlist route must load the app and appear in the public route manifest.')
+  const waitlistHtml = await readFile(resolve(root,'dist/waitlist/index.html'),'utf8')
+  if (!waitlistHtml.includes('<h1>') || !waitlistHtml.includes('rel="canonical"') || !waitlistHtml.includes('twitter:card')) throw new Error('Waitlist route must be rendered with metadata and an H1.')
+  if (!waitlistHtml.includes('src=') || !routes.some(route => route.path === '/waitlist/')) throw new Error('Waitlist route must load the app and appear in the public route manifest.')
   const signupReady = env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false' && Boolean(env.VITE_TURNSTILE_SITE_KEY?.trim()) && env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
   const registerHtml = await readFile(resolve(root,'dist/register/index.html'),'utf8')
   const faqHtml = await readFile(resolve(root,'dist/faq/index.html'),'utf8')
