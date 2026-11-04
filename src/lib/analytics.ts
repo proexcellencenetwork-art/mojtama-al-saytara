@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type SiteEventName = 'page_view' | 'tool_start' | 'tool_complete' | 'register_view' | 'workshop_view' | 'cta_click'
+export type SiteEventName = 'page_view' | 'tool_start' | 'tool_complete' | 'register_view' | 'workshop_view' | 'cta_click' | 'hero_primary_cta_click' | 'waitlist_submit' | 'career_path_click' | 'coaching_click' | 'membership_view' | 'event_view'
 
 const CONSENT_KEY = 'saytara-analytics-consent'
 const VISITOR_KEY = 'saytara-analytics-visitor'

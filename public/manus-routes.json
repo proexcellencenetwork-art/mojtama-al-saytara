@@ -5,6 +5,10 @@
       "title": "مجتمع السيطرة | مجتمع مهني ورحلة مهنية"
     },
     {
+      "path": "/waitlist/",
+      "title": "قائمة الاهتمام المبكر | مجتمع السيطرة"
+    },
+    {
       "path": "/about/",
       "title": "عن مجتمع السيطرة | مساحة مهنية آمنة"
     },
@@ -46,7 +50,7 @@
     },
     {
       "path": "/career-compass/",
-      "title": "البوصلة المهنية | تقييم وخطة عملية"
+      "title": "التقدم والظهور المهني (Professional)"
     },
     {
       "path": "/linkedin-audit/",
@@ -74,7 +78,7 @@
     },
     {
       "path": "/ai-career-leverage/",
-      "title": "AI Career Leverage | الذكاء الاصطناعي في العمل"
+      "title": "توظيف الذكاء الاصطناعي لرفع القيمة المهنية"
     },
     {
       "path": "/saudi-labor-market-radar/",
