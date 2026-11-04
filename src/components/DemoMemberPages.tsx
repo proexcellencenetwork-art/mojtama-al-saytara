@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, Check, MessageCircle, Plus, Search, Send, Users } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 type DemoContact = { id: string; name: string; headline: string; initial: string }
 type DemoMessage = { id: string; contactId: string; sender: 'me'; body: string; createdAt: string }
@@ -20,16 +20,13 @@ function saveLocal(key: string, value: unknown) { try { localStorage.setItem(key
 function stamp(value: string) { return new Date(value).toLocaleString('ar',{dateStyle:'short',timeStyle:'short'}) }
 
 export function DemoMessagesPage() {
- const location=useLocation()
- const queryContact=new URLSearchParams(location.search).get('to')
- const [activeId,setActiveId]=useState(queryContact||contacts[0].id)
+ const [activeId,setActiveId]=useState(()=>new URLSearchParams(window.location.search).get('to')||contacts[0].id)
  const [messages,setMessages]=useState<DemoMessage[]>(()=>readLocal('saytara-demo-private-messages',[]))
  const [draft,setDraft]=useState('')
  const [query,setQuery]=useState('')
  const activeContact=contacts.find(person=>person.id===activeId)||contacts[0]
  const visibleContacts=useMemo(()=>contacts.filter(person=>(person.name+' '+person.headline).includes(query.trim())),[query])
  const thread=messages.filter(message=>message.contactId===activeId).sort((a,b)=>a.createdAt.localeCompare(b.createdAt))
- useEffect(()=>{if(queryContact&&contacts.some(person=>person.id===queryContact))setActiveId(queryContact)},[queryContact])
  useEffect(()=>{saveLocal('saytara-demo-private-messages',messages)},[messages])
  function send(event:React.FormEvent<HTMLFormElement>){event.preventDefault();const body=draft.trim();if(!body||body.length>2000)return;setMessages(current=>[...current,{id:crypto.randomUUID(),contactId:activeId,sender:'me',body,createdAt:new Date().toISOString()}]);setDraft('')}
  return <main className="app-main wrap member-workspace-page">

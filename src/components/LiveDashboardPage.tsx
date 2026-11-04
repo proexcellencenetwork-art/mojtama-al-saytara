@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, UserPlus, Users } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 
@@ -19,10 +19,9 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
   const [memberConnections, setMemberConnections] = useState<Row[]>([])
   const [memberQuery, setMemberQuery] = useState('')
   const [recipients, setRecipients] = useState<{ id: string; name: string }[]>([])
-  const [selectedRecipient, setSelectedRecipient] = useState('')
+  const [selectedRecipient, setSelectedRecipient] = useState(() => new URLSearchParams(window.location.search).get('to') || '')
   const [groupFormOpen, setGroupFormOpen] = useState(false)
   const [groupForm, setGroupForm] = useState({ name: '', topic: '', description: '', is_public: true })
-  const location = useLocation()
   const [draftMessage, setDraftMessage] = useState('')
   const [profile, setProfile] = useState<ProfileForm>(emptyProfile)
   const [loading, setLoading] = useState(true)
@@ -221,20 +220,16 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
   }, [page, selectedRecipient, rows, userId])
 
   useEffect(() => {
-    if (page !== 'messages' || !supabase) return
-    const channel = supabase.channel('member-messages-' + userId)
+    const client = supabase
+    if (page !== 'messages' || !client) return
+    const channel = client.channel('member-messages-' + userId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
         const message = payload.new as Record<string, unknown>
         if (str(message.sender_id) === userId || str(message.recipient_id) === userId) void load()
       })
       .subscribe()
-    return () => { void supabase.removeChannel(channel) }
+    return () => { void client.removeChannel(channel) }
   }, [page, userId, load])
-
-  useEffect(() => {
-    const requestedRecipient = new URLSearchParams(location.search).get('to')
-    if (page === 'messages' && requestedRecipient) setSelectedRecipient(requestedRecipient)
-  }, [page, location.search])
 
   async function changeConnection(row: Row, status: 'accepted' | 'declined') {
     if (!supabase) return
