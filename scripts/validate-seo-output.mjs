@@ -88,10 +88,10 @@ for (const route of publicRoutes) {
   // The optional newsletter stores Supabase connection details in inert data attributes.
   // Those values are used only after an explicit newsletter/analytics action; they are not
   // render-blocking dependencies. Check actual resource-loading attributes and CSS imports.
-  const resourceUrls = [...html.matchAll(/<(?:script|link|img|iframe|source|video|audio)\\b[^>]*?\\b(?:src|href)\\s*=\\s*[\"']([^\"']+)[\"'][^>]*>/gi)].map(match => match[1])
-  const cssImports = [...html.matchAll(/@import\\s+(?:url\\(\\s*)?[\"']?([^\"')\\s;]+)/gi)].map(match => match[1])
-  if ([...resourceUrls, ...cssImports].some(url => /fonts\\.googleapis\\.com|fonts\\.gstatic\\.com|supabase\\.co/i.test(url))) {
-    fail.push(`Public route has an external font or Supabase resource dependency: ${route.path}`)
+  const resourceUrls = [...html.matchAll(/<(?:script|link|img|iframe|source|video|audio)\b[^>]*?\b(?:src|href)\s*=\s*["']([^"']+)["'][^>]*>/gi)].map(match => match[1])
+  const cssImports = [...html.matchAll(/@import\s+(?:url\(\s*)?["']?([^"')\s;]+)/gi)].map(match => match[1])
+  if ([...resourceUrls, ...cssImports].some(url => /fonts\.googleapis\.com|fonts\.gstatic\.com|supabase\.co/i.test(url))) {
+    fail.push('Public route has an external font or Supabase resource dependency: ' + route.path)
   }
   if (!html.includes('critical-public-css') || !/<link\b[^>]*rel="stylesheet"/i.test(html) || html.includes('data-deferred-style')) fail.push(`Public route is missing inline critical CSS or its render-blocking stylesheet: ${route.path}`)
   if (route.path === '/about/') {
