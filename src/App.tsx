@@ -234,16 +234,16 @@ function PublicPage({ page }: { page: keyof typeof publicCopy }) {
    <article><span>06</span><h3>قياس الأثر بصدق</h3><p>متابعة المشاركة والتعلّم والرضا والمخرجات والاهتمام الفعلي، وعدم إعلان نجاح أو طلب أو إيراد قبل وجود بيانات.</p></article>
   </div></div>
   <div className="community-direction-tracks"><div className="direction-section-heading"><span className="eyebrow">ثلاثة مسارات، شبكة واحدة</span><h2>كيف تتحول الرؤية إلى عمل؟</h2></div><div className="direction-track-grid">
-   <article><BriefcaseMedical size={21}/><h3>Professional · التقدم المهني</h3><p>البوصلة المهنية، LinkedIn، الجاهزية، ملف الإنجازات، والتخطيط للخطوة التالية.</p><Link to="/career-journey">استكشف المسار <ArrowLeft size={14}/></Link></article>
-   <article><Sparkles size={21}/><h3>Innovation · البناء والابتكار</h3><p>اختبار الأفكار، تطوير المشاريع والحلول، والربط بين المهارة والتطبيق.</p><Link to="/innovation-rd">استكشف الابتكار <ArrowLeft size={14}/></Link></article>
-   <article><BookOpen size={21}/><h3>Research · البحث والأثر</h3><p>القراءة النقدية، البيانات، البحث المسؤول، وتوضيح الأدلة وحدودها.</p><Link to="/articles">استكشف المعرفة <ArrowLeft size={14}/></Link></article>
+   <article><BriefcaseMedical size={21}/><h3>التقدم المهني (Professional)</h3><p>البوصلة المهنية، LinkedIn، الجاهزية، ملف الإنجازات، والتخطيط للخطوة التالية.</p><Link to="/career-journey">استكشف المسار <ArrowLeft size={14}/></Link></article>
+   <article><Sparkles size={21}/><h3>البناء والابتكار (Innovation)</h3><p>اختبار الأفكار، تطوير المشاريع والحلول، والربط بين المهارة والتطبيق.</p><Link to="/innovation-rd">استكشف الابتكار <ArrowLeft size={14}/></Link></article>
+   <article><BookOpen size={21}/><h3>البحث والأثر (Research)</h3><p>القراءة النقدية، البيانات، البحث المسؤول، وتوضيح الأدلة وحدودها.</p><Link to="/articles">استكشف المعرفة <ArrowLeft size={14}/></Link></article>
   </div></div>
   <div className="community-direction-measure"><span className="eyebrow">مبدأ التنفيذ</span><h2>نقيس التقدم بما يحدث فعلًا.</h2><p>في المرحلة الأولى نختبر احتياجات الجمهور من خلال مقابلات وتجارب وورش صغيرة، ثم نراجع التسجيل والحضور والرضا والمخرجات واهتمام الجهات. هذه مؤشرات سنجمعها وليست نتائج ندّعي تحققها مسبقًا.</p><div className="community-direction-actions"><Link className="btn btn-primary" to="/career-journey">ابدأ بخطوة مهنية <ArrowLeft size={15}/></Link><Link className="btn btn-outline" to="/articles">اقرأ محتوى المجتمع <ArrowLeft size={15}/></Link></div></div>
  </section>}{page === 'coaching' && <div className="coaching-note"><ShieldCheck size={19}/><p><b>تنويه مهم:</b> الكوتشنج لا يغني عن الاستشارة الطبية أو النفسية.</p></div>}<nav className="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b><Link to="/coaching">تعرّف على الكوتشنج المهني</Link><Link to="/articles">اقرأ مقالات المجتمع</Link><Link to="/faq">إجابات الأسئلة الشائعة</Link><Link to="/membership">العضوية والمزايا</Link></nav></main><Footer/></>
 }
 
 const publicSeo: Record<string, { title: string; description: string }> = {
-  '/': { title: 'مجتمع السيطرة المهنية | Professional Mastery Community', description: 'مجتمع مهني يربط التقدم المهني والابتكار والبحث، ويحوّل الخبرة إلى قيمة واضحة وتعاون وأثر.' },
+  '/': { title: 'مجتمع السيطرة المهنية | بناء المسار والأثر', description: 'مجتمع مهني يربط التقدم المهني والابتكار والبحث، ويحوّل الخبرة إلى قيمة واضحة وتعاون وأثر.' },
   '/waitlist': { title: 'قائمة الاهتمام المبكر | مجتمع السيطرة المهنية', description: 'تعرّف على حالة استقبال طلبات الاهتمام المبكر في مجتمع السيطرة المهنية، واطّلع على سياسة الخصوصية قبل مشاركة بياناتك.' },
   '/about': { title: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية', description: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية: التقدم المهني والابتكار والبحث، ضمن شبكة سعودية تربط المعرفة بالتطبيق والأثر.' },
   '/coaching': { title: 'كوتشنج مهني للقطاع الصحي | مجتمع السيطرة', description: 'مساحة حوار مهني تساعد العاملين في الرعاية الصحية على توضيح أهدافهم وخياراتهم.' },
@@ -261,14 +261,14 @@ const publicSeo: Record<string, { title: string; description: string }> = {
   '/owner': { title: 'مركز مالك المنصة | مجتمع السيطرة', description: 'بوابة خاصة لإدارة ملكية منصة مجتمع السيطرة.' },
   '/learning': { title: 'مركز التعلّم | مجتمع السيطرة', description: 'ورش مهنية حيّة ومسجلة للأعضاء المعتمدين في مجتمع السيطرة.' },
   '/career-journey': { title: 'رحلتك المهنية | مجتمع السيطرة', description: 'بوصلة وأدوات ومقالات موثقة لمسارك المهني من التخرج إلى الترقية والتموضع.' },
-  '/career-compass': { title: 'Professional · التقدم والظهور المهني | مجتمع السيطرة', description: 'أداة عملية لتحديد مرحلتك المهنية واختبار خطوتك القادمة بأدلة قابلة للمراجعة.' },
+  '/career-compass': { title: 'التقدم والظهور المهني (Professional) | مجتمع السيطرة', description: 'أداة عملية لتحديد مرحلتك المهنية واختبار خطوتك القادمة بأدلة قابلة للمراجعة.' },
   '/linkedin-audit': { title: 'تدقيق LinkedIn | مجتمع السيطرة', description: 'قائمة تقييم عملية لتحسين العنوان والملخص والخبرة والدليل المهني على LinkedIn.' },
   '/fresh-graduate': { title: 'جاهزية حديث التخرج | مجتمع السيطرة', description: 'مسار عملي من التخرج إلى أول إنجاز مهني مع خطة تعلم وأدلة واضحة.' },
   '/value-economy': { title: 'اقتصاد القيمة المهنية | مجتمع السيطرة', description: 'اربط المهارة بالقدرة والأثر والدليل قبل التموضع المهني أو التفاوض على التعويض.' },
   '/achievement-portfolio': { title: 'ملف الإنجازات المهني | مجتمع السيطرة', description: 'قالب محلي لبناء محفظة إنجازات وأدلة STAR منقحة ومصرح بمشاركتها.' },
   '/promotion-intelligence': { title: 'الاستعداد للترقية | مجتمع السيطرة', description: 'قيّم اكتمال أدلة الترقية وجهّز محفظة ومحادثة مهنية وخطة متابعة 90 يوماً.' },
   '/innovation-rd': { title: 'الابتكار والبحث والتطوير | مجتمع السيطرة', description: 'مسار مسؤول من الاختراع والبحث إلى الابتكار ونقل التقنية والقيمة المهنية.' },
-  '/ai-career-leverage': { title: 'AI Career Leverage | مجتمع السيطرة', description: 'سير عمل بشري مع الذكاء الاصطناعي يوازن بين الأثر والتحقق والحوكمة والأمن.' },
+  '/ai-career-leverage': { title: 'توظيف الذكاء الاصطناعي لرفع القيمة المهنية | مجتمع السيطرة', description: 'سير عمل بشري مع الذكاء الاصطناعي يوازن بين الأثر والتحقق والحوكمة والأمن.' },
   '/saudi-labor-market-radar': { title: 'رادار سوق العمل السعودي | مجتمع السيطرة', description: 'تحليلات سوق عمل موثقة وقابلة للتحديث عن المهارات والوظائف والقطاعات والتنظيمات.' },
   '/professional-positioning': { title: 'التموضع المهني | مجتمع السيطرة', description: 'أنشئ مسودة تعريف مهني تربط جمهورك ومشكلته بقدرتك ودليلك المهني.' },
   '/linkedin-workshop': { title: 'ورشة اختراق LinkedIn | مجتمع السيطرة', description: 'ورشة ذاتية لتحويل ملف LinkedIn إلى أصل مهني مع تمارين وخطة مراجعة 30 يوماً.' },
