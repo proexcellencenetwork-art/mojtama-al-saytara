@@ -81,6 +81,7 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
     { to: '/messages', label: 'التواصل', icon: MessageCircle },
     { to: '/connections', label: 'اتصالاتي', icon: Users },
     { to: '/tools', label: 'الأدوات', icon: Wrench },
+    { to: '/feedback', label: 'قيّم تجربتك', icon: Heart },
   ]
   const workspaceItems = [
     ...navItems.filter(item => !['/feed','/groups','/messages','/connections'].includes(item.to)),

@@ -385,6 +385,7 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
                       ? <span className="member-connection-state">تم إرسال الطلب</span>
                       : <Link className="btn btn-outline btn-small" to="/connections">مراجعة الطلب الوارد</Link>
                     : <span className="member-connection-state">يوجد طلب سابق</span>}
+                  {relationStatus === 'accepted' && <Link className="btn btn-outline btn-small" to={'/messages?to='+personId}><MessageCircle size={14}/> تواصل</Link>}
                 </div>
               </article>
             })}</div>}
