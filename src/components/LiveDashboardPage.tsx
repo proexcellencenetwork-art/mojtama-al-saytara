@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Activity, AlertTriangle, ArrowLeft, ArrowUpRight, BadgeCheck, Check, FileText, MessageCircle, RefreshCw, Search, Shield, UserPlus, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 
@@ -20,6 +20,9 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
   const [memberQuery, setMemberQuery] = useState('')
   const [recipients, setRecipients] = useState<{ id: string; name: string }[]>([])
   const [selectedRecipient, setSelectedRecipient] = useState('')
+  const [groupFormOpen, setGroupFormOpen] = useState(false)
+  const [groupForm, setGroupForm] = useState({ name: '', topic: '', description: '', is_public: true })
+  const location = useLocation()
   const [draftMessage, setDraftMessage] = useState('')
   const [profile, setProfile] = useState<ProfileForm>(emptyProfile)
   const [loading, setLoading] = useState(true)
@@ -77,31 +80,33 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
         setMemberConnections((connections ?? []) as Row[])
       } else if (page === 'messages') {
         const [{ data, error: queryError }, { data: accepted, error: connectionError }] = await Promise.all([
-          supabase.from('messages').select('id,sender_id,recipient_id,body,created_at,read_at').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
+          supabase.from('messages').select('id,conversation_id,sender_id,recipient_id,body,created_at,read_at').or(`sender_id.eq.${userId},recipient_id.eq.${userId}`).order('created_at', { ascending: false }).limit(100),
           supabase.from('connections').select('requester_id,recipient_id').eq('status', 'accepted').or(`requester_id.eq.${userId},recipient_id.eq.${userId}`),
         ])
         if (queryError) throw queryError
         if (connectionError) throw connectionError
         setRows((data ?? []) as Row[])
-        const otherIds = [...new Set((accepted ?? []).map(row => str(row.requester_id) === userId ? str(row.recipient_id) : str(row.requester_id)))]
-        const { data: people } = otherIds.length ? await supabase.from('profiles').select('user_id,display_name').in('user_id', otherIds) : { data: [] as Row[] }
+        const acceptedIds = (accepted ?? []).map(row => str(row.requester_id) === userId ? str(row.recipient_id) : str(row.requester_id))
+        const messageIds = (data ?? []).map(row => str(row.sender_id) === userId ? str(row.recipient_id) : str(row.sender_id))
+        const otherIds = [...new Set([...acceptedIds, ...messageIds].filter(id => id && id !== userId))]
+        const { data: people } = otherIds.length ? await supabase.from('profiles').select('user_id,display_name,headline,profession').in('user_id', otherIds) : { data: [] as Row[] }
         const names = new Map((people ?? []).map(person => [str(person.user_id), str(person.display_name, 'زميل مهني')]))
         const nextRecipients = otherIds.map(id => ({ id, name: names.get(id) || 'زميل مهني' }))
         setRecipients(nextRecipients)
-        setSelectedRecipient(current => current || nextRecipients[0]?.id || '')
+        setSelectedRecipient(current => current && nextRecipients.some(person => person.id === current) ? current : nextRecipients[0]?.id || '')
       } else if (page === 'notifications') {
         const { data, error: queryError } = await supabase.from('notifications').select('id,kind,body,created_at,is_read').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(100)
         if (queryError) throw queryError
         setRows((data ?? []) as Row[])
       } else if (page === 'groups') {
         const [{ data, error: groupError }, { data: memberships, error: membershipError }] = await Promise.all([
-          supabase.from('groups').select('id,name,description,topic,is_public,created_at').order('created_at', { ascending: false }).limit(100),
+          supabase.from('groups').select('id,name,description,topic,is_public,owner_id,created_at').order('created_at', { ascending: false }).limit(100),
           supabase.from('group_memberships').select('group_id,status').eq('user_id', userId),
         ])
         if (groupError) throw groupError
         if (membershipError) throw membershipError
         const statuses = new Map((memberships ?? []).map(item => [str(item.group_id), str(item.status)]))
-        setRows(((data ?? []) as Row[]).map(row => ({ ...row, membership_status: statuses.get(str(row.id)) ?? null })))
+        setRows(((data ?? []) as Row[]).map(row => ({ ...row, membership_status: str(row.owner_id) === userId ? 'owner' : statuses.get(str(row.id)) ?? null })))
       } else if (page === 'verification') {
         const { data, error: queryError } = await supabase.from('verification_requests').select('id,full_name,profession,specialty,workplace,professional_registration_no,status,decision_reason,requested_at').eq('user_id', userId).order('requested_at', { ascending: false })
         if (queryError) throw queryError
@@ -175,6 +180,61 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
     if (insertError) setError('تعذر الانضمام. قد تكون المجموعة خاصة أو أن الطلب موجود مسبقاً.')
     else { setNotice(group.is_public ? 'انضممت إلى المجموعة.' : 'أُرسل طلب الانضمام للمراجعة.'); await load() }
   }
+
+  async function createGroup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase || !['verified','coach','manager','owner'].includes(role) || groupForm.name.trim().length < 2 || busy) return
+    setBusy(true); setError(''); setNotice('')
+    const { data, error: insertError } = await supabase.from('groups').insert({
+      owner_id: userId,
+      name: groupForm.name.trim(),
+      topic: groupForm.topic.trim() || 'عام',
+      description: groupForm.description.trim(),
+      is_public: groupForm.is_public,
+      moderation_state: 'active',
+    }).select('id').single()
+    setBusy(false)
+    if (insertError || !data) { setError('تعذر إنشاء المجموعة. يتطلب الإنشاء حساباً موثقاً أو دور كوتش/مدير.'); return }
+    if (groupForm.is_public) await supabase.from('group_memberships').insert({ group_id: data.id, user_id: userId, status: 'active' })
+    setGroupForm({ name: '', topic: '', description: '', is_public: true })
+    setGroupFormOpen(false)
+    setNotice('أُنشئت المجموعة بنجاح.')
+    await load()
+  }
+
+  async function leaveGroup(group: Row) {
+    if (!supabase || !group.id || busy) return
+    setBusy(true); setError(''); setNotice('')
+    const { error: leaveError } = await supabase.from('group_memberships').delete().eq('group_id', str(group.id)).eq('user_id', userId)
+    setBusy(false)
+    if (leaveError) setError('تعذر مغادرة المجموعة.')
+    else { setNotice('غادرت المجموعة. يمكنك الانضمام مجدداً لاحقاً.'); await load() }
+  }
+
+  useEffect(() => {
+    if (page !== 'messages' || !selectedRecipient || !supabase) return
+    const unreadIds = rows.filter(row => str(row.sender_id) === selectedRecipient && str(row.recipient_id) === userId && !row.read_at).map(row => str(row.id))
+    if (!unreadIds.length) return
+    void supabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', unreadIds).eq('recipient_id', userId).then(({ error: updateError }) => {
+      if (!updateError) setRows(current => current.map(row => unreadIds.includes(str(row.id)) ? { ...row, read_at: new Date().toISOString() } : row))
+    })
+  }, [page, selectedRecipient, rows, userId])
+
+  useEffect(() => {
+    if (page !== 'messages' || !supabase) return
+    const channel = supabase.channel('member-messages-' + userId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+        const message = payload.new as Record<string, unknown>
+        if (str(message.sender_id) === userId || str(message.recipient_id) === userId) void load()
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(channel) }
+  }, [page, userId, load])
+
+  useEffect(() => {
+    const requestedRecipient = new URLSearchParams(location.search).get('to')
+    if (page === 'messages' && requestedRecipient) setSelectedRecipient(requestedRecipient)
+  }, [page, location.search])
 
   async function changeConnection(row: Row, status: 'accepted' | 'declined') {
     if (!supabase) return
@@ -281,6 +341,15 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
     if (!query) return pendingAccounts
     return pendingAccounts.filter(row => [str(row.display_name), str(row.email), str(row.profession), str(row.specialty)].join(' ').toLocaleLowerCase('ar').includes(query))
   }, [accountQuery, pendingAccounts])
+  const conversationSummaries = useMemo(() => recipients.map(person => {
+    const conversationRows = rows.filter(row =>
+      (str(row.sender_id) === userId && str(row.recipient_id) === person.id) ||
+      (str(row.sender_id) === person.id && str(row.recipient_id) === userId),
+    )
+    const last = [...conversationRows].sort((a,b) => str(b.created_at).localeCompare(str(a.created_at)))[0]
+    const unreadCount = conversationRows.filter(row => str(row.sender_id) === person.id && str(row.recipient_id) === userId && !row.read_at).length
+    return { ...person, last, unreadCount }
+  }).sort((a,b) => str(b.last?.created_at).localeCompare(str(a.last?.created_at))), [recipients, rows, userId])
   const filteredMembers = useMemo(() => {
     const query = memberQuery.trim().toLocaleLowerCase('ar')
     return rows.filter(person => [str(person.display_name), str(person.headline), str(person.profession), str(person.specialty), str(person.city)].join(' ').toLocaleLowerCase('ar').includes(query))
@@ -326,10 +395,26 @@ export function LiveDashboardPage({ page, role, userId }: { page: string; role: 
             })}</div>}
           <small className="member-directory-note">للحفاظ على الخصوصية، لا تظهر الحسابات المعلّقة أو الملفات الخاصة، كما تُخفى الحسابات المحظورة بين الطرفين.</small>
         </div>
-        : page === 'connections' ? <div className="panel-card"><h2>اتصالاتك</h2>{rows.length === 0 ? <p>لا توجد اتصالات أو طلبات مسجلة بعد.</p> : rows.map(row => { const person = row.person as Row | undefined; const incoming = str(row.recipient_id) === userId; return <div className="review-row" key={str(row.id)}><div><b>{str(person?.display_name, 'عضو في المجتمع')}</b><small>{str(person?.headline || person?.profession, 'مهني صحي')} · {str(row.status)}</small></div>{incoming && row.status === 'pending' && <span className="live-actions"><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void changeConnection(row, 'accepted')}>قبول</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void changeConnection(row, 'declined')}>رفض</button></span>}</div> })}</div>
-        : page === 'messages' ? <div className="panel-card"><div className="panel-icon"><MessageCircle/></div><h2>رسائلك الخاصة</h2><p>يمكنك مراسلة اتصال مقبول. سيطبق الخادم حدود المعدل ويتحقق من الحظر وصلاحية المحادثة.</p><form className="verification-form message-compose" onSubmit={event => void sendMessage(event)}><label>إلى<select required value={selectedRecipient} onChange={event => setSelectedRecipient(event.target.value)}><option value="">اختر اتصالاً مقبولاً</option>{recipients.map(person => <option value={person.id} key={person.id}>{person.name}</option>)}</select></label><label>الرسالة<textarea required maxLength={5000} value={draftMessage} onChange={event => setDraftMessage(event.target.value)} placeholder="رسالة مهنية خاصة…"/></label><button className="btn btn-primary" disabled={busy || !selectedRecipient || !draftMessage.trim()}>{busy ? 'جارٍ الإرسال…' : 'إرسال الرسالة'} <ArrowLeft size={15}/></button>{recipients.length === 0 && <small>لا توجد اتصالات مقبولة بعد. يمكنك قبول اتصال من صفحة الاتصالات أولاً.</small>}</form>{rows.length === 0 ? <p>لا توجد رسائل لهذا الحساب بعد.</p> : rows.map(row => <div className="message-thread" key={str(row.id)}><span className="avatar avatar-0 avatar-md">{str(row.sender_id) === userId ? 'أنا' : 'ز'}</span><span><b>{str(row.sender_id) === userId ? 'رسالة أرسلتها' : 'رسالة واردة'}</b><small>{str(row.body)}</small><small>{new Date(str(row.created_at)).toLocaleString('ar')}</small></span></div>)}</div>
+        : page === 'connections' ? <div className="panel-card"><div className="panel-icon"><Users/></div><h2>اتصالاتك</h2><p>كل اتصال هنا يخص شخصاً واحداً. افتح محادثة مباشرة بعد قبول الطلب.</p>{rows.length === 0 ? <div className="member-empty-state"><Users size={24}/><b>لا توجد اتصالات بعد</b><span>اكتشف الأعضاء وأرسل طلب اتصال مهنياً.</span><Link className="btn btn-outline btn-small" to="/discover">اكتشف الأعضاء</Link></div> : rows.map(row => { const person = row.person as Row | undefined; const incoming = str(row.recipient_id) === userId; const otherId = str(row.requester_id) === userId ? str(row.recipient_id) : str(row.requester_id); return <div className="review-row" key={str(row.id)}><div><b>{str(person?.display_name, 'عضو في المجتمع')}</b><small>{str(person?.headline || person?.profession, 'ملف مهني عام')} · {str(row.status) === 'accepted' ? 'اتصال مقبول' : incoming ? 'طلب وارد' : 'طلب أرسلته'}</small></div>{incoming && row.status === 'pending' ? <span className="live-actions"><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void changeConnection(row, 'accepted')}>قبول</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void changeConnection(row, 'declined')}>رفض</button></span> : row.status === 'accepted' ? <Link className="btn btn-small btn-primary" to={'/messages?to='+otherId}><MessageCircle size={14}/> مراسلة</Link> : <span className="status-pill">بانتظار الرد</span>}</div> })}</div>
+        : page === 'messages' ? <section className="messenger-shell live-messenger">
+          <aside className="messenger-people" aria-label="محادثاتك">
+            <div className="messenger-list-heading"><b>محادثاتك</b><span>{conversationSummaries.length}</span></div>
+            {conversationSummaries.length === 0 ? <div className="messenger-no-people"><MessageCircle size={22}/><b>ابدأ من اتصال مقبول</b><p>تظهر محادثاتك هنا بشكل منفصل لكل شخص.</p><Link className="btn btn-outline btn-small" to="/discover">اكتشف الأعضاء</Link></div> : conversationSummaries.map(person => <button type="button" className={'messenger-contact '+(selectedRecipient===person.id?'is-active':'')} key={person.id} onClick={()=>setSelectedRecipient(person.id)}><span className="messenger-avatar">{person.name.trim().charAt(0)||'ع'}</span><span className="messenger-contact-copy"><b>{person.name}</b><small>{str(person.last?.body,'ابدأ محادثة جديدة')}</small></span>{person.unreadCount>0&&<span className="messenger-unread-count">{person.unreadCount}</span>}</button>)}
+          </aside>
+          <section className="messenger-thread">
+            {selectedRecipient && recipients.some(person=>person.id===selectedRecipient) ? <>
+              <header className="messenger-thread-head"><span className="messenger-avatar">{recipients.find(person=>person.id===selectedRecipient)?.name.trim().charAt(0)||'ع'}</span><div><b>{recipients.find(person=>person.id===selectedRecipient)?.name}</b><small>محادثة خاصة بينك وبين هذا العضو فقط</small></div><span className="messenger-private-label">خاصة</span></header>
+              <div className="messenger-thread-body" aria-live="polite">{rows.filter(row=>(str(row.sender_id)===userId&&str(row.recipient_id)===selectedRecipient)||(str(row.sender_id)===selectedRecipient&&str(row.recipient_id)===userId)).sort((a,b)=>str(a.created_at).localeCompare(str(b.created_at))).length===0 ? <div className="messenger-empty"><MessageCircle size={25}/><b>ابدأ المحادثة</b><span>اكتب رسالة بسيطة ومباشرة. لا تحتاج إلى خطاب رسمي.</span></div> : rows.filter(row=>(str(row.sender_id)===userId&&str(row.recipient_id)===selectedRecipient)||(str(row.sender_id)===selectedRecipient&&str(row.recipient_id)===userId)).sort((a,b)=>str(a.created_at).localeCompare(str(b.created_at))).map(row=><article className={'message-bubble '+(str(row.sender_id)===userId?'message-mine':'message-theirs')} key={str(row.id)}><p>{str(row.body)}</p><time>{new Date(str(row.created_at)).toLocaleString('ar',{dateStyle:'short',timeStyle:'short'})}</time></article>)}</div>
+              <form className="messenger-compose" onSubmit={event=>void sendMessage(event)}><input aria-label="اكتب رسالتك" required maxLength={2000} value={draftMessage} onChange={event=>setDraftMessage(event.target.value)} placeholder={'اكتب رسالة قصيرة إلى '+(recipients.find(person=>person.id===selectedRecipient)?.name||'العضو')+'…'}/><button className="btn btn-primary" disabled={busy||!draftMessage.trim()}>{busy?'جارٍ الإرسال…':<>إرسال <ArrowLeft size={15}/></>}</button></form>
+            </> : <div className="messenger-empty"><MessageCircle size={28}/><b>اختر محادثة</b><span>اختر شخصاً من القائمة لعرض رسائلكما الخاصة.</span></div>}
+          </section>
+        </section>
         : page === 'notifications' ? <div className="panel-card"><div className="panel-icon"><Check/></div><h2>إشعاراتك</h2>{rows.length === 0 ? <p>لا توجد إشعارات.</p> : rows.map(row => <div className={`review-row ${row.is_read ? '' : 'notification-unread'}`} key={str(row.id)}><div><b>{str(row.body, 'إشعار من المجتمع')}</b><small>{new Date(str(row.created_at)).toLocaleString('ar')} · {str(row.kind)}</small></div>{!row.is_read && <button className="btn btn-small btn-outline" onClick={() => void markRead(row)}>تحديد كمقروء</button>}</div>)}</div>
-        : page === 'groups' ? <div className="panel-card"><div className="panel-icon"><Users/></div><h2>مجموعات المجتمع</h2>{rows.length === 0 ? <p>لا توجد مجموعات عامة منشورة بعد.</p> : rows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.name)}</b><small>{str(row.topic)} · {row.is_public ? 'عامة' : 'خاصة'}</small><small>{str(row.description)}</small></div>{row.membership_status ? <span className="status-pill">{str(row.membership_status)}</span> : <button className="btn btn-small btn-outline" disabled={busy} onClick={() => void joinGroup(row)}>انضمام</button>}</div>)}</div>
+        : page === 'groups' ? <section className="member-groups-workspace">
+          <header className="member-page-heading"><div><span className="eyebrow">مساحات متخصصة</span><h2>مجموعات المجتمع</h2><p>انضم لمجموعة أو أنشئ مساحة نقاش حول موضوع مهني واضح.</p></div>{['verified','coach','manager','owner'].includes(role)&&<button className="btn btn-primary" type="button" onClick={()=>setGroupFormOpen(value=>!value)}><Users size={15}/>{groupFormOpen?'إغلاق':'إنشاء مجموعة'}</button>}</header>
+          {groupFormOpen&&<form className="member-create-group panel-card" onSubmit={event=>void createGroup(event)}><div className="form-grid"><label>اسم المجموعة<input required minLength={2} maxLength={120} value={groupForm.name} onChange={event=>setGroupForm({...groupForm,name:event.target.value})} placeholder="مثال: تطوير المسار المهني"/></label><label>الموضوع<input maxLength={100} value={groupForm.topic} onChange={event=>setGroupForm({...groupForm,topic:event.target.value})} placeholder="تطوير مهني، صحة، ابتكار…"/></label><label className="full-field">وصف المجموعة<textarea maxLength={1500} value={groupForm.description} onChange={event=>setGroupForm({...groupForm,description:event.target.value})} placeholder="ما الذي يجمع أعضاء هذه المجموعة؟"/></label><label className="group-visibility-toggle"><input type="checkbox" checked={groupForm.is_public} onChange={event=>setGroupForm({...groupForm,is_public:event.target.checked})}/> مجموعة مفتوحة للانضمام المباشر</label></div><button className="btn btn-primary" disabled={busy||groupForm.name.trim().length<2}>{busy?'جارٍ الإنشاء…':'إنشاء المجموعة'}</button><small>يستطيع الأعضاء الموثقون والكوتشات والمدير إنشاء مجموعة. المجموعات الخاصة تستقبل طلبات انضمام للمراجعة.</small></form>}
+          {rows.length===0 ? <div className="member-empty-state"><Users size={24}/><b>لا توجد مجموعات متاحة حالياً</b><span>يمكنك العودة لاحقاً أو إنشاء مجموعة إذا كانت صلاحية حسابك تسمح بذلك.</span></div> : <div className="member-group-grid">{rows.map(row=><article className="member-group-card" key={str(row.id)}><span className="member-group-symbol"><Users size={19}/></span><span className="member-group-topic">{str(row.topic,'عام')}</span><h3>{str(row.name)}</h3><p>{str(row.description,'لا يوجد وصف بعد.')}</p><div className="member-group-footer"><span>{row.is_public?'مفتوحة':'خاصة بطلب انضمام'}</span>{row.membership_status==='owner'?<span className="member-group-state"><Check size={14}/> أنت منشئها</span>:row.membership_status==='active'?<button className="btn btn-outline btn-small" disabled={busy} onClick={()=>void leaveGroup(row)}>مغادرة</button>:row.membership_status==='pending'?<span className="status-pill">طلبك قيد المراجعة</span>:<button className="btn btn-primary btn-small" disabled={busy} onClick={()=>void joinGroup(row)}>انضمام</button>}</div></article>)}</div>}
+        </section>
         : page === 'moderation' ? !staff ? <div className="panel-card"><h2>صلاحية غير متاحة</h2><p>تظهر أدوات المراجعة للمشرفين والمدير فقط.</p></div> : <div className="panel-card"><div className="panel-icon"><Shield/></div><h2>مركز الإشراف</h2><h3>البلاغات المفتوحة</h3>{reportRows.length === 0 ? <p>لا توجد بلاغات مفتوحة.</p> : reportRows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.reason)} · {str(row.target_type)}</b><small>{str(row.details)} · {str(row.status)}</small><small>المعرف: {str(row.target_id)}</small></div><span className="live-actions"><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void updateReport(row, 'reviewing')}>قيد المراجعة</button><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void updateReport(row, 'resolved')}>حلّ</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void updateReport(row, 'dismissed')}>إغلاق</button></span></div>)}<h3>طلبات التوثيق</h3>{rows.length === 0 ? <p>لا توجد طلبات توثيق معلقة.</p> : rows.map(row => <div className="review-row" key={str(row.id)}><div><b>{str(row.full_name)} · {str(row.profession)}</b><small>{str(row.specialty)} · {new Date(str(row.requested_at)).toLocaleString('ar')}</small></div><span className="live-actions"><button className="btn btn-small btn-outline" onClick={() => void openPrivateDocument(row)}><FileText size={13}/> عرض المستند</button><button className="btn btn-small btn-primary" disabled={busy} onClick={() => void reviewRequest(row, 'approved')}>اعتماد</button><button className="btn btn-small btn-outline" disabled={busy} onClick={() => void reviewRequest(row, 'rejected')}>رفض</button></span></div>)}</div>
 
         : page === 'admin' ? role !== 'manager' && role !== 'owner' ? <div className="panel-card"><h2>صلاحية غير متاحة</h2><p>لوحة الإدارة متاحة للمدير ومالك المنصة فقط.</p></div> : <div className="admin-console">
