@@ -2,7 +2,7 @@
   "routes": [
     {
       "path": "/",
-      "title": "مجتمع السيطرة المهنية | Professional Mastery Community"
+      "title": "مجتمع السيطرة المهنية | بناء المسار والأثر"
     },
     {
       "path": "/waitlist/",
@@ -55,7 +55,7 @@
     },
     {
       "path": "/career-compass/",
-      "title": "التقدم والظهور المهني (Professional)"
+      "title": "التقدم والظهور المهني (Professional) | تقييم وخطة عملية"
     },
     {
       "path": "/linkedin-audit/",
@@ -83,7 +83,7 @@
     },
     {
       "path": "/ai-career-leverage/",
-      "title": "توظيف الذكاء الاصطناعي لرفع القيمة المهنية"
+      "title": "توظيف الذكاء الاصطناعي لرفع القيمة المهنية | مجتمع السيطرة"
     },
     {
       "path": "/saudi-labor-market-radar/",
