@@ -199,7 +199,7 @@
 
 /* Public journey refresh — preserve the community's dark, calm teal identity. */
 .skip-link{position:fixed;z-index:1000;inset-block-start:10px;inset-inline-start:10px;transform:translateY(-160%);padding:.75rem 1rem;border-radius:.65rem;background:#55d6b0;color:#102429;font-weight:800}.skip-link:focus{transform:translateY(0)}
-:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #55d6b0;outline-offset:3px}
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #0e665e;outline-offset:3px}.app.dark :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline-color:#55d6b0}.app.dark .btn-primary{color:#102429}
 .public-nav a,.footer-links a,.related-links a{min-height:24px}
 .journey-hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(18rem,.9fr);align-items:center;gap:2rem;text-align:start}.journey-hero .hero h1{margin-inline:0}.journey-hero .hero-lead{margin-inline:0}.journey-hero .hero-actions{justify-content:flex-start}
 .journey-hero .hero-proof{display:flex;align-items:center;gap:.65rem;max-width:38rem;margin-top:1.2rem;padding:.8rem 1rem;border:1px solid var(--line);border-radius:.85rem;background:color-mix(in srgb,var(--paper) 86%,var(--teal) 14%)}
