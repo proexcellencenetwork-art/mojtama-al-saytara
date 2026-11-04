@@ -222,6 +222,12 @@
       "path": "/groups/"
     },
     {
+      "path": "/tools/"
+    },
+    {
+      "path": "/feedback/"
+    },
+    {
       "path": "/verification/"
     },
     {
@@ -247,14 +253,6 @@
     },
     {
       "path": "/learning-room/"
-    },
-    {
-      "path": "/tools/",
-      "title": "الأدوات المهنية | مجتمع السيطرة"
-    },
-    {
-      "path": "/feedback/",
-      "title": "قيّم تجربتك | مجتمع السيطرة"
     }
   ]
 }
