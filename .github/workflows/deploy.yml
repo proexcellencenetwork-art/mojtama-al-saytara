@@ -64,20 +64,6 @@ jobs:
             git commit -m 'chore: update GitHub Pages static output'
             git push origin HEAD:main
           fi
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-  deploy:
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+      # GitHub Pages is published by the repository's branch-based Pages workflow
+      # after the generated root files are committed above. Do not start a second
+      # deploy-pages action here; it races the branch deployment and cancels it.
