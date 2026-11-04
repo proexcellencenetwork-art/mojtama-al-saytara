@@ -14,7 +14,7 @@ const tools = [
 ]
 export function MemberToolsPage() {
  return <main className="app-main wrap member-workspace-page">
-  <header className="member-page-heading"><div><span className="eyebrow">أدوات متاحة داخل المجتمع</span><h1>أدواتك المهنية</h1><p>ابدأ بالأداة الأقرب إلى هدفك. تعمل التقييمات الذاتية في المتصفح ولا تحتاج إلى ربط قاعدة بيانات لحفظ خطواتك المحلية.</p></div></header>
+  <header className="member-page-heading"><div><span className="eyebrow">أدوات متاحة داخل المجتمع</span><h1>أدواتك المهنية</h1><p>ابدأ بالأداة الأقرب إلى هدفك. تعمل الأدوات مباشرة في المتصفح؛ راجع تنبيه كل أداة لمعرفة ما إذا كانت تحفظ نتيجتها محلياً.</p></div></header>
   <section className="member-tools-grid">{tools.map(tool=>{const Icon=tool.icon;return <article className="member-tool-card" key={tool.to}><span className="member-tool-icon"><Icon size={19}/></span><span className="member-tool-tag">{tool.tag}</span><h2>{tool.title}</h2><p>{tool.description}</p><Link to={tool.to}>افتح الأداة <ArrowLeft size={15}/></Link></article>})}</section>
  </main>
 }
