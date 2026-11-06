@@ -1,0 +1,37 @@
+.linkedin-studio{margin-top:2.4rem;padding:1.35rem;border:1px solid var(--line);border-radius:1.2rem;background:var(--paper);box-shadow:var(--shadow)}
+.linkedin-studio-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.1rem}
+.linkedin-studio-heading h2{margin:.35rem 0;font-size:1.45rem}
+.linkedin-studio-heading p{max-width:720px;margin:0;color:var(--muted);font-size:.84rem;line-height:1.85}
+.linkedin-studio-mark{display:grid;place-items:center;flex:0 0 3rem;height:3rem;border-radius:1rem;background:color-mix(in srgb,var(--teal) 13%,transparent);color:var(--teal)}
+.linkedin-studio-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:1rem;align-items:start}
+.linkedin-studio-editor{display:grid;gap:.85rem;min-width:0}
+.linkedin-preset-row,.linkedin-format-control>div{display:flex;flex-wrap:wrap;gap:.45rem}
+.linkedin-preset-row button,.linkedin-format-control button{border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--muted);padding:.5rem .75rem;font:inherit;font-size:.75rem}
+.linkedin-preset-row button.is-active,.linkedin-format-control button.is-active{border-color:var(--teal);background:color-mix(in srgb,var(--teal) 12%,var(--paper));color:var(--teal);font-weight:800}
+.linkedin-field{display:grid;gap:.38rem;color:var(--ink);font-size:.8rem;font-weight:800}
+.linkedin-field input,.linkedin-field textarea{width:100%;border:1px solid var(--line);border-radius:.75rem;background:var(--bg);color:var(--ink);padding:.7rem .8rem;font:inherit;font-size:.85rem;font-weight:500;line-height:1.8;resize:vertical}
+.linkedin-field input:focus,.linkedin-field textarea:focus{outline:3px solid color-mix(in srgb,var(--teal) 20%,transparent);border-color:var(--teal)}
+.linkedin-field small{color:var(--muted);font-size:.7rem;font-weight:500}
+.linkedin-caption-input{min-height:190px}
+.linkedin-format-control{display:grid;gap:.5rem}
+.linkedin-format-control>span{font-size:.78rem;font-weight:800}
+.linkedin-studio-actions{display:flex;flex-wrap:wrap;gap:.5rem}
+.linkedin-studio-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem}
+.linkedin-open-button{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;justify-self:start;border:0;background:transparent;color:var(--teal);font:inherit;font-size:.8rem;font-weight:800;padding:.2rem}
+.linkedin-studio-preview{position:sticky;top:1rem;min-width:0;padding:.8rem;border:1px solid var(--line);border-radius:1rem;background:var(--bg)}
+.linkedin-preview-topline{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.25rem .2rem .75rem;color:var(--muted);font-size:.72rem}
+.linkedin-preview-topline span:first-child{display:inline-flex;align-items:center;gap:.35rem;color:var(--ink);font-weight:800}
+.linkedin-studio-preview>img{width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;border-radius:.55rem;background:#142f33;box-shadow:0 10px 26px rgb(0 0 0 / 14%)}
+.linkedin-preview-loading{display:grid;place-items:center;min-height:220px;border-radius:.6rem;background:var(--paper);color:var(--muted);font-size:.8rem}
+.linkedin-preview-caption{padding:.75rem .2rem .1rem}
+.linkedin-preview-caption strong{font-size:.77rem}
+.linkedin-preview-caption p{margin:.25rem 0 0;color:var(--muted);font-size:.72rem;line-height:1.75}
+.linkedin-studio-guidance{display:flex;align-items:flex-start;gap:.6rem;margin-top:1rem;padding:.75rem .85rem;border:1px solid var(--line);border-radius:.8rem;background:color-mix(in srgb,var(--teal) 5%,var(--paper));color:var(--muted)}
+.linkedin-studio-guidance>svg{flex:0 0 auto;margin-top:.1rem;color:var(--teal)}
+.linkedin-studio-guidance p{margin:0;font-size:.72rem;line-height:1.8}
+.linkedin-studio-guidance strong{color:var(--ink)}
+.linkedin-tool-notice,.linkedin-tool-error{margin:0;padding:.65rem .75rem;border-radius:.7rem;font-size:.75rem;line-height:1.7}
+.linkedin-tool-notice{background:color-mix(in srgb,var(--teal) 10%,var(--paper));color:var(--teal)}
+.linkedin-tool-error{color:#c45b5b;background:color-mix(in srgb,#c45b5b 9%,var(--paper))}
+@media(max-width:860px){.linkedin-studio-layout{grid-template-columns:1fr}.linkedin-studio-preview{position:static;max-width:620px;margin-inline:auto;width:100%}}
+@media(max-width:560px){.linkedin-studio{padding:1rem}.linkedin-studio-heading h2{font-size:1.2rem}.linkedin-studio-actions{display:grid;grid-template-columns:1fr}.linkedin-studio-actions .btn{width:100%}.linkedin-studio-preview{padding:.55rem}}
