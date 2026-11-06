@@ -95,30 +95,25 @@ async function renderBrandedCard(headline: string, supporting: string, signature
   ctx.fillRect(0, 0, width, 13)
   ctx.fillRect(84, 176, 9, height - 340)
 
-  // Community mark: a simple heart outline matching the site's official favicon motif.
-  ctx.save()
-  ctx.translate(1110, 108)
-  ctx.strokeStyle = '#e7f7f2'
-  ctx.lineWidth = 5
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  ctx.beginPath()
-  ctx.moveTo(0, 37)
-  ctx.bezierCurveTo(-58, 3, -50, -44, -16, -38)
-  ctx.bezierCurveTo(-4, -36, 0, -25, 0, -25)
-  ctx.bezierCurveTo(0, -25, 15, -48, 39, -34)
-  ctx.bezierCurveTo(74, -13, 34, 25, 0, 37)
-  ctx.stroke()
-  ctx.restore()
+  // Reuse the exact official community favicon mark rather than approximating the logo.
+  const logo = new Image()
+  logo.src = new URL(`${import.meta.env.BASE_URL}favicon.svg`, window.location.origin).toString()
+  await new Promise<void>(resolve => {
+    logo.onload = () => resolve()
+    logo.onerror = () => resolve()
+  })
+  if (logo.complete && logo.naturalWidth > 0) {
+    ctx.drawImage(logo, 1022, 68, 64, 64)
+  }
 
   ctx.direction = 'rtl'
   ctx.textAlign = 'right'
   ctx.fillStyle = '#d7b678'
   ctx.font = '700 25px Tajawal, sans-serif'
-  ctx.fillText('مجتمع السيطرة المهنية', 1070, 102)
+  ctx.fillText('مجتمع السيطرة المهنية', 990, 96)
   ctx.fillStyle = 'rgba(236, 247, 244, .7)'
   ctx.font = '500 17px Tajawal, sans-serif'
-  ctx.fillText('PROFESSIONAL MASTERY COMMUNITY', 1070, 136)
+  ctx.fillText('PROFESSIONAL MASTERY COMMUNITY', 990, 126)
 
   ctx.fillStyle = '#b7e2d8'
   ctx.font = '700 25px Tajawal, sans-serif'
