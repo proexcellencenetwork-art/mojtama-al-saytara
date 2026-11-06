@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Copy, Download, ExternalLink, ImagePlus, Linkedin, ShieldCheck, Sparkles } from 'lucide-react'
+import { Copy, Download, ExternalLink, ImagePlus, ShieldCheck, Sparkles } from 'lucide-react'
 import './LinkedInStudio.css'
 
 type CardFormat = 'square' | 'portrait'
@@ -231,7 +231,7 @@ export function LinkedInStudio() {
         <h2 id="linkedin-studio-title">أنشئ منشور LinkedIn بهوية مجتمع السيطرة</h2>
         <p>اكتب فكرتك، جهّز النص، وأنشئ صورة أصلية متناسقة مع هوية المجتمع. كل شيء يُجهّز في متصفحك دون إرسال مسودتك إلى خادم.</p>
       </div>
-      <span className="linkedin-studio-mark"><Linkedin size={21}/></span>
+      <span className="linkedin-studio-mark"><ExternalLink size={21}/></span>
     </header>
 
     <div className="linkedin-studio-layout">
