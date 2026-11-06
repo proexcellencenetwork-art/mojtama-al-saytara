@@ -339,9 +339,9 @@ for (const [collection,records] of Object.entries(recordsByPage)) {
   }
 }
 for (const route of protectedRoutes) {
-  const page = { title: `${route === '/login' ? 'تسجيل الدخول' : route === '/register' ? 'إنشاء حساب' : route === '/pending-review' ? 'مراجعة العضوية' : route === '/reset-password' ? 'استعادة كلمة المرور' : route === '/owner/100ms' ? 'إعداد البث للمالك' : route === '/owner' ? 'بوابة المالك' : route === '/learning' ? 'مركز التعلّم للأعضاء' : 'مساحة الأعضاء'} | مجتمع السيطرة`, description: route === '/register' ? registrationPageDescription : route === '/pending-review' ? 'صفحة خاصة لمتابعة حالة العضوية بعد الدعوة أو التسجيل.' : 'صفحة خاصة بأعضاء مجتمع السيطرة.' }
+  const page = { title: `${route === '/login' ? 'تسجيل الدخول' : route === '/register' ? 'إنشاء حساب' : route === '/pending-review' ? 'مراجعة العضوية' : route === '/reset-password' ? 'استعادة كلمة المرور' : route === '/owner/100ms' ? 'إعداد البث للمالك' : route === '/owner' ? 'بوابة المالك' : route === '/learning' ? 'مركز التعلّم للأعضاء' : 'مساحة الأعضاء'} | مجتمع السيطرة`, description: route === '/register' ? registrationPageDescription : 'صفحة خاصة بأعضاء مجتمع السيطرة.' }
   const privateBody = route === '/pending-review'
-    ? `${header()}<main class="public-page wrap"><h1>متابعة حالة العضوية</h1><p>هذه الصفحة خاصة بالمدعوين وأصحاب الحسابات قيد المراجعة. سجّل الدخول للمتابعة.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`
+    ? `${header()}<main class="public-page wrap"><h1>هذه المساحة تتطلب الدخول.</h1><p>سيحوّلك التطبيق إلى صفحة تسجيل الدخول.</p>${htmlLink('/login','تسجيل الدخول','btn btn-primary')}</main>${footer()}`
     : route === '/register'
     ? `${header()}<main class="public-page wrap"><span class="eyebrow">${publicSignupReady ? 'انضم إلينا' : 'التسجيل الآمن'}</span><h1>${safeText(registrationPageHeading)}</h1><p>${safeText(registrationPageIntro)}</p>${htmlLink('/login',publicSignupReady ? 'لديك حساب؟ سجّل الدخول' : 'تسجيل الدخول للحسابات القائمة','btn btn-outline')}${publicSignupReady ? '' : htmlLink('/career-journey','استكشف الرحلة المهنية','btn btn-primary')}</main>${footer()}`
     : route === '/owner/100ms'
