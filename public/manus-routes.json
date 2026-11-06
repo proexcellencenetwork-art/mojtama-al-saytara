@@ -155,6 +155,10 @@
       "path": "/register/"
     },
     {
+      "path": "/pending-review/",
+      "title": "متابعة حالة العضوية | مجتمع السيطرة"
+    },
+    {
       "path": "/reset-password/"
     },
     {
