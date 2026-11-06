@@ -4,8 +4,8 @@
 
 - A coach, moderator, manager, or platform owner can request an invitation only through the authenticated `community-invite` Edge Function.
 - Supabase Auth generates a recipient-specific confirmation URL. The raw token is never created, stored, or exposed by the browser UI.
-- The redirect marker is `?flow=community-invite`; the app verifies the resulting Auth session and sends the recipient to `/pending-review?welcome=community-invite`.
-- After setting a password, the recipient sees the branded welcome at `/pending-review?welcome=community-invite`. Every invited account starts with the base `member` role and remains pending until its email is confirmed and the community review is completed. The invite link does not grant coach, moderator, manager, or owner access.
+- The redirect marker is `?flow=community-invite`; the app verifies the resulting Auth session and sends the recipient to `/reset-password?welcome=community-invite` to create an initial password.
+- After the password is saved, the app opens `/pending-review?welcome=community-invite` and displays the branded welcome. Every invited account starts with the base `member` role and remains pending until its email is confirmed and the community review is completed. The invite link does not grant coach, moderator, manager, or owner access.
 - `supabase/templates/community-invite.html` is the branded Arabic invite email template. `supabase/config.toml` points the local Supabase configuration at this template.
 
 ## Hosted email configuration still required
