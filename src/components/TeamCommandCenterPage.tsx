@@ -10,7 +10,7 @@ import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './TeamCommandCenterPage.css'
 
-const adminRoles: Role[] = ['owner', 'manager', 'moderator']
+const adminRoles: Role[] = ['owner', 'manager']
 const teamRoles: Role[] = [...adminRoles, 'coach']
 
 const updates = [
@@ -161,14 +161,16 @@ export function TeamCommandCenterPage({ role }: { role: Role }) {
           <span className="team-status team-status-hold">اختبار مطلوب</span>
           <h3>البث المباشر والتسجيلات</h3>
           <p>وظائف 100ms الخمس نشطة، لكن قاعدة البيانات لا تحتوي غرفاً أو تسجيلات. لم يثبت اختبار مالك وعضو كامل من إنشاء البث إلى تشغيل تسجيل خاص.</p>
-          <Link to="/owner/100ms">إعدادات مزود البث <ArrowUpLeft size={14}/></Link>
+          {role === 'owner' ? <Link to="/owner/100ms">إعدادات مزود البث <ArrowUpLeft size={14}/></Link> : <small className="team-footnote">إعداد مزود البث متاح للمالك فقط.</small>}
         </article>
+        {isAdmin && <>
         <article className="team-work-card">
           <span className="team-status team-status-review">مراجعة أمنية</span>
           <h3>الحسابات وحماية التسجيل</h3>
           <p>حماية كلمات المرور المسرّبة في Supabase Auth ما زالت معطلة وفق فحص المستشار. توجد تحذيرات لدوال SECURITY DEFINER وسياسات RLS تحتاج مراجعة فردية؛ لا تعني هذه التحذيرات وحدها وجود اختراق.</p>
           <a href="https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection" target="_blank" rel="noreferrer">مرجع الحماية <ExternalLink size={14}/></a>
         </article>
+        </>}
       </div>
     </section>
 
@@ -177,9 +179,9 @@ export function TeamCommandCenterPage({ role }: { role: Role }) {
         <div><span className="team-kicker">إجراءات الإدارة</span><h2>روابط تشغيلية مباشرة</h2></div>
       </div>
       <div className="team-link-grid">
-        <Link to="/admin"><Users size={18}/> إدارة المجتمع <ArrowUpLeft size={14}/></Link>
-        <Link to="/moderation"><ShieldCheck size={18}/> الإشراف والبلاغات <ArrowUpLeft size={14}/></Link>
-        <Link to="/content-studio"><FileText size={18}/> استوديو المحتوى <ArrowUpLeft size={14}/></Link>
+        {isAdmin && <Link to="/admin"><Users size={18}/> إدارة المجتمع <ArrowUpLeft size={14}/></Link>}
+        {(role === 'moderator' || isAdmin) && <Link to="/moderation"><ShieldCheck size={18}/> الإشراف والبلاغات <ArrowUpLeft size={14}/></Link>}
+        {isAdmin && <Link to="/content-studio"><FileText size={18}/> استوديو المحتوى <ArrowUpLeft size={14}/></Link>}
         {role === 'owner' && <Link to="/owner"><ShieldCheck size={18}/> مركز المالك <ArrowUpLeft size={14}/></Link>}
         {role === 'owner' && <Link to="/owner/analytics"><Activity size={18}/> لوحة التحليلات <ArrowUpLeft size={14}/></Link>}
         {role === 'owner' && <Link to="/owner/100ms"><Video size={18}/> إعداد البث <ArrowUpLeft size={14}/></Link>}
