@@ -270,7 +270,7 @@ export function LinkedInStudio() {
 
       <aside className="linkedin-studio-preview">
         <div className="linkedin-preview-topline"><span><ImagePlus size={15}/> معاينة التصميم</span><span>هوية المجتمع</span></div>
-        {preview ? <img src={preview} alt="معاينة بطاقة منشور تحمل هوية مجتمع السيطرة المهنية"/> : <div className="linkedin-preview-loading">جارٍ تجهيز المعاينة…</div>}
+        {preview ? <img className={format === 'portrait' ? 'linkedin-preview-image linkedin-preview-image-portrait' : 'linkedin-preview-image'} src={preview} alt="معاينة بطاقة منشور تحمل هوية مجتمع السيطرة المهنية"/> : <div className="linkedin-preview-loading">جارٍ تجهيز المعاينة…</div>}
         {renderError && <p className="linkedin-tool-error" role="alert">{renderError}</p>}
         <div className="linkedin-preview-caption">
           <strong>قبل النشر</strong>
