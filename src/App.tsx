@@ -493,7 +493,7 @@ function SupabaseCallbackRouter() {
         const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
         const unverified = Boolean(data.session && flow !== 'recovery' && !hasConfirmedEmail(data.session.user))
         const failed = Boolean(error || !data.session || callbackError || unverified)
-        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : flow === 'community-invite' ? '/pending-review?welcome=community-invite' : '/pending-review'
+        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : flow === 'community-invite' ? '/reset-password?welcome=community-invite' : '/pending-review'
         const callbackUrl = new URL(window.location.href)
         for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
         window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)
