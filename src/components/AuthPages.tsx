@@ -222,6 +222,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
 
 export function ResetPasswordPage({ onSignedIn }: Pick<AuthPageProps, 'onSignedIn'>) {
   const navigate = useNavigate()
+  const isCommunityInvitation = new URLSearchParams(window.location.search).get('welcome') === 'community-invite'
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -252,7 +253,7 @@ export function ResetPasswordPage({ onSignedIn }: Pick<AuthPageProps, 'onSignedI
       }
       onSignedIn(data.user)
       setMessage('تم تحديث كلمة المرور. يجري فتح حسابك…')
-      window.setTimeout(() => navigate('/pending-review', { replace: true }), 600)
+      window.setTimeout(() => navigate(isCommunityInvitation ? '/pending-review?welcome=community-invite' : '/pending-review', { replace: true }), 600)
     } catch (error) {
       setIsError(true)
       setMessage(authMessage(error instanceof Error ? error.message : 'password reset error'))
@@ -261,5 +262,5 @@ export function ResetPasswordPage({ onSignedIn }: Pick<AuthPageProps, 'onSignedI
     }
   }
 
-  return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">رابط استعادة آمن</span><h1>اختر كلمة مرور جديدة.</h1><p>استخدم كلمة مرور قوية لا تقل عن ٨ أحرف.</p></div><form onSubmit={submit} className="auth-form"><label>كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} dir="ltr"/></label><label>تأكيد كلمة المرور<input type="password" autoComplete="new-password" minLength={8} required value={confirm} onChange={event => setConfirm(event.target.value)} dir="ltr"/></label><button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الحفظ…' : 'تحديث كلمة المرور'} <ArrowLeft size={16}/></button></form>{message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}<p className="auth-switch"><Link to="/login">العودة إلى تسجيل الدخول</Link></p><small className="auth-privacy"><LockKeyhole size={13}/> إذا انتهت صلاحية الرابط، اطلب رسالة استعادة جديدة.</small></div></main>
+  return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">{isCommunityInvitation ? 'دعوتك إلى مجتمع السيطرة المهنية' : 'رابط استعادة آمن'}</span><h1>{isCommunityInvitation ? 'أنشئ كلمة مرور لعضويتك.' : 'اختر كلمة مرور جديدة.'}</h1><p>{isCommunityInvitation ? 'خطوة أخيرة لتفعيل حسابك: اختر كلمة مرور قوية، ثم نعرض لك رسالة الترحيب وحالة مراجعة العضوية.' : 'استخدم كلمة مرور قوية لا تقل عن ٨ أحرف.'}</p></div><form onSubmit={submit} className="auth-form"><label>كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={password} onChange={event => setPassword(event.target.value)} dir="ltr"/></label><label>تأكيد كلمة المرور<input type="password" autoComplete="new-password" minLength={8} required value={confirm} onChange={event => setConfirm(event.target.value)} dir="ltr"/></label><button className="btn btn-primary btn-full" type="submit" disabled={busy}>{busy ? 'جارٍ الحفظ…' : isCommunityInvitation ? 'تأكيد كلمة المرور ومتابعة الدعوة' : 'تحديث كلمة المرور'} <ArrowLeft size={16}/></button></form>{message && <div className={`inline-message ${isError ? 'live-error' : ''}`} role={isError ? 'alert' : 'status'}>{message}</div>}<p className="auth-switch"><Link to="/login">العودة إلى تسجيل الدخول</Link></p><small className="auth-privacy"><LockKeyhole size={13}/> إذا انتهت صلاحية الرابط، اطلب رسالة استعادة جديدة.</small></div></main>
 }
