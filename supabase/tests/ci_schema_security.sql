@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(24);
+select plan(25);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
@@ -31,6 +31,17 @@ select ok(not has_table_privilege('authenticated', 'public.platform_owner_audit'
 select ok(not has_function_privilege('anon', 'public.is_staff(uuid)', 'EXECUTE'), 'anonymous users cannot execute internal staff lookup');
 select ok(not has_function_privilege('anon', 'public.is_account_approved()', 'EXECUTE'), 'anonymous users cannot execute approval helper');
 select ok(not has_function_privilege('authenticated', 'public.guard_message_update()', 'EXECUTE'), 'authenticated users cannot directly execute trigger-only message guard');
+
+-- The public aggregate endpoint must respect the owner's visibility switch.
+UPDATE public.platform_settings
+SET value_boolean = false
+WHERE setting_key = 'public_member_metric_visible';
+
+select ok(
+  (public.get_public_community_metric() ->> 'visible')::boolean = false
+  AND public.get_public_community_metric() -> 'actual_count' = 'null'::jsonb,
+  'public member count is not returned while the owner hides the metric'
+);
 
 select * from finish();
 rollback;
