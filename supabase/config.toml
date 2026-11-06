@@ -32,6 +32,10 @@ verify_jwt = false
 [functions.newsletter-subscribe]
 verify_jwt = false
 
+# Team-only member invitations require a valid signed-in user JWT.
+[functions.community-invite]
+verify_jwt = true
+
 # Official branded member invitation. For the hosted project, also install this template
 # in Authentication > Email Templates > Invite User and configure verified custom SMTP.
 [auth.email.template.invite]
