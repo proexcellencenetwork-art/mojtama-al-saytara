@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase'
 import './TeamCommandCenterPage.css'
 
 const adminRoles: Role[] = ['owner', 'manager']
-const teamRoles: Role[] = [...adminRoles, 'coach']
+const teamRoles: Role[] = [...adminRoles, 'moderator', 'coach']
 
 const updates = [
   {
@@ -174,7 +174,7 @@ export function TeamCommandCenterPage({ role }: { role: Role }) {
       </div>
     </section>
 
-    {isAdmin && <section className="team-section team-admin-actions">
+    {(isAdmin || role === 'moderator') && <section className="team-section team-admin-actions">
       <div className="team-section-heading">
         <div><span className="team-kicker">إجراءات الإدارة</span><h2>روابط تشغيلية مباشرة</h2></div>
       </div>
