@@ -31,3 +31,13 @@ verify_jwt = false
 # Public newsletter opt-in endpoint with origin checks and hashed-IP rate limiting.
 [functions.newsletter-subscribe]
 verify_jwt = false
+
+# Team-only member invitations require a valid signed-in user JWT.
+[functions.community-invite]
+verify_jwt = true
+
+# Official branded member invitation. For the hosted project, also install this template
+# in Authentication > Email Templates > Invite User and configure verified custom SMTP.
+[auth.email.template.invite]
+subject = "دعوتك الرسمية إلى مجتمع السيطرة المهنية"
+content_path = "./supabase/templates/community-invite.html"

@@ -457,6 +457,7 @@ function AppShell({ children, authenticated, authReady, demoMode, accountStatus 
 
 function PendingReviewPage({ authReady, authenticated, demoMode, accountStatus, onSignOut, onRefreshStatus }: { authReady: boolean; authenticated: boolean; demoMode: boolean; accountStatus: AccountStatus | null; onSignOut: () => Promise<void>; onRefreshStatus: () => Promise<void> }) {
   const navigate = useNavigate()
+  const invitationWelcome = new URLSearchParams(window.location.search).get('welcome') === 'community-invite'
   useEffect(() => {
     if (!authReady) return
     if (!authenticated) navigate('/login', { replace: true })
@@ -468,6 +469,7 @@ function PendingReviewPage({ authReady, authenticated, demoMode, accountStatus, 
   const unknown = accountStatus === 'unknown'
   const loadingStatus = accountStatus === null
   return <main className="auth-wrap"><section className="auth-card account-review-card">
+    {invitationWelcome && <div className="community-invite-welcome" role="status"><span className="eyebrow">دعوة خاصة · مجتمع السيطرة المهنية</span><h2>أهلاً بك، يسعدنا وصول دعوتنا إليك.</h2><p>تم تحويلك إلى مساحة الترحيب الرسمية بعد قبول رابط الدعوة. نؤمن بأن الأداء الوظيفي العالي والجهد الحقيقي يستحقان أن يُعرضا بأدلة واضحة.</p><p>تبدأ عضويتك الأساسية بعد مراجعة الحساب؛ لا تحتاج إلى مشاركة رابط الدعوة مع أي شخص آخر.</p></div>}
     <div className="auth-intro"><span className="eyebrow">حماية مجتمعنا المهني</span><h1>{loadingStatus ? 'جارٍ التحقق من حالة الحساب…' : rejected ? 'لم يُعتمد طلب الانضمام.' : unknown ? 'تعذر التحقق من حالة الحساب.' : accountStatus === 'pending' ? 'حسابك قيد المراجعة.' : 'تحقق من بريدك أولاً.'}</h1>
       <p>{loadingStatus ? 'جارٍ تجهيز مساحة العضوية.' : rejected ? 'لا تتوفر صلاحيات العضوية لهذا الحساب. إذا كنت ترى أن القرار يحتاج مراجعة، تواصل مع إدارة المجتمع.' : unknown ? 'تعذر تجهيز مساحة العضوية الآن. أعد المحاولة بعد قليل.' : accountStatus === 'pending' ? 'وصل طلبك إلى مراجعة الإدارة. سيُفتح دخول مساحة الأعضاء بعد الاعتماد؛ أعد التحقق من الحالة لاحقاً.' : 'أكد بريدك الإلكتروني ثم سجّل الدخول للمتابعة.'}</p>
     </div>
@@ -479,7 +481,7 @@ function SupabaseCallbackRouter() {
   const navigate = useNavigate()
   useEffect(() => {
     const flow = new URLSearchParams(window.location.search).get('flow')
-    if (flow !== 'confirm' && flow !== 'recovery' && flow !== 'oauth') return
+    if (flow !== 'confirm' && flow !== 'community-invite' && flow !== 'recovery' && flow !== 'oauth') return
     let active = true
     void import('./lib/supabase').then(({ supabase: client }) => {
       if (!active) return
@@ -491,7 +493,7 @@ function SupabaseCallbackRouter() {
         const callbackError = searchParams.get('error_description') || hashParams.get('error_description') || searchParams.get('error') || hashParams.get('error')
         const unverified = Boolean(data.session && flow !== 'recovery' && !hasConfirmedEmail(data.session.user))
         const failed = Boolean(error || !data.session || callbackError || unverified)
-        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : '/pending-review'
+        const target = failed ? '/login' : flow === 'recovery' ? '/reset-password' : flow === 'community-invite' ? '/pending-review?welcome=community-invite' : '/pending-review'
         const callbackUrl = new URL(window.location.href)
         for (const key of ['flow', 'code', 'error', 'error_code', 'error_description', 'state']) callbackUrl.searchParams.delete(key)
         window.history.replaceState(window.history.state, '', `${callbackUrl.pathname}${callbackUrl.search}${callbackUrl.hash}`)

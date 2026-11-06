@@ -108,7 +108,11 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { error } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${siteUrl}?flow=confirm`,
+      redirectTo: `${siteUrl}?flow=community-invite`,
+      data: {
+        community_name: 'مجتمع السيطرة المهنية',
+        community_invitation: true,
+      },
     })
     if (error) return jsonResponse({ error: 'invitation_not_created', detail: 'The address may already have an account.' }, 409, cors)
     return jsonResponse({ invited: true, initial_role: 'member', account_status: 'pending_review' }, 202, cors)

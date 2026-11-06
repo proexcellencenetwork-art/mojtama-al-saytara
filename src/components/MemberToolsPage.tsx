@@ -1,5 +1,6 @@
 import { ArrowLeft, Award, BookOpen, BriefcaseBusiness, Compass, FileSearch, GraduationCap, Lightbulb, LineChart, Target, Wrench } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { LinkedInStudio } from './LinkedInStudio'
 const tools = [
  {to:'/career-compass',title:'البوصلة المهنية',description:'حدد موقعك الحالي، أولوياتك، والاتجاه الذي تريد اختباره.',icon:Compass,tag:'تقييم ذاتي'},
  {to:'/linkedin-audit',title:'تدقيق ملف LinkedIn',description:'راجع عناصر ملفك وحدد التحسينات الأكثر أهمية.',icon:FileSearch,tag:'حضور مهني'},
@@ -16,5 +17,6 @@ export function MemberToolsPage() {
  return <main className="app-main wrap member-workspace-page">
   <header className="member-page-heading"><div><span className="eyebrow">أدوات متاحة داخل المجتمع</span><h1>أدواتك المهنية</h1><p>ابدأ بالأداة الأقرب إلى هدفك. تعمل الأدوات مباشرة في المتصفح؛ راجع تنبيه كل أداة لمعرفة ما إذا كانت تحفظ نتيجتها محلياً.</p></div></header>
   <section className="member-tools-grid">{tools.map(tool=>{const Icon=tool.icon;return <article className="member-tool-card" key={tool.to}><span className="member-tool-icon"><Icon size={19}/></span><span className="member-tool-tag">{tool.tag}</span><h2>{tool.title}</h2><p>{tool.description}</p><Link to={tool.to}>افتح الأداة <ArrowLeft size={15}/></Link></article>})}</section>
+  <LinkedInStudio/>
  </main>
 }

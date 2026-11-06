@@ -418,3 +418,8 @@
   .member-tools-grid{grid-template-columns:1fr}
   .member-connection-card{flex-wrap:wrap}
 }
+
+/* Secure invitation acceptance welcome */
+.community-invite-welcome{margin-bottom:1.2rem;padding:1.2rem 1.3rem;border:1px solid color-mix(in srgb,#168277 32%,var(--line));border-radius:1rem;background:color-mix(in srgb,#168277 8%,var(--paper));}
+.community-invite-welcome h2{margin:.35rem 0 .55rem;font-size:1.3rem;line-height:1.6;color:var(--ink);}
+.community-invite-welcome p{margin:.35rem 0 0;color:var(--muted);font-size:.82rem;line-height:1.9;}
