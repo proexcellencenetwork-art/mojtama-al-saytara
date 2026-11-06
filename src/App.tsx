@@ -322,8 +322,13 @@ function RouteMetadata() {
       const social = document.querySelector<HTMLMetaElement>(selector)
       if (social) social.content = content
     }
-    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
-    if (robots) robots.content = meta && !privateRoute ? 'index,follow,max-image-preview:large' : 'noindex,nofollow'
+    let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    if (!robots) {
+      robots = document.createElement('meta')
+      robots.name = 'robots'
+      document.head.append(robots)
+    }
+    robots.content = meta && !privateRoute ? 'index,follow,max-image-preview:large' : 'noindex,nofollow'
     let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
     if (meta) {
       if (!link) { link = document.createElement('link'); link.rel = 'canonical'; document.head.append(link) }
@@ -369,8 +374,13 @@ function LivePublicDetailPage({ page, client }: { page: 'articles' | 'events' | 
         const description = String(publicRow.excerpt || publicRow.public_bio || publicRow.description || 'محتوى عام منشور في مجتمع السيطرة.').slice(0, 155)
         const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]')
         if (meta) meta.content = description
-        const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
-        if (robots) robots.content = 'index,follow,max-image-preview:large'
+        let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+        if (!robots) {
+          robots = document.createElement('meta')
+          robots.name = 'robots'
+          document.head.append(robots)
+        }
+        robots.content = 'index,follow,max-image-preview:large'
         const siteRoot = import.meta.env.VITE_SITE_URL || `${window.location.origin}${import.meta.env.BASE_URL}`
         const canonical = new URL(`${page}/${encodeURIComponent(key)}/`, siteRoot.endsWith('/') ? siteRoot : `${siteRoot}/`).toString()
         const canonicalTag = document.querySelector<HTMLLinkElement>('link[rel="canonical"]')
@@ -393,8 +403,13 @@ function LivePublicDetailPage({ page, client }: { page: 'articles' | 'events' | 
             : { '@context': 'https://schema.org', '@type': 'Person', name: title, jobTitle: publicRow.headline || publicRow.profession, description, url: canonical, knowsAbout: publicRow.coaching_topics || [] }
         schema.textContent = JSON.stringify(json)
       } else {
-        const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
-        if (robots) robots.content = 'noindex,nofollow'
+        let robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+        if (!robots) {
+          robots = document.createElement('meta')
+          robots.name = 'robots'
+          document.head.append(robots)
+        }
+        robots.content = 'noindex,nofollow'
       }
     }
     void load()
