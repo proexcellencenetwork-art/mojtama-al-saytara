@@ -31,6 +31,29 @@ function getDeviceCategory(): 'mobile' | 'tablet' | 'desktop' | 'unknown' {
   return width < 640 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop'
 }
 
+function getClientEnvironment() {
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent
+  let os = 'Other'
+  if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS'
+  else if (/Android/i.test(ua)) os = 'Android'
+  else if (/Windows/i.test(ua)) os = 'Windows'
+  else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS'
+  else if (/CrOS/i.test(ua)) os = 'ChromeOS'
+  else if (/Linux/i.test(ua)) os = 'Linux'
+
+  let browser = 'Other'
+  if (/SamsungBrowser/i.test(ua)) browser = 'Samsung Internet'
+  else if (/Edg\//i.test(ua)) browser = 'Edge'
+  else if (/OPR\//i.test(ua)) browser = 'Opera'
+  else if (/Firefox\//i.test(ua)) browser = 'Firefox'
+  else if (/CriOS|Chrome\//i.test(ua) && !/Edg\//i.test(ua)) browser = 'Chrome'
+  else if (/Safari\//i.test(ua) && !/Chrome|CriOS|Edg\//i.test(ua)) browser = 'Safari'
+
+  const width = typeof window === 'undefined' ? 0 : window.innerWidth
+  const viewport = width === 0 ? 'unknown' : width < 640 ? 'compact' : width < 1024 ? 'medium' : 'wide'
+  return { os, browser, viewport }
+}
+
 export async function trackSiteEvent(eventName: SiteEventName, pagePath: string, eventLabel?: string): Promise<void> {
   if (!supabase || !hasAnalyticsConsent()) return
   const visitorId = getVisitorId()
@@ -55,8 +78,9 @@ export async function trackSiteEvent(eventName: SiteEventName, pagePath: string,
     if (!stored || Object.values(currentAttribution).some(Boolean)) localStorage.setItem('saytara-analytics-attribution', JSON.stringify(attribution))
   } catch { /* Attribution is optional and never blocks the page. */ }
   const timezone = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null } catch { return null } })()
+  const environment = getClientEnvironment()
   try {
-    await supabase.rpc('record_site_analytics_event', {
+    await supabase.rpc('record_site_analytics_event_v2', {
       p_event_name: eventName,
       p_page_path: pagePath.slice(0, 300),
       p_visitor_id: visitorId,
@@ -68,6 +92,9 @@ export async function trackSiteEvent(eventName: SiteEventName, pagePath: string,
       p_timezone: timezone,
       p_locale: navigator.language?.slice(0, 24) || null,
       p_device_category: getDeviceCategory(),
+      p_os_family: environment.os,
+      p_browser_family: environment.browser,
+      p_viewport_class: environment.viewport,
     })
   } catch { /* Analytics must never block product functionality. */ }
 }
