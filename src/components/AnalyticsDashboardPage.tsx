@@ -29,6 +29,8 @@ type Lead = {
   interests: { interest_key: string; source_page: string; created_at: string }[]
 }
 type LeadPayload = { total?: number; new_count?: number; contacted_count?: number; qualified_count?: number; converted_count?: number; leads?: Lead[] }
+type SurveyPayload = { responses?:number; average_rating?:number|null; average_recommendation?:number|null; average_ease?:number|null; areas?:{area:string;responses:number}[]; used_areas?:{area:string;responses:number}[]; recent_comments?:{comment:string;overall_rating:number;created_at:string}[] }
+type BehaviorPayload = { returning_visitors?:number; repeat_tool_users?:number; tool_funnels?:{tool:string;starts:number;completions:number;completion_percent:number|null}[] }
 
 const number = (value?: number) => new Intl.NumberFormat('ar-SA').format(value ?? 0)
 const date = (value?: string) => value ? new Date(value).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
@@ -42,6 +44,8 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
   const [data, setData] = useState<AnalyticsPayload | null>(null)
   const [devices, setDevices] = useState<DevicePayload | null>(null)
   const [leadData, setLeadData] = useState<LeadPayload | null>(null)
+  const [surveyData, setSurveyData] = useState<SurveyPayload | null>(null)
+  const [behaviorData, setBehaviorData] = useState<BehaviorPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingLead, setSavingLead] = useState<string | null>(null)
@@ -52,10 +56,12 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     const owner = await supabase.rpc('is_platform_owner')
     if (owner.error || owner.data !== true) { setAuthorized(false); setData(null); setDevices(null); setLeadData(null); setLoading(false); return }
     setAuthorized(true)
-    const [analyticsResult, deviceResult, leadResult] = await Promise.all([
+    const [analyticsResult, deviceResult, leadResult, surveyResult, behaviorResult] = await Promise.all([
       supabase.rpc('get_owner_site_analytics', { p_days: days }),
       supabase.rpc('get_owner_device_analytics', { p_days: days }),
       supabase.rpc('get_owner_lead_pipeline', { p_limit: 150 }),
+      supabase.rpc('get_owner_public_survey_summary', { p_days: 90 }),
+      supabase.rpc('get_owner_behavioral_insights', { p_days: days }),
     ])
     if (analyticsResult.error) { setError('تعذر تحميل مؤشرات الزيارات. تحقق من صلاحيات المالك ثم أعد المحاولة.'); setData(null) }
     else setData(analyticsResult.data as AnalyticsPayload)
@@ -63,7 +69,11 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     else setDevices(deviceResult.data as DevicePayload)
     if (leadResult.error) setLeadData(null)
     else setLeadData(leadResult.data as LeadPayload)
-    if (deviceResult.error || leadResult.error) setError('بعض الأقسام لم تُحمّل. حدّث الصفحة، وإذا استمر الخلل راجع صلاحيات وظائف لوحة المالك.')
+    if (surveyResult.error) setSurveyData(null)
+    else setSurveyData(surveyResult.data as SurveyPayload)
+    if (behaviorResult.error) setBehaviorData(null)
+    else setBehaviorData(behaviorResult.data as BehaviorPayload)
+    if (deviceResult.error || leadResult.error || surveyResult.error || behaviorResult.error) setError('بعض الأقسام لم تُحمّل. حدّث الصفحة، وإذا استمر الخلل راجع صلاحيات وظائف لوحة المالك.')
     setLoading(false)
   }, [role, days])
 
@@ -111,6 +121,18 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     {error && <p className="analytics-error" role="alert">{error}</p>}
     {loading && !data ? <section className="analytics-card">جارٍ تحميل المؤشرات…</section> : <>
       <section className="analytics-kpis">{cards.map(card => <article className="analytics-kpi" key={card.title}><span><card.icon size={19}/></span><small>{card.title}</small><strong>{number(card.value)}</strong></article>)}</section>
+
+      <section className="analytics-card">
+        <div className="analytics-section-heading"><div><h2>مؤشرات التجربة من السلوك</h2><p>هذه إشارات استخدام وليست آراء مؤكدة: العودة قد تعني اهتماماً، وإكمال الأداة يعني إكمال الاستخدام، وعدم الإكمال قد يشير إلى احتكاك ويحتاج سؤال الزائر.</p></div></div>
+        <div className="analytics-kpis">{[{title:'زوار عادوا في أيام مختلفة',value:behaviorData?.returning_visitors},{title:'زوار كرروا بدء الأدوات',value:behaviorData?.repeat_tool_users},{title:'إجمالي إكمال الأدوات',value:overview?.tool_completions}].map(item=><article className="analytics-kpi" key={item.title}><small>{item.title}</small><strong>{number(item.value)}</strong></article>)}</div>
+        <div className="analytics-table-wrap"><table><thead><tr><th>الأداة</th><th>مرات البدء</th><th>مرات الإكمال</th><th>نسبة الإكمال</th></tr></thead><tbody>{(behaviorData?.tool_funnels??[]).map(row=><tr key={row.tool}><td>{pathLabel(row.tool||'غير محدد')}</td><td>{number(row.starts)}</td><td>{number(row.completions)}</td><td>{row.completion_percent==null?'—':number(row.completion_percent)+'%'}</td></tr>)}</tbody></table></div>
+      </section>
+      <section className="analytics-card">
+        <div className="analytics-section-heading"><div><h2>استبيان تجربة الزائر</h2><p>نتائج الاستبيان المجهول خلال آخر 90 يومًا.</p></div><a className="btn btn-outline btn-small" href="/mojtama-al-saytara/survey/" target="_blank" rel="noreferrer">عرض صفحة الاستبيان</a></div>
+        <div className="analytics-kpis">{[{title:'عدد الردود',value:surveyData?.responses},{title:'متوسط الرضا / 5',value:surveyData?.average_rating},{title:'سهولة الاستخدام / 5',value:surveyData?.average_ease},{title:'التوصية / 10',value:surveyData?.average_recommendation}].map(item=><article className="analytics-kpi" key={item.title}><small>{item.title}</small><strong>{item.value==null?'—':typeof item.value==='number'?item.value.toLocaleString('ar-SA',{maximumFractionDigits:2}):number(item.value)}</strong></article>)}</div>
+        <div className="analytics-two-col"><div className="analytics-table-wrap"><h3>أكثر مجالات التحسين طلبًا</h3><table><thead><tr><th>المجال</th><th>الردود</th></tr></thead><tbody>{(surveyData?.areas??[]).map(row=><tr key={row.area}><td>{row.area}</td><td>{number(row.responses)}</td></tr>)}</tbody></table></div><div className="analytics-table-wrap"><h3>ما الذي استخدمه الزوار؟</h3><table><thead><tr><th>المحتوى</th><th>الردود</th></tr></thead><tbody>{(surveyData?.used_areas??[]).map(row=><tr key={row.area}><td>{row.area}</td><td>{number(row.responses)}</td></tr>)}</tbody></table></div></div>
+        <div className="analytics-table-wrap"><h3>ملاحظات الزوار</h3>{(surveyData?.recent_comments??[]).map((row,i)=><p key={i}>“{row.comment}” <small>· تقييم {row.overall_rating}/5 · {date(row.created_at)}</small></p>)}{!surveyData?.recent_comments?.length&&<p className="analytics-empty">لا توجد ملاحظات مكتوبة بعد.</p>}</div>
+      </section>
       <section className="analytics-card"><div className="analytics-section-heading"><div><h2>أداء الصفحات</h2><p>ترتيب الصفحات حسب المشاهدات، مع عدد الزوار المميزين لكل صفحة.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>الصفحة</th><th>المشاهدات</th><th>الزوار</th></tr></thead><tbody>{(data?.pages ?? []).map(row => <tr key={row.page_path}><td><b>{pathLabel(row.page_path)}</b><small dir="ltr">{row.page_path}</small></td><td>{number(row.page_views)}</td><td>{number(row.visitors)}</td></tr>)}</tbody></table>{!data?.pages?.length && <p className="analytics-empty">لا توجد بيانات بعد. ستظهر الصفحات بعد موافقة الزوار على التحليلات.</p>}</div></section>
       <section className="analytics-two-col">
         <article className="analytics-card"><div className="analytics-section-heading"><div><h2>الأدوات المهنية</h2><p>البداية والإكمال وعدد الزوار الذين بدأوا الأداة.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>الأداة/المسار</th><th>البدء</th><th>الإكمال</th><th>الزوار</th></tr></thead><tbody>{(data?.tools ?? []).map(row => <tr key={row.tool}><td>{pathLabel(row.tool)}</td><td>{number(row.starts)}</td><td>{number(row.completions)}</td><td>{number(row.users)}</td></tr>)}</tbody></table>{!data?.tools?.length && <p className="analytics-empty">لم تُسجل استخدامات أدوات بعد.</p>}</div></article>
