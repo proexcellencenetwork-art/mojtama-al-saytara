@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight, BookOpen, BriefcaseBusiness, CheckCircle2, Compass, Lightbulb, Search, ShieldCheck, Sparkles, Users, X } from 'lucide-react'
 import './StrategicOverviewPages.css'
@@ -87,7 +88,7 @@ const questions: { title: string; hint: string; options: { label: string; track:
   },
 ]
 
-function PageHero({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children?: React.ReactNode }) {
+function PageHero({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children?: ReactNode }) {
   return <header className="strategic-page-hero">
     <span className="strategic-eyebrow">{eyebrow}</span>
     <h1>{title}</h1>
