@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Activity, ArrowDownToLine, BarChart3, Eye, Mail, MapPin, RefreshCw, ShieldCheck, Target, Wrench, Laptop, Smartphone, Users, UserRoundCheck } from 'lucide-react'
+import { Activity, ArrowDownToLine, BarChart3, Eye, Mail, MapPin, RefreshCw, ShieldCheck, Target, Wrench, Laptop, Users, UserRoundCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Role } from '../appTypes'
 import './AnalyticsDashboardPage.css'
@@ -35,7 +35,6 @@ const date = (value?: string) => value ? new Date(value).toLocaleString('ar-SA',
 const pathLabel = (path: string) => ({ '/': 'الرئيسية', '/career-journey': 'الرحلة المهنية', '/career-compass': 'البوصلة المهنية', '/linkedin-audit': 'تدقيق LinkedIn', '/fresh-graduate': 'جاهزية الخريج', '/learning': 'مركز التعلّم', '/register': 'التسجيل', '/coaching': 'الكوتشنج', '/articles': 'المقالات', '/events': 'الفعاليات' } as Record<string,string>)[path] || path
 const userTypeLabel = (value: string) => ({professional:'مهني',job_seeker:'باحث عن عمل',graduate:'خريج',coach:'كوتش',researcher:'باحث',innovator:'مبتكر',other:'أخرى'} as Record<string,string>)[value] || value
 const goalLabel = (value: string) => ({job:'فرصة مهنية',skills:'تطوير المهارات',promotion:'ترقية',transition:'انتقال مهني',leadership:'قيادة',explore:'استكشاف'} as Record<string,string>)[value] || value
-const statusLabel = (value: string) => ({new:'جديد',contacted:'تم التواصل',qualified:'مؤهل',archived:'مؤرشف'} as Record<string,string>)[value] || value
 
 export function AnalyticsDashboardPage({ role }: { role: Role }) {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
