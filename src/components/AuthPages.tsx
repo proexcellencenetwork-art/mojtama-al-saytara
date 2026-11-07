@@ -215,7 +215,6 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
     {!isSupabaseConfigured && <button className="btn btn-outline btn-full" onClick={() => { onDemo(); navigate('/feed') }}><Sparkles size={16}/> استكشف نسخة التجربة</button>}
     <p className="auth-switch">{forgot ? 'تذكرت كلمة المرور؟' : mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب؟'} <button type="button" onClick={() => { setForgot(false); setCanResendConfirmation(false); setMessage(''); navigate(forgot ? '/login' : mode === 'login' ? '/register' : '/login') }}>{forgot ? 'العودة للدخول' : mode === 'login' ? 'أنشئ حساباً' : 'سجّل الدخول'}</button></p>
     <p className="auth-waitlist-note">التسجيل العام غير متاح حالياً. <Link to="/waitlist">تعرّف على قائمة الاهتمام المبكر</Link></p>
-    <p className="auth-waitlist-note">التسجيل العام غير متاح حالياً. <Link to="/waitlist">تعرّف على قائمة الاهتمام المبكر</Link></p>
     <small className="auth-privacy"><LockKeyhole size={13}/> لن نطلب بيانات صحية حساسة.</small>
   </div></main>
 }
