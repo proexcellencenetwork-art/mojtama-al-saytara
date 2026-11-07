@@ -22,7 +22,7 @@ for (const route of manifest.routes) {
   )
   if (!route || typeof route.path !== 'string' || !route.path.startsWith('/') || Object.keys(route).some(key => !['path','title','lastmod'].includes(key)) || (route.title !== undefined && typeof route.title !== 'string') || !validLastmod) fail.push('Invalid route manifest entry; expected path/title and an optional ISO lastmod.')
 }
-const privatePaths = new Set(['/login/','/register/','/pending-review/','/reset-password/','/feed/','/profile/','/discover/','/connections/','/messages/','/notifications/','/groups/','/tools/','/feedback/','/team/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
+const privatePaths = new Set(['/survey/','/owner/videos/','/login/','/register/','/pending-review/','/reset-password/','/feed/','/profile/','/discover/','/connections/','/messages/','/notifications/','/groups/','/tools/','/feedback/','/team/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
 const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/','/waitlist/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
