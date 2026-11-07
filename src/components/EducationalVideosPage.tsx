@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, Copy, Film, LockKeyhole, Play, Plus, RefreshCw, ShieldCheck, Video } from 'lucide-react'
+import { ArrowLeft, Copy, Film, LockKeyhole, Play, RefreshCw, ShieldCheck, Video } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
@@ -11,7 +11,7 @@ const blank={slug:'',title:'',description:'',youtube_video_id:'',access_mode:'pu
 const accessLabel=(mode:string)=>mode==='public'?'عام':mode==='unlisted'?'خاص بالرابط':'للأعضاء المعتمدين'
 export default function EducationalVideosPage({role,manage=false}:{role:Role;manage?:boolean}){
  const {slug}=useParams();const location=useLocation()
- const [videos,setVideos]=useState<VideoRow[]>([]),[current,setCurrent]=useState<PublicVideo|null>(null)
+ const [adminVideos,setAdminVideos]=useState<VideoRow[]>([]),[videos,setVideos]=useState<PublicVideo[]>([]),[current,setCurrent]=useState<PublicVideo|null>(null)
  const [form,setForm]=useState(blank),[editingId,setEditingId]=useState<string|null>(null)
  const [playing,setPlaying]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false)
  const [error,setError]=useState(''),[notice,setNotice]=useState('')
@@ -24,7 +24,7 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
    if(!owner){setError('هذه الصفحة للمالك فقط.');setLoading(false);return}
    const {data,error:loadError}=await supabase.rpc('owner_list_educational_videos')
    if(loadError)setError('تعذر تحميل مكتبة الفيديو للمالك.')
-   else setVideos(Array.isArray(data)?data as VideoRow[]:[])
+   else setAdminVideos(Array.isArray(data)?data as VideoRow[]:[])
   }else if(slug){
    const {data,error:loadError}=await supabase.rpc('get_educational_video',{p_slug:slug,p_share_token:token})
    if(loadError)setError('تعذر تحميل الفيديو.')
@@ -42,7 +42,7 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
  async function saveVideo(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();if(!supabase||busy)return
   setBusy(true);setError('');setNotice('')
-  const {data,error:saveError}=await supabase.rpc('owner_upsert_educational_video',{p_id:editingId,p_slug:form.slug.trim().toLowerCase(),p_title:form.title.trim(),p_description:form.description.trim(),p_youtube_video_id:form.youtube_video_id.trim(),p_access_mode:form.access_mode,p_is_published:form.is_published})
+  const {error:saveError}=await supabase.rpc('owner_upsert_educational_video',{p_id:editingId,p_slug:form.slug.trim().toLowerCase(),p_title:form.title.trim(),p_description:form.description.trim(),p_youtube_video_id:form.youtube_video_id.trim(),p_access_mode:form.access_mode,p_is_published:form.is_published})
   setBusy(false)
   if(saveError){setError('تعذر حفظ الفيديو. تحقق من صيغة الرابط ومعرّف YouTube وصلاحية المالك.');return}
   setNotice('تم حفظ إعداد الفيديو.');resetForm();await load()
@@ -75,7 +75,7 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
    <label className="video-publish-toggle"><input type="checkbox" checked={form.is_published} onChange={e=>setForm({...form,is_published:e.target.checked})}/> نشر الفيديو وإتاحته حسب نوع الوصول</label>
    <div className="video-admin-actions"><button className="btn btn-primary" disabled={busy}>{busy?'جارٍ الحفظ…':'حفظ الفيديو'}</button>{editingId&&<button className="btn btn-outline" type="button" onClick={resetForm}>إلغاء التعديل</button>}</div>
   </form>
-  <section className="video-admin-list"><h2>الفيديوهات المحفوظة</h2>{loading?'جارٍ التحميل…':videos.map(video=><article className="video-admin-row" key={video.id}><div><b>{video.title}</b><small dir="ltr">{video.slug}</small><small>{accessLabel(video.access_mode)} · {video.is_published?'منشور':'مسودة'} · {video.play_starts.toLocaleString('ar')} بدء تشغيل</small></div><div><button className="btn btn-outline btn-small" onClick={()=>editVideo(video)}>تعديل</button><button className="btn btn-outline btn-small" onClick={()=>void copyLink(video)}><Copy size={14}/> نسخ الرابط</button></div></article>)}</section>
+  <section className="video-admin-list"><h2>الفيديوهات المحفوظة</h2>{loading?'جارٍ التحميل…':adminVideos.map(video=><article className="video-admin-row" key={video.id}><div><b>{video.title}</b><small dir="ltr">{video.slug}</small><small>{accessLabel(video.access_mode)} · {video.is_published?'منشور':'مسودة'} · {video.play_starts.toLocaleString('ar')} بدء تشغيل</small></div><div><button className="btn btn-outline btn-small" onClick={()=>editVideo(video)}>تعديل</button><button className="btn btn-outline btn-small" onClick={()=>void copyLink(video)}><Copy size={14}/> نسخ الرابط</button></div></article>)}</section>
   <p className="video-privacy-note"><ShieldCheck size={16}/> عدد المشاهدات هنا يعني مرات بدء تشغيل الفيديو من الموقع، وليس مدة المشاهدة. YouTube Analytics يظل مرجع مدة المشاهدة والاحتفاظ بالمشاهدين.</p>
  </main>
  if(slug)return <main className="public-page wrap educational-videos-page" dir="rtl"><nav className="breadcrumbs"><Link to="/">الرئيسية</Link><span>/</span><Link to="/videos">الفيديوهات</Link><span>/</span><span>{current?.title||'مشاهدة الفيديو'}</span></nav>{loading?<p>جارٍ تحميل الفيديو…</p>:!current?<section className="video-unavailable"><LockKeyhole size={28}/><h1>الفيديو غير متاح بهذا الرابط.</h1><p>قد يكون الرابط خاصاً أو انتهت صلاحيته أو يتطلب حساب عضو معتمد.</p><Link className="btn btn-primary" to="/videos">العودة إلى مكتبة الفيديو</Link></section>:<><header className="educational-videos-heading"><div><span className="eyebrow">مكتبة مجتمع السيطرة</span><h1>{current.title}</h1><p>{current.description}</p></div></header><section className="video-player-shell">{playing?<iframe src={'https://www.youtube-nocookie.com/embed/'+current.youtube_video_id+'?autoplay=1&rel=0&playsinline=1'} title={current.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>:<button className="video-play-cover" onClick={()=>void startVideo()} disabled={busy}><img src={'https://i.ytimg.com/vi/'+current.youtube_video_id+'/hqdefault.jpg'} alt="" loading="lazy"/><span><Play size={26}/>{busy?'جارٍ التحقق…':'شاهد الفيديو'}</span></button>}</section>{error&&<p className="video-error" role="alert">{error}</p>}<p className="video-view-count"><Film size={16}/> {current.play_starts.toLocaleString('ar')} مرات بدء تشغيل من الموقع</p><Link to="/videos" className="text-link"><ArrowLeft size={15}/> مكتبة الفيديو</Link></>}</main>
