@@ -24,7 +24,7 @@ for (const route of manifest.routes) {
 }
 const privatePaths = new Set(['/survey/','/owner/videos/','/login/','/register/','/pending-review/','/reset-password/','/feed/','/profile/','/discover/','/connections/','/messages/','/notifications/','/groups/','/tools/','/feedback/','/team/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
-const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/','/waitlist/'])
+const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/','/waitlist/','/tracks/','/programs/','/innovation-hub/','/contribute/','/contact/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
 if (!publicRoutes.some(route => route.path === '/membership/')) fail.push('Public membership page missing from route manifest.')
