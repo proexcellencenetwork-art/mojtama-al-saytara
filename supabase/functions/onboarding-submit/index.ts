@@ -52,6 +52,10 @@ Deno.serve(async (req: Request) => {
   const goal = typeof input.goal === 'string' ? input.goal : ''
   const selectedPath = typeof input.selectedPath === 'string' ? input.selectedPath : ''
   const sourcePath = typeof input.sourcePath === 'string' && input.sourcePath.startsWith('/') ? input.sourcePath.split(/[?#]/)[0].slice(0, 300) : '/'
+  const visitorId = typeof input.visitorId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.visitorId) ? input.visitorId : null
+  let sourceReferrer: string | null = null
+  try { if (typeof input.sourceReferrer === 'string' && input.sourceReferrer) sourceReferrer = new URL(input.sourceReferrer).hostname.slice(0, 160) } catch { /* Ignore malformed referrer. */ }
+  const sourceCampaign = typeof input.sourceCampaign === 'string' ? input.sourceCampaign.slice(0, 160) : null
   const validUserTypes = new Set(['professional', 'job_seeker', 'graduate', 'coach', 'researcher', 'innovator', 'other'])
   const validGoals = new Set(['job', 'skills', 'promotion', 'transition', 'leadership', 'explore'])
   const validSpecialties = new Set(['تقنية وذكاء اصطناعي', 'صحة وعلوم طبية', 'إدارة وأعمال', 'هندسة', 'مالية ومحاسبة', 'موارد بشرية', 'تعليم وبحث علمي', 'أخرى'])
@@ -92,6 +96,9 @@ Deno.serve(async (req: Request) => {
     marketing_opt_in: input.marketingOptIn,
     marketing_consent_at: input.marketingOptIn ? new Date(now).toISOString() : null,
     source_path: sourcePath,
+    visitor_id: visitorId,
+    source_referrer: sourceReferrer,
+    source_campaign: sourceCampaign,
   }).select('id').single()
 
   if (leadError?.code === '23505') return json(req, { error: 'already_registered' }, 409)
