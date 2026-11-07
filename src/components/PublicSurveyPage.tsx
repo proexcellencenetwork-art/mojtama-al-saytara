@@ -29,7 +29,7 @@ export default function PublicSurveyPage(){
  }
  return <main className="public-survey-page wrap" dir="rtl">
   <nav className="breadcrumbs"><Link to="/">الرئيسية</Link><span>/</span><span>استبيان تجربة الزائر</span></nav>
-  <header className="public-survey-heading"><span className="eyebrow"><HeartHandshake size={15}/> صوتك يطوّر المجتمع</span><h1>شاركنا رأيك في تجربتك</h1><p>استبيان قصير يساعدنا على معرفة ما كان مفيداً وما يحتاج إلى تحسين. لا نطلب اسمك أو بريدك الإلكتروني.</p></header>
+  <header className="public-survey-heading"><span className="eyebrow"><HeartHandshake size={15}/> صوتك يطوّر المجتمع</span><h1>شاركنا رأيك في تجربتك</h1><p>استبيان قصير يساعدنا على معرفة ما كان مفيداً وما يحتاج إلى تحسين. لا نطلب اسمك أو بريدك الإلكتروني؛ نستخدم معرّفاً تقنياً مستعاراً لمنع تكرار الرد.</p></header>
   {done?<section className="public-survey-success"><CheckCircle2 size={42}/><h2>وصلنا رأيك، شكرًا لك.</h2><p>سنستخدم الإجابات المجمّعة لتحسين المحتوى والأدوات وتجربة الاستخدام.</p><Link className="btn btn-primary" to="/">العودة إلى مجتمع السيطرة</Link></section>:
   <form className="public-survey-form" onSubmit={submit}>
    <section className="survey-question"><span className="survey-step">01</span><div><h2>كيف تقيّم تجربتك بشكل عام؟</h2><p>من غير راضٍ إلى راضٍ جداً.</p></div><div className="survey-scale">{[1,2,3,4,5].map(n=><button type="button" key={n} className={overall===n?'selected':''} aria-pressed={overall===n} onClick={()=>setOverall(n)}>{n}</button>)}</div><div className="survey-scale-labels"><span>غير راضٍ</span><span>راضٍ جداً</span></div></section>
@@ -39,7 +39,7 @@ export default function PublicSurveyPage(){
    <section className="survey-question"><span className="survey-step">05</span><div><h2>وش أكثر شيء يحتاج إلى تحسين؟</h2></div><div className="survey-options">{improvementOptions.map(([v,label])=><label key={v}><input type="radio" name="improvement" checked={improvement===v} onChange={()=>setImprovement(v)}/><span>{label}</span></label>)}</div></section>
    <section className="survey-question"><span className="survey-step">06</span><div><h2>هل عندك اقتراح أو ملاحظة؟</h2><p>اختياري، بحد أقصى 500 حرف. لا تكتب معلومات شخصية أو سرية.</p></div><textarea value={comment} maxLength={500} rows={4} onChange={e=>setComment(e.target.value)} placeholder="اكتب ملاحظتك هنا…"/><small className="survey-char-count">{comment.length}/500</small></section>
    {error&&<p className="survey-error" role="alert">{error}</p>}
-   <div className="survey-submit-row"><p><ShieldCheck size={16}/> الاستبيان لا يطلب بيانات تعريفية. تُعرض النتائج للمالك بصورة مجمّعة.</p><button className="btn btn-primary" type="submit" disabled={busy}>{busy?'جارٍ الحفظ…':'إرسال رأيي'} <Send size={16}/></button></div>
+   <div className="survey-submit-row"><p><ShieldCheck size={16}/> لا نطلب بيانات تواصل. يُستخدم معرّف مستعار لمنع تكرار الرد، وتُعرض النتائج للمالك بصورة مجمّعة.</p><button className="btn btn-primary" type="submit" disabled={busy}>{busy?'جارٍ الحفظ…':'إرسال رأيي'} <Send size={16}/></button></div>
   </form>}
  </main>
 }
