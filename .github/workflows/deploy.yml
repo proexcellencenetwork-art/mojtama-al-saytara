@@ -47,6 +47,8 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          # Enable only after Google OAuth is configured and tested in Supabase Auth.
+          VITE_GOOGLE_AUTH_ENABLED: ${{ vars.VITE_GOOGLE_AUTH_ENABLED }}
           # Set true only after CAPTCHA is enabled in Supabase Auth and verified with a test signup.
           VITE_SUPABASE_CAPTCHA_ENFORCED: ${{ vars.VITE_SUPABASE_CAPTCHA_ENFORCED }}
           # Keep general registration closed; new members enter through approved invitations.
