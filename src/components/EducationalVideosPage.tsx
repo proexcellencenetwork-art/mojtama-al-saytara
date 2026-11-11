@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, Copy, Film, LockKeyhole, Play, Plus, RefreshCw, ShieldCheck, Video } from 'lucide-react'
+import { ArrowLeft, Copy, Film, LockKeyhole, Play, RefreshCw, ShieldCheck, Video } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
@@ -11,7 +11,7 @@ const blank={slug:'',title:'',description:'',youtube_video_id:'',access_mode:'pu
 const accessLabel=(mode:string)=>mode==='public'?'عام':mode==='unlisted'?'خاص بالرابط':'للأعضاء المعتمدين'
 export default function EducationalVideosPage({role,manage=false}:{role:Role;manage?:boolean}){
  const {slug}=useParams();const location=useLocation()
- const [videos,setVideos]=useState<VideoRow[]>([]),[current,setCurrent]=useState<PublicVideo|null>(null)
+ const [videos,setVideos]=useState<VideoRow[]>([]),[publicVideos,setPublicVideos]=useState<PublicVideo[]>([]),[current,setCurrent]=useState<PublicVideo|null>(null)
  const [form,setForm]=useState(blank),[editingId,setEditingId]=useState<string|null>(null)
  const [playing,setPlaying]=useState(false),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false)
  const [error,setError]=useState(''),[notice,setNotice]=useState('')
@@ -32,7 +32,7 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
   }else{
    const {data,error:loadError}=await supabase.rpc('list_public_educational_videos')
    if(loadError)setError('تعذر تحميل الفيديوهات العامة.')
-   else setVideos(Array.isArray(data)?data as PublicVideo[]:[])
+   else setPublicVideos(Array.isArray(data)?data as PublicVideo[]:[])
   }
   setLoading(false)
  },[manage,owner,slug,token])
@@ -42,7 +42,7 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
  async function saveVideo(event:React.FormEvent<HTMLFormElement>){
   event.preventDefault();if(!supabase||busy)return
   setBusy(true);setError('');setNotice('')
-  const {data,error:saveError}=await supabase.rpc('owner_upsert_educational_video',{p_id:editingId,p_slug:form.slug.trim().toLowerCase(),p_title:form.title.trim(),p_description:form.description.trim(),p_youtube_video_id:form.youtube_video_id.trim(),p_access_mode:form.access_mode,p_is_published:form.is_published})
+  const {error:saveError}=await supabase.rpc('owner_upsert_educational_video',{p_id:editingId,p_slug:form.slug.trim().toLowerCase(),p_title:form.title.trim(),p_description:form.description.trim(),p_youtube_video_id:form.youtube_video_id.trim(),p_access_mode:form.access_mode,p_is_published:form.is_published})
   setBusy(false)
   if(saveError){setError('تعذر حفظ الفيديو. تحقق من صيغة الرابط ومعرّف YouTube وصلاحية المالك.');return}
   setNotice('تم حفظ إعداد الفيديو.');resetForm();await load()
@@ -79,5 +79,5 @@ export default function EducationalVideosPage({role,manage=false}:{role:Role;man
   <p className="video-privacy-note"><ShieldCheck size={16}/> عدد المشاهدات هنا يعني مرات بدء تشغيل الفيديو من الموقع، وليس مدة المشاهدة. YouTube Analytics يظل مرجع مدة المشاهدة والاحتفاظ بالمشاهدين.</p>
  </main>
  if(slug)return <main className="public-page wrap educational-videos-page" dir="rtl"><nav className="breadcrumbs"><Link to="/">الرئيسية</Link><span>/</span><Link to="/videos">الفيديوهات</Link><span>/</span><span>{current?.title||'مشاهدة الفيديو'}</span></nav>{loading?<p>جارٍ تحميل الفيديو…</p>:!current?<section className="video-unavailable"><LockKeyhole size={28}/><h1>الفيديو غير متاح بهذا الرابط.</h1><p>قد يكون الرابط خاصاً أو انتهت صلاحيته أو يتطلب حساب عضو معتمد.</p><Link className="btn btn-primary" to="/videos">العودة إلى مكتبة الفيديو</Link></section>:<><header className="educational-videos-heading"><div><span className="eyebrow">مكتبة مجتمع السيطرة</span><h1>{current.title}</h1><p>{current.description}</p></div></header><section className="video-player-shell">{playing?<iframe src={'https://www.youtube-nocookie.com/embed/'+current.youtube_video_id+'?autoplay=1&rel=0&playsinline=1'} title={current.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen/>:<button className="video-play-cover" onClick={()=>void startVideo()} disabled={busy}><img src={'https://i.ytimg.com/vi/'+current.youtube_video_id+'/hqdefault.jpg'} alt="" loading="lazy"/><span><Play size={26}/>{busy?'جارٍ التحقق…':'شاهد الفيديو'}</span></button>}</section>{error&&<p className="video-error" role="alert">{error}</p>}<p className="video-view-count"><Film size={16}/> {current.play_starts.toLocaleString('ar')} مرات بدء تشغيل من الموقع</p><Link to="/videos" className="text-link"><ArrowLeft size={15}/> مكتبة الفيديو</Link></>}</main>
- return <main className="public-page wrap educational-videos-page" dir="rtl"><header className="educational-videos-heading"><div><span className="eyebrow"><Video size={15}/> محتوى مرئي مجاني</span><h1>مكتبة الفيديو</h1><p>دروس ومقاطع مجانية من قناة مجتمع السيطرة المهنية، تشاهدها مباشرة من الموقع.</p></div>{owner&&<Link className="btn btn-outline btn-small" to="/owner/videos">إدارة مكتبة الفيديو</Link>}</header>{loading?<p>جارٍ تحميل الفيديوهات…</p>:error?<p className="video-error">{error}</p>:videos.length===0?<section className="video-unavailable"><Film size={30}/><h2>قريباً نضيف أول فيديو.</h2><p>ستظهر هنا المقاطع العامة بعد نشرها من لوحة المالك.</p></section>:<div className="educational-video-grid">{videos.map(video=><Link className="educational-video-card" key={video.id} to={'/videos/'+video.slug+'/'}><img src={'https://i.ytimg.com/vi/'+video.youtube_video_id+'/hqdefault.jpg'} alt="" loading="lazy"/><div><h2>{video.title}</h2><p>{video.description}</p><small>{video.play_starts.toLocaleString('ar')} مرات بدء تشغيل</small></div></Link>)}</div>}</main>
+ return <main className="public-page wrap educational-videos-page" dir="rtl"><header className="educational-videos-heading"><div><span className="eyebrow"><Video size={15}/> محتوى مرئي مجاني</span><h1>مكتبة الفيديو</h1><p>دروس ومقاطع مجانية من قناة مجتمع السيطرة المهنية، تشاهدها مباشرة من الموقع.</p></div>{owner&&<Link className="btn btn-outline btn-small" to="/owner/videos">إدارة مكتبة الفيديو</Link>}</header>{loading?<p>جارٍ تحميل الفيديوهات…</p>:error?<p className="video-error">{error}</p>:publicVideos.length===0?<section className="video-unavailable"><Film size={30}/><h2>قريباً نضيف أول فيديو.</h2><p>ستظهر هنا المقاطع العامة بعد نشرها من لوحة المالك.</p></section>:<div className="educational-video-grid" >{publicVideos.map(video=><Link className="educational-video-card" key={video.id} to={'/videos/'+video.slug+'/'}><img src={'https://i.ytimg.com/vi/'+video.youtube_video_id+'/hqdefault.jpg'} alt="" loading="lazy"/><div><h2>{video.title}</h2><p>{video.description}</p><small>{video.play_starts.toLocaleString('ar')} مرات بدء تشغيل</small></div></Link>)}</div>}</main>
 }
