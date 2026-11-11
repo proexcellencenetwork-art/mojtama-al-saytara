@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase'
 type Row = Record<string, unknown>
 type ProfileForm = { display_name: string; headline: string; profession: string; specialty: string; workplace: string; city: string; bio: string; experience_years: string; interests: string; goals: string }
 const emptyProfile: ProfileForm = { display_name: '', headline: '', profession: '', specialty: '', workplace: '', city: '', bio: '', experience_years: '', interests: '', goals: '' }
-const parseProfileTags = (value: string) => value.split(/[,،\\n]/).map(item => item.trim()).filter(Boolean).slice(0, 20)
+const parseProfileTags = (value: string) => value.split(/[,،\n]/).map(item => item.trim()).filter(Boolean).slice(0, 20)
 const titles: Record<string, string> = { profile: 'الملف الشخصي', discover: 'اكتشف الأعضاء', connections: 'الاتصالات', messages: 'الرسائل', notifications: 'الإشعارات', groups: 'المجموعات', verification: 'طلب التوثيق', moderation: 'لوحة الإشراف', admin: 'لوحة إدارة المجتمع' }
 const str = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback
 const canReview = (role: Role) => role === 'moderator' || role === 'manager' || role === 'owner'
