@@ -48,20 +48,13 @@ try {
   const waitlistHtml = await readFile(resolve(root,'dist/waitlist/index.html'),'utf8')
   if (!waitlistHtml.includes('<h1>') || !waitlistHtml.includes('rel="canonical"') || !waitlistHtml.includes('twitter:card')) throw new Error('Waitlist route must be rendered with metadata and an H1.')
   if (!waitlistHtml.includes('src=') || !routes.some(route => route.path === '/waitlist/')) throw new Error('Waitlist route must load the app and appear in the public route manifest.')
-  const signupReady = env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false' && Boolean(env.VITE_TURNSTILE_SITE_KEY?.trim()) && env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
   const registerHtml = await readFile(resolve(root,'dist/register/index.html'),'utf8')
   const faqHtml = await readFile(resolve(root,'dist/faq/index.html'),'utf8')
-  if (!signupReady) {
-    if (!registerHtml.includes('التسجيل العام موقوف مؤقتًا') && !registerHtml.includes('التسجيل العام متوقف مؤقتًا')) {
-      throw new Error('Registration HTML must fail closed until both Turnstile and Supabase Auth CAPTCHA are configured.')
-    }
-    if (registerHtml.includes('التسجيل مفتوح للجميع')) {
-      throw new Error('Registration HTML must not advertise open registration while signup security is unconfigured.')
-    }
-    if (!faqHtml.includes('التسجيل العام موقوف مؤقتًا') && !faqHtml.includes('التسجيل العام مغلق مؤقتًا')) {
-      throw new Error('Static FAQ must match the current closed or paused public-signup state.')
-    }
+  if (!registerHtml.includes('أنشئ ملفك وانضم إلى شبكة المهنيين')) {
+    throw new Error('Registration HTML must clearly show that public community signup is open.')
   }
+  if (!registerHtml.includes('تأكيد')) throw new Error('Registration HTML must tell new members to confirm their email.')
+  if (!faqHtml.includes('الانضمام مفتوح')) throw new Error('Static FAQ must state that public community signup is open.')
   const sitemap = await readFile(resolve(root,'dist/sitemap.xml'),'utf8')
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
   if (!sitemap.includes('<lastmod>2026-02-01T12:30:00.000Z</lastmod>')) throw new Error('Sitemap must expose the verified updated_at timestamp for a synthetic published article.')
