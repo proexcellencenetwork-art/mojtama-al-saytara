@@ -126,19 +126,17 @@ for (const route of privateRoutes) {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
     if (route.path === '/register/') {
-      const signupReady = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
-        && Boolean(process.env.VITE_TURNSTILE_SITE_KEY?.trim())
-        && process.env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
-      if (signupReady) {
-        if (!html.includes('أنشئ حسابك وأكّد بريدك الإلكتروني') || !html.includes('اعتماد الإدارة')) {
-          fail.push('Pre-rendered registration page must explain email confirmation and manager approval when signup security is configured.')
+      const signupEnabled = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
+      if (signupEnabled) {
+        if (!html.includes('أنشئ ملفك وانضم إلى شبكة المهنيين') || !html.includes('تأكيد البريد الإلكتروني')) {
+          fail.push('Pre-rendered registration page must clearly invite public signup and explain email confirmation.')
         }
       } else {
         const pausedCopyPresent = html.includes('التسجيل العام متوقف مؤقتًا')
           || html.includes('التسجيل العام مغلق حاليًا')
           || html.includes('التسجيل العام مغلق مؤقتًا')
-        if (!pausedCopyPresent || html.includes('التسجيل مفتوح للجميع')) {
-          fail.push('Pre-rendered registration page must pause public signup when Turnstile or Supabase Auth CAPTCHA is not configured.')
+        if (!pausedCopyPresent || html.includes('الانضمام مفتوح')) {
+          fail.push('Pre-rendered registration page must show paused copy when public signup is intentionally disabled.')
         }
       }
     }
