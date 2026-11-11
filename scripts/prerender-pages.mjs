@@ -13,37 +13,30 @@ const siteRoot = new URL(site.pathname.endsWith('/') ? site.pathname : `${site.p
 const basePath = siteRoot.pathname
 const appName = 'مجتمع السيطرة'
 const publicSignupEnabled = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
-const turnstileSiteKeyConfigured = Boolean(process.env.VITE_TURNSTILE_SITE_KEY?.trim())
-const supabaseAuthCaptchaEnforced = process.env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
-const publicSignupReady = publicSignupEnabled && turnstileSiteKeyConfigured && supabaseAuthCaptchaEnforced
+const publicSignupReady = publicSignupEnabled
 const publicSignupFaqAnswer = !publicSignupEnabled
-  ? 'التسجيل العام مغلق مؤقتًا. إذا وصلتك دعوة، استخدم تسجيل الدخول؛ أما الحسابات القائمة فلا تتأثر.'
-  : publicSignupReady
-    ? 'التسجيل العام متاح. أنشئ حسابك وأكّد بريدك الإلكتروني، ثم انتظر اعتماد الإدارة قبل دخول مساحة الأعضاء.'
-    : 'التسجيل العام موقوف مؤقتًا حتى تهيئة Cloudflare Turnstile وتفعيل CAPTCHA في Supabase Auth؛ بعد إعادة فتحه، يلزم تأكيد البريد واعتماد الإدارة.'
+  ? 'التسجيل العام مغلق مؤقتًا. استخدم تسجيل الدخول إذا كان لديك حساب قائم.'
+  : 'الانضمام مفتوح. أنشئ حسابك وأكّد بريدك الإلكتروني؛ يتفعّل حساب العضو تلقائياً بعد التأكيد، ثم أكمل ملفك ليظهر في الدليل المهني العام.'
 const registrationPageHeading = !publicSignupEnabled
   ? 'التسجيل العام متوقف مؤقتًا.'
-  : publicSignupReady
-    ? 'أنشئ حسابك وانضم إلى المجتمع.'
-    : 'نحمي مجتمعنا قبل فتح الحسابات.'
+  : 'أنشئ ملفك وانضم إلى شبكة المهنيين.'
 const registrationPageIntro = !publicSignupEnabled
-  ? 'التسجيل العام مغلق حاليًا. إذا وصلتك دعوة، استخدم تسجيل الدخول لمتابعة حسابك.'
-  : publicSignupReady
-    ? 'أنشئ حسابك وأكّد بريدك الإلكتروني، ثم انتظر اعتماد الإدارة قبل دخول مساحة الأعضاء.'
-    : 'التسجيل العام متوقف مؤقتًا حتى اكتمال إعداد Cloudflare Turnstile وتفعيل CAPTCHA في Supabase Auth. يمكنك استكشاف الأدوات المهنية العامة في هذه الأثناء.'
-const registrationPageDescription = publicSignupReady
-  ? 'أنشئ حسابًا، وأكّد بريدك الإلكتروني، وانتظر اعتماد الإدارة قبل دخول مساحة الأعضاء.'
+  ? 'التسجيل العام مغلق حاليًا. استخدم تسجيل الدخول لمتابعة حسابك.'
+  : 'أنشئ حسابك وأكّد بريدك الإلكتروني؛ بعد التأكيد تدخل المجتمع مباشرة. أكمل التخصص والخبرة والنبذة وما تبحث عنه حتى يظهر ملفك في الدليل المهني العام.'
+const registrationPageDescription = publicSignupEnabled
+  ? 'التسجيل مفتوح في مجتمع السيطرة المهنية؛ تأكيد البريد يفعّل العضوية الأساسية والدليل المهني العام.'
   : 'حالة التسجيل وتعليمات الدخول إلى مجتمع السيطرة المهنية.'
-const publicSignupCtaPath = publicSignupReady ? '/register' : '/career-journey'
-const publicSignupCtaLabel = publicSignupReady ? 'انضم للمجتمع' : 'ابدأ رحلتك المهنية'
+const publicSignupCtaPath = publicSignupEnabled ? '/register' : '/career-journey'
+const publicSignupCtaLabel = publicSignupEnabled ? 'انضم للمجتمع' : 'ابدأ رحلتك المهنية'
 const ogImage = new URL(`${basePath.replace(/\/$/, '')}/og-social.png`, site.origin).toString()
 const builtIndex = await readFile(resolve(distDir, 'index.html'), 'utf8')
 const criticalCss = await readFile(resolve(projectRoot, 'scripts/public-critical.css'), 'utf8')
 
 const pages = {
-  '/': { title: 'مجتمع السيطرة المهنية | بناء المسار والأثر', description: 'مجتمع مهني في السعودية يساعد الخريجين والباحثين عن عمل والمهنيين على تحديد المسار، وتطوير المهارات، وإبراز الإنجازات والقيمة المهنية.', heading: 'ابنِ مسارك المهني بوضوح، وحوّل خبرتك إلى أثر قابل للإثبات.', intro: 'منصة تطوير مهني للمهنيين والكوتشات والباحثين والمبتكرين. ننطلق من واقع سوق العمل السعودي، ونخدم القطاع الصحي بعمق ضمن شبكة أوسع من التخصصات المهنية.', type: 'home' },
+  '/': { title: 'مجتمع السيطرة المهنية | إثبات القيمة المهنية', description: 'مجتمع مهني في السعودية يساعد المهنيين على توثيق أثر العمل وبناء ملف إنجازات واضح، ويوفر للخريجين والباحثين عن عمل أدوات مجانية لتحديد المسار وإظهار المهارات.', heading: 'ابنِ مسارك المهني بوضوح، وحوّل خبرتك إلى أثر قابل للإثبات.', intro: 'نساعد المهنيين على توثيق أثر أعمالهم وتحويل الخبرة إلى ملف إنجازات واضح يفهمه أصحاب العمل. ونوفر للخريجين والباحثين عن عمل أدوات ومحتوى مجاني لبناء الخطوة المهنية التالية.', type: 'home' },
   '/videos': { title: 'فيديوهات ودروس مهنية مجانية | مجتمع السيطرة', description: 'شاهد دروس مجتمع السيطرة المهنية ومقاطع YouTube المجانية مباشرة من الموقع.', heading: 'مكتبة الفيديو', intro: 'دروس ومقاطع مجانية من قناة مجتمع السيطرة المهنية، تشاهدها مباشرة من الموقع.', type: 'career_hub', interactive: true, related: [['/career-journey','الرحلة المهنية'],['/articles','مقالات المجتمع']] },
-  '/waitlist': { title: 'قائمة الاهتمام المبكر | مجتمع السيطرة', description: 'تعرّف على حالة استقبال طلبات الاهتمام المبكر وشروط الخصوصية قبل مشاركة بياناتك.', heading: 'قائمة الاهتمام المبكر', intro: 'تعرّف على حالة استقبال الطلبات. لا ننشئ حساباً أو نفعّل عضوية تلقائياً، ولا نحفظ بياناتك إذا كانت القائمة متوقفة.', type: 'career_tool', interactive: true, points: [['حالة الاستقبال', 'نوضح ما إذا كان استقبال الطلبات متاحاً قبل طلب أي بيانات.'], ['البيانات المطلوبة عند الفتح', 'الاسم والبريد ونوع المستخدم والمجال المهني والهدف، مع موافقة معالجة منفصلة.'], ['منع التكرار والرسائل غير المطلوبة', 'نمنع تكرار البريد ونفصل الموافقة على المعالجة عن الموافقة التسويقية.']], related: [['/privacy','سياسة الخصوصية'],['/career-journey','الرحلة المهنية'],['/articles','مقالات المجتمع']] },
+  '/professionals': { title: 'دليل المهنيين | مجتمع السيطرة', description: 'اكتشف الخبرات والتخصصات ومجالات العمل والفرص التي يبحث عنها أعضاء مجتمع السيطرة المهنية.', heading: 'دليل المهنيين', intro: 'تعرّف على أصحاب الخبرات والتخصصات، وما يعملون عليه، وما يبحثون عنه من فرص وظيفية أو تعاون مهني. أنشئ ملفك ليصبح حضورك المهني قابلاً للاكتشاف.', type: 'professionals', interactive: true },
+  '/waitlist': { title: 'الانضمام المفتوح | مجتمع السيطرة المهنية', description: 'التسجيل مفتوح في شبكة مجتمع السيطرة المهنية. أكّد بريدك وأكمل ملفك العام حتى تظهر خبرتك وأهدافك المهنية في الدليل.', heading: 'الانضمام إلى المجتمع مفتوح الآن', intro: 'لم تعد هناك قائمة انتظار. أنشئ حسابك، أكّد بريدك الإلكتروني، وأكمل ملفك المهني حتى يستطيع أصحاب العمل والمهنيون التعرف على خبرتك وما تبحث عنه.', type: 'career_tool', interactive: true, points: [['إنشاء الحساب', 'التسجيل متاح مباشرة عبر البريد الإلكتروني وكلمة مرور.'], ['تفعيل العضوية', 'تأكيد البريد الإلكتروني يفعّل عضوية المجتمع الأساسية تلقائياً دون موافقة مدير.'], ['الظهور المهني', 'أكمل الاسم المهني والتخصص والخبرة والنبذة والاهتمامات وما تبحث عنه ليظهر ملفك في الدليل العام.']], related: [['/register','إنشاء حساب'],['/professionals','الدليل المهني'],['/membership','العضوية والبرامج']] },
   '/about': { title: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية', description: 'رؤية ورسالة وأهداف مجتمع السيطرة المهنية: التقدم المهني والابتكار والبحث، ضمن شبكة سعودية تربط المعرفة بالتطبيق والأثر.', heading: 'مجتمع واحد. هوية واحدة. شبكة تصنع أثرًا.', intro: 'مجتمع السيطرة المهنية شبكة تطوير مهني متعددة التخصصات تنطلق من واقع السوق السعودي وتربط التقدم المهني والابتكار والبحث. نساعد الأفراد على اتخاذ قرارات مهنية أوعى، وإظهار قيمة خبراتهم، وبناء حلول وأدلة قابلة للمراجعة؛ من دون وعود بوظيفة أو ترقية أو دخل، ومن دون استبدال المصادر والجهات الرسمية.', points: [['الأمان والاحترام أولًا', 'نحمي الخصوصية ونحترم اختلاف الخبرات، ونمنع نشر معلومات المرضى أو أسرار جهات العمل.'], ['الدليل قبل الادعاء', 'نوضح مصادر المحتوى وحدوده، ونفرّق بين الحقائق والفرضيات والتجارب التي لم تُختبر بعد.'], ['التطبيق قبل التكديس', 'نحوّل التعلم إلى أدوات وتمارين وخطوات صغيرة يمكن تجربتها ومراجعتها.'], ['التعاون بدل العزلة', 'نربط الأفراد بالمعرفة والزملاء والفرص المناسبة دون ادعاء شراكات أو اعتماد غير مثبت.']] },
   '/coaching': { title: 'كوتشنج مهني للقطاع الصحي | مجتمع السيطرة', description: 'مساحة حوار مهني تساعد العاملين في الرعاية الصحية على توضيح أهدافهم وخياراتهم.', heading: 'مساحة للتفكير. وخطوة تنبع منك.', intro: 'الكوتشنج حوار مهني يساعدك على توضيح أهدافك وخياراتك، واستكشاف الخطوات التي تناسبك في مسيرتك.', points: [['تطوير المسار', 'رؤية أوضح لأهدافك وخياراتك المهنية.'], ['إدارة الضغط', 'مساحة للتأمل في التحديات وحدودك.'], ['اتخاذ القرار', 'تحويل الأفكار إلى خطوات قابلة للتجربة.']], type: 'service' },
   '/coaches': { title: 'دليل الكوتشات | مجتمع السيطرة', description: 'تعرّف على الكوتشات والملفات المهنية العامة المنشورة في مجتمع السيطرة.', heading: 'تعرّف على من يصغي إلى رحلتك.', intro: 'كوتشات بخبرات متنوعة ومساحات حوار مهنية، مع ملفات عامة عند توفرها في المجتمع.', type: 'coaches' },
@@ -133,7 +126,7 @@ function schemaFor(route, page, record = null) {
   if (page.type === 'service') list.push({ '@context': 'https://schema.org', '@type': 'Service', name: 'الكوتشنج المهني للقطاع الصحي', serviceType: 'Professional coaching', provider: { '@type': 'Organization', name: appName, url: urlFor('/') }, areaServed: { '@type': 'Country', name: 'السعودية' }, description: page.intro, url: urlFor(route) })
   if (page.type === 'faq') list.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: questions.map(([question, answer]) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) })
   if (page.type === 'course') list.push({ '@context': 'https://schema.org', '@type': 'Course', name: page.heading, description: page.intro, provider: { '@type': 'Organization', name: appName, url: urlFor('/') }, url: urlFor(route), inLanguage: 'ar' })
-  if (['career_hub','career_tool','course'].includes(page.type)) list.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: page.heading, description: page.intro, url: urlFor(route), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: appName, url: urlFor('/') } })
+  if (['career_hub','career_tool','course','professionals'].includes(page.type)) list.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: page.heading, description: page.intro, url: urlFor(route), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: appName, url: urlFor('/') } })
   if (record?.kind === 'article') list.push({ '@context': 'https://schema.org', '@type': 'Article', headline: record.title, description: record.excerpt || record.title, ...(sitemapDate(record.published_at) ? { datePublished: sitemapDate(record.published_at) } : {}), ...(sitemapDate(record.updated_at) ? { dateModified: sitemapDate(record.updated_at) } : {}), inLanguage: 'ar', mainEntityOfPage: urlFor(route), publisher: { '@type': 'Organization', name: appName, url: urlFor('/') } })
   if (record?.kind === 'event') list.push({ '@context': 'https://schema.org', '@type': 'Event', name: record.title, description: record.description || record.title, startDate: record.starts_at, ...(record.ends_at ? { endDate: record.ends_at } : {}), eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode', eventStatus: 'https://schema.org/EventScheduled', location: { '@type': 'VirtualLocation', url: urlFor(route) }, organizer: { '@type': 'Organization', name: appName, url: urlFor('/') }, inLanguage: 'ar' })
   if (record?.kind === 'coach') list.push({ '@context': 'https://schema.org', '@type': 'Person', name: record.display_name, jobTitle: record.headline || record.profession, description: record.public_bio || page.description, url: urlFor(route), knowsAbout: record.coaching_topics || [] })
@@ -174,25 +167,36 @@ function brandIllustration() {
   return `<section class="brand-visual"><div><span class="eyebrow">مساحة تجمعنا</span><h2>مهنية، إنسانية، ومتّصلة.</h2><p>نؤمن أن النمو المهني يصبح أعمق حين يجد الإنسان حوله مجتمعاً يحترم خبرته وحدوده ويشجّع التواصل الهادف.</p></div><picture>${avif}${webp}<img src="${ogImage}" srcset="${assetUrl('images/brand-community-480.webp')} 480w, ${assetUrl('images/brand-community-1200.webp')} 1200w" sizes="${sizes}" width="1200" height="630" loading="lazy" decoding="async" alt="دوائر مترابطة وقلوب تعبّر عن التعاون والنمو المهني"></picture></section>`
 }
 function staticBody(route, page, records = []) {
+  if (page.type === 'professionals') {
+    const cards = records.map(record => {
+      const details = [record.profession,record.specialty,record.workplace,record.city].filter(Boolean).join(' · ')
+      const goals = Array.isArray(record.goals) ? record.goals : []
+      const interests = Array.isArray(record.interests) ? record.interests : []
+      const photo = typeof record.photo_url === 'string' && (record.photo_url.startsWith('https://') || record.photo_url.startsWith('http://')) ? `<img class=\"professional-avatar\" src=\"${safeText(record.photo_url)}\" alt=\"\" loading=\"lazy\">` : `<span class=\"professional-avatar professional-avatar-fallback\">${safeText(String(record.display_name || 'م').trim().charAt(0))}</span>`
+      const chips = values => values.map(value => `<span>${safeText(value)}</span>`).join('')
+      return `<article class=\"professional-card\"><div class=\"professional-card-heading\">${photo}<div class=\"professional-identity\"><h2>${safeText(record.display_name)}</h2><p>${safeText(record.headline || record.profession || '')}</p></div></div><p class=\"professional-meta\">${safeText(details)}</p>${record.bio ? `<p class=\"professional-bio\">${safeText(record.bio)}</p>` : ''}${interests.length ? `<div class=\"professional-tags\"><b>مجالات الاهتمام</b><div>${chips(interests)}</div></div>` : ''}${goals.length ? `<div class=\"professional-tags professional-goals\"><b>يبحث عن</b><div>${chips(goals)}</div></div>` : ''}</article>`
+    }).join('')
+    return `<main id=\"main-content\" class=\"public-page wrap\">${breadcrumb(route,page)}<div class=\"public-page-copy\"><span class=\"eyebrow\">شبكة مجتمع السيطرة المهنية</span><h1>${safeText(page.heading)}</h1><p class=\"hero-lead\">${safeText(page.intro)}</p><p>ملفات مهنية عامة يختار أصحابها عرضها، وتشمل الخبرة والتخصص وجهة العمل والاهتمامات وما يبحثون عنه.</p></div>${records.length ? `<div class=\"professionals-grid\">${cards}</div>` : `<div class=\"panel-card empty-state\"><h2>كن من أوائل أصحاب الملفات المهنية</h2><p>أنشئ حسابك وأكمل ملفك العام حتى يظهر في الدليل.</p>${htmlLink('/register','أنشئ حسابك الآن','btn btn-primary')}</div>`}<nav class=\"related-links\" aria-label=\"روابط مرتبطة\"><b>انضم إلى الشبكة</b>${htmlLink('/register','أنشئ ملفك المهني')}${htmlLink('/membership','العضوية والبرامج')}</nav></main>`
+  }
   if (page.type === 'career_hub' || page.type === 'career_tool' || page.type === 'course') {
     const links = (page.related || []).map(([path,label]) => htmlLink(path,label)).join('')
     return `<main id="main-content" class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">${page.type === 'career_hub' ? 'ابدأ من هنا · رحلتك المهنية' : page.type === 'course' ? 'ورشة ذاتية' : 'أداة ومسار مهني'}</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div>${pointCards(page.points)}<nav class="related-links" aria-label="مسارات ومقالات مرتبطة"><b>تابع رحلتك</b>${links}</nav><div class="coaching-note"><p>الأدوات محلية ولا ترفع إجاباتك. المحتوى معلومات مهنية ولا يضمن وظيفة أو ترقية؛ راجع المصادر والسياسات المناسبة لسياقك.</p></div></main>`
   }
   if (page.type === 'home') {
     const benefits = [
-      ['تقييم أولي للمسار المهني','تحديد المرحلة الحالية والهدف والتحديات التي تحتاج إلى معالجة.'],
-      ['خطة خطوات قابلة للتنفيذ','ترتيب الأولويات إلى إجراءات قصيرة ومخرجات يمكن مراجعتها.'],
+      ['ملف إنجازات قابل للإثبات','توثيق العمل والنتائج والسياق والأدلة المسموح بمشاركتها في ملف مهني واضح.'],
+      ['إظهار القيمة المهنية','ربط المهارات بالنتائج والسياق والأدلة بدلاً من الاكتفاء بوصف المسؤوليات.'],
       ['محتوى وورش متخصصة','مقالات وأدوات وورش تربط المعرفة بالتطبيق، مع إعلان المتاح فعلياً فقط.'],
       ['فرص للتواصل مع مهنيين','مساحة لبناء علاقات مهنية وتبادل خبرة ضمن ضوابط واضحة.'],
       ['مساحة للكوتشنج','توضيح الهدف والاستعداد لحوار مهني مناسب دون وعود بنتيجة مسبقة.'],
-      ['بناء الملف والإنجازات','توثيق العمل والنتائج والأدلة المسموح بمشاركتها وإبراز القيمة المهنية.'],
+      ['تحديد الخطوة التالية','ترتيب هدف مهني واحد إلى إجراء قصير ومخرج يمكن مراجعته وقياسه.'],
     ]
     const paths = [
-      ['أطوّر مساري المهني','أحدد موقعي الحالي، وأرتّب المهارات والإنجازات والخطوة التالية.','بوصلة مهنية وخطة عمل أولية.','/career-compass','ابدأ تقييم المسار'],
-      ['أبحث عن كوتشنج','أوضح تحدياً أو قراراً مهنياً وأتعرف على طبيعة الكوتشنج قبل طلب جلسة.','فهم أوضح لما تحتاجه قبل اختيار الكوتش.','/coaching','تعرّف على الكوتشنج'],
-      ['أبني مشروعاً أو حلاً مبتكراً','أحوّل فكرة أو مشكلة مهنية إلى فرضية وتجربة وخطوات تطوير.','مسار أولي لاختبار الفكرة وتطويرها.','/innovation-rd','استكشف مسار الابتكار'],
-      ['أعمل في البحث أو التعاون العلمي','أربط الاهتمام البحثي بالبيانات والمنهجية والتعاون المسؤول.','نقطة بداية أوضح للتعلّم والتعاون.','/articles','استكشف المعرفة المنشورة'],
-      ['أنضم ككوتش أو خبير','أتعرف على معايير الظهور المهني وآلية بناء ملف عام موثوق.','تسجيل اهتمام دون ادعاء اعتماد أو نشر ملف تلقائي.','/waitlist','سجّل اهتمامك كخبير'],
+      ['أبني ملف إنجازاتي المهنية','أوثّق الأثر والنتائج والأدلة المسموح بمشاركتها في ملف واضح ومهني.','مسودة ملف إنجازات قابلة للمراجعة.','/achievement-portfolio','ابدأ ملف الإنجاز'],
+      ['أبدأ مساري كخريج أو باحث عن عمل','أرتب مهاراتي ومشاريعي وأحدد أول خطوة عملية نحو سوق العمل.','مسار أولي وأدلة مناسبة لبداية المسيرة.','/fresh-graduate','ابدأ من مسار الخريج'],
+      ['أبحث عن كوتشنج مهني','أوضح تحدياً أو قراراً مهنياً وأتعرف على طبيعة الحوار المهني قبل طلب جلسة.','فهم أوضح لما تحتاجه قبل اختيار المساندة المناسبة.','/coaching','تعرّف على الكوتشنج'],
+      ['أطوّر حلاً أو مساراً مبتكراً','أحوّل فكرة أو مشكلة إلى فرضية وتجربة وخطوات تطوير قابلة للمراجعة.','مسار أولي لاختبار الفكرة وتطويرها.','/innovation-rd','استكشف مسار الابتكار'],
+      ['أتعلم وأبحث بمسؤولية','أستخدم المعرفة والمصادر والبيانات لفهم تحدٍّ مهني أو صحي وبناء تعاون مسؤول.','مصادر أوضح وخطوة تعلم قابلة للتطبيق.','/articles','استكشف المعرفة المنشورة'],
     ]
     const benefitCards = benefits.map((item,index) =>
       '<article class="feature-card"><span class="feature-count">0' + (index+1) + '</span><h3>' + safeText(item[0]) + '</h3><p>' + safeText(item[1]) + '</p></article>'
@@ -201,12 +205,12 @@ function staticBody(route, page, records = []) {
       '<article class="journey-path-card"><span class="journey-path-index">0' + (index+1) + '</span><h3>' + safeText(item[0]) + '</h3><p>' + safeText(item[1]) + '</p><div class="journey-outcome"><b>النتيجة المتوقعة</b><span>' + safeText(item[2]) + '</span></div>' + htmlLink(item[3],item[4] + ' ←','btn btn-outline') + '</article>'
     ).join('')
     return '<main id="main-content">' +
-      '<section class="hero wrap journey-hero"><div class="hero-copy"><div class="eyebrow">مجتمع السيطرة المهنية · مساحة للتقدم والابتكار والبحث</div><h1>ابنِ مسارك المهني بوضوح،<br><em>وحوّل خبرتك إلى أثر قابل للإثبات</em></h1><p class="hero-lead">' + safeText(page.intro) + '</p><div class="hero-actions">' + htmlLink('/career-compass','ابدأ تقييمك المهني','btn btn-primary') + htmlLink('/waitlist','انضم إلى قائمة الانتظار','btn btn-outline') + '</div><div class="hero-proof"><span class="proof-badge">✓</span><span><b>التسجيل العام غير متاح حالياً</b><small>يمكنك استكشاف المحتوى والأدوات العامة. تعرض صفحة الاهتمام حالة الاستقبال قبل طلب بياناتك.</small></span></div></div><div class="hero-art" aria-hidden="true"></div></section>' +
+      '<section class="hero wrap journey-hero"><div class="hero-copy"><div class="eyebrow">مجتمع السيطرة المهنية · شبكة مهنية مفتوحة</div><h1>اجعل خبرتك مرئية،<br><em>وحوّل إنجازاتك إلى فرص</em></h1><p class="hero-lead">' + safeText(page.intro) + '</p><div class="hero-actions">' + htmlLink('/register','انضم إلى المجتمع الآن','btn btn-primary') + htmlLink('/professionals','استكشف الدليل المهني','btn btn-outline') + '</div><div class="hero-proof"><span class="proof-badge">✓</span><span><b>الانضمام مفتوح الآن</b><small>أكّد بريدك وأكمل ملفك المهني ليظهر في الدليل العام.</small></span></div></div><div class="hero-art" aria-hidden="true"></div></section>' +
       '<section class="section wrap journey-benefits"><div class="section-heading"><div><span class="eyebrow">قيمة عملية وليست وعوداً عامة</span><h2>ماذا ستحصل عليه داخل المجتمع؟</h2><p>نربط التعلّم بخطوة واضحة ومخرج مهني يمكن تطويره ومراجعته.</p></div></div><div class="feature-grid">' + benefitCards + '</div></section>' +
       '<section class="section wrap journey-paths"><div class="section-heading"><div><span class="eyebrow">مسارات مختلفة، وخطوة تناسب هدفك</span><h2>اختر طريقك</h2><p>لا تحتاج إلى معرفة كل شيء الآن. اختر ما تريد العمل عليه أولاً.</p></div></div><div class="journey-path-grid">' + pathCards + '</div></section>' +
       '<section class="section wrap journey-steps"><div class="section-heading"><div><span class="eyebrow">بداية بسيطة وواضحة</span><h2>كيف تبدأ؟</h2></div></div><ol class="journey-step-grid"><li><span>01</span><h3>اختر هدفك</h3><p>حدد ما إذا كنت تطوّر مسارك أو تبحث عن كوتشنج أو تبني مشروعاً أو تبحث عن تعاون.</p></li><li><span>02</span><h3>أكمل التقييم أو الملف المهني</h3><p>استخدم الأدوات العامة أو جهّز معلوماتك المهنية دون إدخال بيانات حساسة.</p></li><li><span>03</span><h3>احصل على الخطوة التالية المناسبة لك</h3><p>ابدأ بخطوة قابلة للتنفيذ، ثم راجع تقدمك وأدلتك مع الوقت.</p></li></ol></section>' +
-      '<section class="section wrap journey-trust"><div><span class="eyebrow">الشفافية قبل الأرقام</span><h2>نبني المجتمع على أساس موثوق.</h2><p>نحن في مرحلة بناء المجتمع الأولية، ونهيّئ قائمة الاهتمام المبكر بعد استكمال مراجعة الخصوصية. لن نعرض أعداد أعضاء أو ملفات كوتشات أو تجارب مستخدمين إلا إذا كانت حقيقية ومراجعة وبموافقة أصحابها.</p><p class="journey-trust-note">لا توجد حالياً عضوية عامة مفتوحة، ولا نعد بفرصة وظيفية أو ترقية أو زيادة دخل.</p></div><div class="journey-trust-links">' + htmlLink('/articles','اقرأ المقالات المتاحة') + htmlLink('/career-journey','استكشف أدوات الرحلة المهنية') + htmlLink('/linkedin-workshop','افتح ورشة LinkedIn الذاتية') + '</div></section>' +
-      '<section class="section wrap join-section"><div><span class="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>ابدأ من هدف واضح، ثم ابنِ دليلك المهني.</h2><p>استكشف الأدوات المتاحة أو راجع حالة قائمة الاهتمام المبكر قبل مشاركة بياناتك.</p></div>' + htmlLink('/waitlist','تعرّف على قائمة الانتظار','btn btn-primary') + '</section></main>'
+      '<section class="section wrap journey-trust"><div><span class="eyebrow">الشفافية قبل الأرقام</span><h2>نبني المجتمع على أساس موثوق.</h2><p>المجتمع مفتوح للمهنيين والخريجين والباحثين عن فرص. اعرض خبرتك ومشاريعك واهتماماتك وما تبحث عنه، واكتشف أصحاب الخبرات الذين يمكن أن تتعاون معهم. لا نعد بوظيفة أو ترقية؛ نحن نوفر شبكة مهنية تجعل خبرتك قابلة للاكتشاف.</p><p class="journey-trust-note">بعد تأكيد البريد، تتفعّل العضوية الأساسية تلقائياً، ويظهر الملف في الدليل عندما تكمل بياناته العامة.</p></div><div class="journey-trust-links">' + htmlLink('/articles','اقرأ المقالات المتاحة') + htmlLink('/career-journey','استكشف أدوات الرحلة المهنية') + htmlLink('/linkedin-workshop','افتح ورشة LinkedIn الذاتية') + '</div></section>' +
+      '<section class="section wrap join-section"><div><span class="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>انضم إلى شبكة المهنيين.</h2><p>أنشئ ملفك المهني، وأكمل خبرتك واهتماماتك وما تبحث عنه، واجعل حضورك قابلاً للاكتشاف.</p></div>' + htmlLink('/register','أنشئ حسابك الآن','btn btn-primary') + '</section></main>'
   }
   if (page.type === 'faq') return `<main id="main-content" class="public-page wrap">${breadcrumb(route,page)}<div class="public-page-copy"><span class="eyebrow">الأسئلة الشائعة</span><h1>${safeText(page.heading)}</h1><p class="hero-lead">${safeText(page.intro)}</p></div><div class="public-points">${questions.map(([question,answer])=>`<article class="public-point"><div><h2>${safeText(question)}</h2><p>${safeText(answer)}</p></div></article>`).join('')}</div><nav class="related-links" aria-label="صفحات مرتبطة"><b>قد تهمك</b>${htmlLink('/coaching','الكوتشنج المهني')}${htmlLink('/membership','العضوية والمزايا')}${htmlLink('/privacy','سياسة الخصوصية')}${htmlLink('/register','إنشاء حساب')}</nav></main>`
   if (page.type === 'articles' || page.type === 'coaches' || page.type === 'events') {
@@ -289,10 +293,11 @@ async function readPublicRows(table, query) {
   }
 }
 const now = encodeURIComponent(new Date().toISOString())
-const [coachRows, articleRows, eventRows] = await Promise.all([
+const [coachRows, articleRows, eventRows, professionalRows] = await Promise.all([
   readPublicRows('public_coaches','select=user_id,display_name,headline,profession,specialty,city,photo_url,public_bio,coaching_topics&order=display_name.asc&limit=200'),
   readPublicRows('articles','select=id,title,slug,excerpt,body,published_at,updated_at&status=eq.published&order=published_at.desc&limit=200'),
   readPublicRows('events',`select=id,title,description,starts_at,ends_at,location&is_private=eq.false&moderation_state=eq.visible&starts_at=gte.${now}&order=starts_at.asc&limit=200`),
+  readPublicRows('profiles','select=user_id,username,display_name,headline,profession,specialty,workplace,bio,photo_url,experience_years,interests,goals,city&account_status=eq.approved&visibility=eq.public&order=display_name.asc&limit=250'),
 ])
 const editorialBundle = JSON.parse(await readFile(resolve(projectRoot, 'src/content/editorial-pipeline.json'), 'utf8'))
 const publishedCmsArticles = articleRows.filter(row => row.slug && row.title).map(row => ({ ...row, kind: 'article' }))
@@ -300,7 +305,7 @@ const articlesBySlug = new Map(publishedCmsArticles.map(row => [row.slug, row]))
 for (const seed of editorialBundle.articles || []) {
   if (!articlesBySlug.has(seed.slug) && seed.title && seed.slug && seed.content_body) articlesBySlug.set(seed.slug, { id: `seed-${seed.slug}`, title: seed.title, slug: seed.slug, excerpt: seed.excerpt, body: seed.content_body, kind: 'article' })
 }
-const recordsByPage = { '/coaches': coachRows.filter(row => row.user_id && row.display_name).map(row => ({ ...row, kind: 'coach' })), '/articles': [...articlesBySlug.values()], '/events': eventRows.filter(row => row.id && row.title && row.starts_at).map(row => ({ ...row, kind: 'event' })) }
+const recordsByPage = { '/coaches': coachRows.filter(row => row.user_id && row.display_name).map(row => ({ ...row, kind: 'coach' })), '/articles': [...articlesBySlug.values()], '/events': eventRows.filter(row => row.id && row.title && row.starts_at).map(row => ({ ...row, kind: 'event' })), '/professionals': professionalRows.filter(row => row.user_id && row.display_name) }
 for (const [route,page] of Object.entries(pages)) {
   ensureMetadataLimits(page)
   const records = recordsByPage[route] || []
@@ -316,6 +321,7 @@ routes.push(
   { path: '/learning-room/:id/', title: 'غرفة ورشة مهنية خاصة' },
 )
 for (const [collection,records] of Object.entries(recordsByPage)) {
+  if (collection === '/professionals') continue
   for (const record of records) {
     let route
     let page

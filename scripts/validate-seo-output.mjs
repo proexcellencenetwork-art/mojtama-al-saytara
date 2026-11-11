@@ -24,7 +24,7 @@ for (const route of manifest.routes) {
 }
 const privatePaths = new Set(['/survey/','/owner/videos/','/login/','/register/','/pending-review/','/reset-password/','/feed/','/profile/','/discover/','/connections/','/messages/','/notifications/','/groups/','/tools/','/feedback/','/team/','/verification/','/moderation/','/admin/','/settings/','/owner/','/owner/100ms/','/learning/','/content-studio/','/learning-room/'])
 const dynamicPatterns = new Set(['/articles/:slug/','/events/:id/','/coaches/:id/','/learning-room/:id/'])
-const interactiveRoutes = new Set(['/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/','/waitlist/'])
+const interactiveRoutes = new Set(['/professionals/','/videos/','/career-journey/','/career-compass/','/linkedin-audit/','/fresh-graduate/','/value-economy/','/achievement-portfolio/','/promotion-intelligence/','/innovation-rd/','/ai-career-leverage/','/saudi-labor-market-radar/','/professional-positioning/','/linkedin-workshop/','/waitlist/'])
 const publicRoutes = manifest.routes.filter(route => !privatePaths.has(route.path) && !dynamicPatterns.has(route.path))
 const privateRoutes = manifest.routes.filter(route => privatePaths.has(route.path))
 if (!publicRoutes.some(route => route.path === '/membership/')) fail.push('Public membership page missing from route manifest.')
@@ -126,19 +126,17 @@ for (const route of privateRoutes) {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
     if (route.path === '/register/') {
-      const signupReady = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
-        && Boolean(process.env.VITE_TURNSTILE_SITE_KEY?.trim())
-        && process.env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
-      if (signupReady) {
-        if (!html.includes('أنشئ حسابك وأكّد بريدك الإلكتروني') || !html.includes('اعتماد الإدارة')) {
-          fail.push('Pre-rendered registration page must explain email confirmation and manager approval when signup security is configured.')
+      const signupEnabled = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
+      if (signupEnabled) {
+        if (!html.includes('أنشئ ملفك وانضم إلى شبكة المهنيين') || !html.includes('أكّد بريدك الإلكتروني')) {
+          fail.push('Pre-rendered registration page must clearly invite public signup and explain email confirmation.')
         }
       } else {
         const pausedCopyPresent = html.includes('التسجيل العام متوقف مؤقتًا')
           || html.includes('التسجيل العام مغلق حاليًا')
           || html.includes('التسجيل العام مغلق مؤقتًا')
-        if (!pausedCopyPresent || html.includes('التسجيل مفتوح للجميع')) {
-          fail.push('Pre-rendered registration page must pause public signup when Turnstile or Supabase Auth CAPTCHA is not configured.')
+        if (!pausedCopyPresent || html.includes('الانضمام مفتوح')) {
+          fail.push('Pre-rendered registration page must show paused copy when public signup is intentionally disabled.')
         }
       }
     }

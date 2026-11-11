@@ -51,8 +51,8 @@ jobs:
           VITE_GOOGLE_AUTH_ENABLED: ${{ vars.VITE_GOOGLE_AUTH_ENABLED }}
           # Set true only after CAPTCHA is enabled in Supabase Auth and verified with a test signup.
           VITE_SUPABASE_CAPTCHA_ENFORCED: ${{ vars.VITE_SUPABASE_CAPTCHA_ENFORCED }}
-          # Keep general registration closed; new members enter through approved invitations.
-          VITE_PUBLIC_SIGNUP_ENABLED: 'false'
+          # Public community signup is open; email confirmation activates the basic member account.
+          VITE_PUBLIC_SIGNUP_ENABLED: 'true'
       - name: Stage root files for branch-based Pages
         run: npm run stage:pages
       - name: Commit generated branch-based Pages files

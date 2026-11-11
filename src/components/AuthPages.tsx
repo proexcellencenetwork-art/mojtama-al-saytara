@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, LockKeyhole, Sparkles } from 'lucide-react'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 import { isPublicSignupEnabled } from '../lib/supabase-config'
-import { isSignupSecurityConfigured, isTurnstileConfigured } from '../lib/turnstile-config'
+import { isTurnstileConfigured } from '../lib/turnstile-config'
 import { TurnstileChallenge } from './TurnstileChallenge'
 
 type AuthPageProps = { onDemo: () => void; onSignedIn: (user: User) => void }
@@ -76,14 +76,6 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
       setMessage('الحسابات الحقيقية غير مفعّلة بعد. استكشف نسخة التجربة الآن، أو أضف إعدادات Supabase كما في دليل الإعداد.')
       return
     }
-    // Fail closed for public registration when the Turnstile site key is absent.
-    // Supabase Auth CAPTCHA must also be enabled server-side; this client guard alone
-    // cannot prevent direct requests to the Auth API.
-    if (mode === 'register' && !isSignupSecurityConfigured) {
-      setIsError(true)
-      setMessage('التسجيل العام متوقف مؤقتًا حتى تفعيل Turnstile وتأكيد تفعيل CAPTCHA في Supabase Auth. يمكنك تسجيل الدخول إذا كان لديك حساب.')
-      return
-    }
     const captchaTokenForRequest = requireCaptchaToken()
     if (captchaTokenForRequest === null) return
     setBusy(true)
@@ -113,7 +105,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
         } else {
           if (data.session) await supabase.auth.signOut({ scope: 'local' })
           setCanResendConfirmation(true)
-          setMessage('أُنشئ الحساب. أكّد بريدك الإلكتروني ثم سجّل الدخول لمتابعة حالة الطلب؛ يتاح دخول مساحة الأعضاء بعد اعتماد الحساب.')
+          setMessage('أُنشئ الحساب. أكّد بريدك الإلكتروني ثم سجّل الدخول؛ بعد التأكيد تدخل المجتمع مباشرة، ويظهر ملفك في الدليل عندما تكمل بياناتك المهنية العامة.')
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password, options: captchaTokenForRequest ? { captchaToken: captchaTokenForRequest } : undefined })
@@ -196,10 +188,9 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
   }
 
   if (mode === 'register' && !isPublicSignupEnabled) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">الدخول بالدعوة فقط</span><h1>التسجيل العام متوقف مؤقتاً.</h1><p>أوقفنا إنشاء الحسابات الجديدة حتى اكتمال اختبارات القبول والأمان. لن تُقبل حسابات عامة في هذه المرحلة.</p></div><div className="inline-message" role="status">إذا وصلتك دعوة على بريدك، افتح رسالة Supabase ثم أكّد البريد. للحسابات الموجودة، استخدم تسجيل الدخول أو استعادة كلمة المرور.</div><Link className="btn btn-primary btn-full" to="/login">الانتقال إلى تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch">وصلتك دعوة؟ افتح رابطها من بريدك الإلكتروني، ثم سجّل الدخول هنا إذا طُلب منك ذلك.</p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو روابط التأكيد لأحد.</small></div></main>
-  if (mode === 'register' && isPublicSignupEnabled && !isSignupSecurityConfigured) return <main className="auth-wrap"><div className="auth-card"><div className="auth-intro"><span className="eyebrow">التسجيل الآمن</span><h1>نحمي مجتمعنا قبل فتح الحسابات.</h1><p>التسجيل العام متوقف مؤقتًا حتى اكتمال إعداد Cloudflare Turnstile وتأكيد تفعيل CAPTCHA في Supabase Auth.</p></div><div className="inline-message" role="status">الحسابات الحالية لا تتأثر. يمكنك تسجيل الدخول أو استعادة كلمة المرور كالمعتاد.</div><Link className="btn btn-primary btn-full" to="/login">تسجيل الدخول <ArrowLeft size={16}/></Link><p className="auth-switch"><Link to="/privacy">سياسة الخصوصية</Link></p><small className="auth-privacy"><LockKeyhole size={13}/> لا ترسل كلمات المرور أو رموز التحقق لأحد.</small></div></main>
   const heading = forgot ? 'استعادة كلمة المرور' : mode === 'login' ? 'أهلاً بعودتك.' : 'مكانك بيننا.'
   return <main className="auth-wrap"><div className="auth-card">
-    <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ حسابك وانضم إلى حوار مهني أكثر توازناً.'}</p></div>
+    <div className="auth-intro"><span className="eyebrow">{forgot ? 'نرسل رابطاً آمناً إلى بريدك' : mode === 'login' ? 'سعداء بعودتك' : 'خطوة مهنية جديدة'}</span><h1>{heading}</h1><p>{forgot ? 'أدخل البريد المستخدم في حسابك، وسنرسل رابطاً لاختيار كلمة مرور جديدة.' : mode === 'login' ? 'تابع مساحتك المهنية من حيث توقفت.' : 'أنشئ ملفك المهني، واعرض خبرتك ومشاريعك وما تبحث عنه من فرص وتعاون.'}</p></div>
     <form onSubmit={submit} className="auth-form">
       {mode === 'register' && !forgot && <label>الاسم الكامل<input autoComplete="name" required minLength={2} maxLength={100} value={displayName} onChange={event => setDisplayName(event.target.value)} placeholder="الاسم الذي سيظهر للأعضاء"/></label>}
       <label>البريد الإلكتروني<input autoComplete="email" type="email" required value={email} onChange={event => setEmail(event.target.value)} placeholder="name@example.com" dir="ltr"/></label>
@@ -214,7 +205,7 @@ export function LoginPage({ onDemo, onSignedIn }: AuthPageProps) {
     {(!isSupabaseConfigured || forgot) && <div className="auth-separator"><span>{forgot ? 'أو' : 'نسخة استعراض'}</span></div>}
     {!isSupabaseConfigured && <button className="btn btn-outline btn-full" onClick={() => { onDemo(); navigate('/feed') }}><Sparkles size={16}/> استكشف نسخة التجربة</button>}
     <p className="auth-switch">{forgot ? 'تذكرت كلمة المرور؟' : mode === 'login' ? 'ليس لديك حساب؟' : 'لديك حساب؟'} <button type="button" onClick={() => { setForgot(false); setCanResendConfirmation(false); setMessage(''); navigate(forgot ? '/login' : mode === 'login' ? '/register' : '/login') }}>{forgot ? 'العودة للدخول' : mode === 'login' ? 'أنشئ حساباً' : 'سجّل الدخول'}</button></p>
-    <p className="auth-waitlist-note">التسجيل العام غير متاح حالياً. <Link to="/waitlist">تعرّف على قائمة الاهتمام المبكر</Link></p>
+    <p className="auth-waitlist-note">الانضمام إلى المجتمع مفتوح. أكّد بريدك الإلكتروني، ثم أكمل ملفك ليظهر في الدليل المهني العام.</p>
     <small className="auth-privacy"><LockKeyhole size={13}/> لن نطلب بيانات صحية حساسة.</small>
   </div></main>
 }

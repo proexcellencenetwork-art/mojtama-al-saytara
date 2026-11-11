@@ -10,6 +10,7 @@ const fixtureRows = {
   public_coaches: [{ user_id: ids.coach, display_name: 'كوتش تجريبي', headline: 'كوتش مهني', profession: 'ممارس صحي', specialty: 'التطوير المهني', city: 'مدينة تجريبية', photo_url: null, public_bio: 'ملف تجريبي مولّد لاختبار HTML العام.', coaching_topics: ['المسار المهني'], session_minutes: [30,60], booking_enabled: false }],
   articles: [{ id: ids.article, title: 'مقال تجريبي للسيو', slug: 'مقال-تجريبي', excerpt: 'محتوى تجريبي لاختبار HTML وبيانات المقال.', body: 'نص اختبار عام لا يحتوي بيانات مستخدم أو مريض.', published_at: new Date('2026-01-01T00:00:00.000Z').toISOString(), updated_at: new Date('2026-02-01T12:30:00.000Z').toISOString() }],
   events: [{ id: ids.event, title: 'فعالية تجريبية', description: 'وصف فعالية مؤقتة لاختبار البيانات المنظمة.', starts_at: new Date(Date.now()+86400000).toISOString(), ends_at: new Date(Date.now()+90000000).toISOString(), location: 'افتراضي' }],
+  profiles: [{ user_id: '40000000-0000-4000-8000-000000000004', username: 'professional_demo', display_name: 'مهني تجريبي', headline: 'محلل بيانات صحية', profession: 'تحليل البيانات', specialty: 'البيانات الصحية', workplace: 'شركة تجريبية', bio: 'نبذة مهنية تجريبية لاختبار الدليل العام.', photo_url: null, experience_years: 4, interests: ['الذكاء الاصطناعي'], goals: ['فرصة عمل','تعاون مهني'], city: 'الرياض', account_status: 'approved', visibility: 'public' }],
 }
 const server = createServer((req,res) => {
   const table = new URL(req.url || '/', 'http://localhost').pathname.split('/').at(-1)
@@ -45,23 +46,18 @@ try {
     if (!html.includes('name="robots" content="noindex,nofollow"')) throw new Error(`Private learning shell must be noindex: ${relative}`)
   }
   if (!routes.some(route=>route.path==='/learning-room/:id/')) throw new Error('Dynamic workshop room route missing from the route manifest.')
+  const professionalsHtml = await readFile(resolve(root,'dist/professionals/index.html'),'utf8')
+  if (!professionalsHtml.includes('مهني تجريبي') || !professionalsHtml.includes('فرصة عمل')) throw new Error('Public professional directory must pre-render professional profile fields and goals.')
   const waitlistHtml = await readFile(resolve(root,'dist/waitlist/index.html'),'utf8')
   if (!waitlistHtml.includes('<h1>') || !waitlistHtml.includes('rel="canonical"') || !waitlistHtml.includes('twitter:card')) throw new Error('Waitlist route must be rendered with metadata and an H1.')
   if (!waitlistHtml.includes('src=') || !routes.some(route => route.path === '/waitlist/')) throw new Error('Waitlist route must load the app and appear in the public route manifest.')
-  const signupReady = env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false' && Boolean(env.VITE_TURNSTILE_SITE_KEY?.trim()) && env.VITE_SUPABASE_CAPTCHA_ENFORCED === 'true'
   const registerHtml = await readFile(resolve(root,'dist/register/index.html'),'utf8')
   const faqHtml = await readFile(resolve(root,'dist/faq/index.html'),'utf8')
-  if (!signupReady) {
-    if (!registerHtml.includes('التسجيل العام موقوف مؤقتًا') && !registerHtml.includes('التسجيل العام متوقف مؤقتًا')) {
-      throw new Error('Registration HTML must fail closed until both Turnstile and Supabase Auth CAPTCHA are configured.')
-    }
-    if (registerHtml.includes('التسجيل مفتوح للجميع')) {
-      throw new Error('Registration HTML must not advertise open registration while signup security is unconfigured.')
-    }
-    if (!faqHtml.includes('التسجيل العام موقوف مؤقتًا') && !faqHtml.includes('التسجيل العام مغلق مؤقتًا')) {
-      throw new Error('Static FAQ must match the current closed or paused public-signup state.')
-    }
+  if (!registerHtml.includes('أنشئ ملفك وانضم إلى شبكة المهنيين')) {
+    throw new Error('Registration HTML must clearly show that public community signup is open.')
   }
+  if (!registerHtml.includes('تأكيد')) throw new Error('Registration HTML must tell new members to confirm their email.')
+  if (!faqHtml.includes('الانضمام مفتوح')) throw new Error('Static FAQ must state that public community signup is open.')
   const sitemap = await readFile(resolve(root,'dist/sitemap.xml'),'utf8')
   if (!sitemap.includes(encodeURIComponent('مقال-تجريبي')) || !sitemap.includes(ids.event) || !sitemap.includes(ids.coach)) throw new Error('Synthetic public detail routes missing from sitemap.')
   if (!sitemap.includes('<lastmod>2026-02-01T12:30:00.000Z</lastmod>')) throw new Error('Sitemap must expose the verified updated_at timestamp for a synthetic published article.')
