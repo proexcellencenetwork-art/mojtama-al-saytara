@@ -126,7 +126,7 @@ function schemaFor(route, page, record = null) {
   if (page.type === 'service') list.push({ '@context': 'https://schema.org', '@type': 'Service', name: 'الكوتشنج المهني للقطاع الصحي', serviceType: 'Professional coaching', provider: { '@type': 'Organization', name: appName, url: urlFor('/') }, areaServed: { '@type': 'Country', name: 'السعودية' }, description: page.intro, url: urlFor(route) })
   if (page.type === 'faq') list.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: questions.map(([question, answer]) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) })
   if (page.type === 'course') list.push({ '@context': 'https://schema.org', '@type': 'Course', name: page.heading, description: page.intro, provider: { '@type': 'Organization', name: appName, url: urlFor('/') }, url: urlFor(route), inLanguage: 'ar' })
-  if (['career_hub','career_tool','course'].includes(page.type)) list.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: page.heading, description: page.intro, url: urlFor(route), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: appName, url: urlFor('/') } })
+  if (['career_hub','career_tool','course','professionals'].includes(page.type)) list.push({ '@context': 'https://schema.org', '@type': 'WebPage', name: page.heading, description: page.intro, url: urlFor(route), inLanguage: 'ar', isPartOf: { '@type': 'WebSite', name: appName, url: urlFor('/') } })
   if (record?.kind === 'article') list.push({ '@context': 'https://schema.org', '@type': 'Article', headline: record.title, description: record.excerpt || record.title, ...(sitemapDate(record.published_at) ? { datePublished: sitemapDate(record.published_at) } : {}), ...(sitemapDate(record.updated_at) ? { dateModified: sitemapDate(record.updated_at) } : {}), inLanguage: 'ar', mainEntityOfPage: urlFor(route), publisher: { '@type': 'Organization', name: appName, url: urlFor('/') } })
   if (record?.kind === 'event') list.push({ '@context': 'https://schema.org', '@type': 'Event', name: record.title, description: record.description || record.title, startDate: record.starts_at, ...(record.ends_at ? { endDate: record.ends_at } : {}), eventAttendanceMode: 'https://schema.org/OnlineEventAttendanceMode', eventStatus: 'https://schema.org/EventScheduled', location: { '@type': 'VirtualLocation', url: urlFor(route) }, organizer: { '@type': 'Organization', name: appName, url: urlFor('/') }, inLanguage: 'ar' })
   if (record?.kind === 'coach') list.push({ '@context': 'https://schema.org', '@type': 'Person', name: record.display_name, jobTitle: record.headline || record.profession, description: record.public_bio || page.description, url: urlFor(route), knowsAbout: record.coaching_topics || [] })
@@ -172,7 +172,7 @@ function staticBody(route, page, records = []) {
       const details = [record.profession,record.specialty,record.workplace,record.city].filter(Boolean).join(' · ')
       const goals = Array.isArray(record.goals) ? record.goals : []
       const interests = Array.isArray(record.interests) ? record.interests : []
-      const photo = typeof record.photo_url === 'string' && /^https?:\\/\\//i.test(record.photo_url) ? `<img class=\"professional-avatar\" src=\"${safeText(record.photo_url)}\" alt=\"\" loading=\"lazy\">` : `<span class=\"professional-avatar professional-avatar-fallback\">${safeText(String(record.display_name || 'م').trim().charAt(0))}</span>`
+      const photo = typeof record.photo_url === 'string' && (record.photo_url.startsWith('https://') || record.photo_url.startsWith('http://')) ? `<img class=\"professional-avatar\" src=\"${safeText(record.photo_url)}\" alt=\"\" loading=\"lazy\">` : `<span class=\"professional-avatar professional-avatar-fallback\">${safeText(String(record.display_name || 'م').trim().charAt(0))}</span>`
       const chips = values => values.map(value => `<span>${safeText(value)}</span>`).join('')
       return `<article class=\"professional-card\"><div class=\"professional-card-heading\">${photo}<div class=\"professional-identity\"><h2>${safeText(record.display_name)}</h2><p>${safeText(record.headline || record.profession || '')}</p></div></div><p class=\"professional-meta\">${safeText(details)}</p>${record.bio ? `<p class=\"professional-bio\">${safeText(record.bio)}</p>` : ''}${interests.length ? `<div class=\"professional-tags\"><b>مجالات الاهتمام</b><div>${chips(interests)}</div></div>` : ''}${goals.length ? `<div class=\"professional-tags professional-goals\"><b>يبحث عن</b><div>${chips(goals)}</div></div>` : ''}</article>`
     }).join('')
@@ -321,6 +321,7 @@ routes.push(
   { path: '/learning-room/:id/', title: 'غرفة ورشة مهنية خاصة' },
 )
 for (const [collection,records] of Object.entries(recordsByPage)) {
+  if (collection === '/professionals') continue
   for (const record of records) {
     let route
     let page
