@@ -71,7 +71,7 @@ function Brand({ light = false }: { light?: boolean }) {
 }
 function Verified({ role }: { role: Role }) { return role !== 'member' ? <span className={`verified-mark ${role === 'coach' ? 'coach-mark' : ''}`} title={roleNames[role]}><BadgeCheck size={14}/></span> : null }
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
-function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة للقطاع الصحي: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
+function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة لبناء القيمة وإظهار الأثر: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
 
 function Header({ demo, authenticated, accountStatus, displayName, role, toggleTheme, dark, unread, unreadMessages, onSignOut }: { demo: boolean; authenticated: boolean; accountStatus: AccountStatus | null; displayName: string; role: Role; toggleTheme: () => void; dark: boolean; unread: number; unreadMessages: number; onSignOut: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
@@ -159,29 +159,29 @@ function PublicCommunityMetric() {
 
 function PublicHome() {
  const paths = [
-  { title: 'أطوّر مساري المهني', description: 'أحدد موقعي الحالي، وأرتّب المهارات والإنجازات والخطوة التالية.', outcome: 'بوصلة مهنية وخطة عمل أولية.', to: '/career-compass', action: 'ابدأ تقييم المسار' },
-  { title: 'أبحث عن كوتشنج', description: 'أوضح تحدياً أو قراراً مهنياً وأتعرف على طبيعة الكوتشنج قبل طلب جلسة.', outcome: 'فهم أوضح لما تحتاجه قبل اختيار الكوتش.', to: '/coaching', action: 'تعرّف على الكوتشنج' },
-  { title: 'أبني مشروعاً أو حلاً مبتكراً', description: 'أحوّل فكرة أو مشكلة مهنية إلى فرضية وتجربة وخطوات تطوير.', outcome: 'مسار أولي لاختبار الفكرة وتطويرها.', to: '/innovation-rd', action: 'استكشف مسار الابتكار' },
-  { title: 'أعمل في البحث أو التعاون العلمي', description: 'أربط الاهتمام البحثي بالبيانات والمنهجية والتعاون المسؤول.', outcome: 'نقطة بداية أوضح للتعلّم والتعاون.', to: '/articles', action: 'استكشف المعرفة المنشورة' },
-  { title: 'أنضم ككوتش أو خبير', description: 'أتعرف على معايير الظهور المهني وآلية بناء ملف عام موثوق.', outcome: 'تسجيل اهتمام دون ادعاء اعتماد أو نشر ملف تلقائي.', to: '/waitlist', action: 'سجّل اهتمامك كخبير' },
+  { title: 'أبني ملف إنجازاتي المهنية', description: 'أوثّق الأثر والنتائج والأدلة المسموح بمشاركتها في ملف واضح ومهني.', outcome: 'مسودة ملف إنجازات قابلة للمراجعة.', to: '/achievement-portfolio', action: 'ابدأ ملف الإنجاز' },
+  { title: 'أبدأ مساري كخريج أو باحث عن عمل', description: 'أرتب مهاراتي ومشاريعي وأحدد أول خطوة عملية نحو سوق العمل.', outcome: 'مسار أولي وأدلة مناسبة لبداية المسيرة.', to: '/fresh-graduate', action: 'ابدأ من مسار الخريج' },
+  { title: 'أبحث عن كوتشنج مهني', description: 'أوضح تحدياً أو قراراً مهنياً وأتعرف على طبيعة الحوار المهني قبل طلب جلسة.', outcome: 'فهم أوضح لما تحتاجه قبل اختيار المساندة المناسبة.', to: '/coaching', action: 'تعرّف على الكوتشنج' },
+  { title: 'أطوّر حلاً أو مساراً مبتكراً', description: 'أحوّل فكرة أو مشكلة إلى فرضية وتجربة وخطوات تطوير قابلة للمراجعة.', outcome: 'مسار أولي لاختبار الفكرة وتطويرها.', to: '/innovation-rd', action: 'استكشف مسار الابتكار' },
+  { title: 'أتعلم وأبحث بمسؤولية', description: 'أستخدم المعرفة والمصادر والبيانات لفهم تحدٍّ مهني أو صحي وبناء تعاون مسؤول.', outcome: 'مصادر أوضح وخطوة تعلم قابلة للتطبيق.', to: '/articles', action: 'استكشف المعرفة المنشورة' },
  ]
  const benefits = [
-  ['تقييم أولي للمسار المهني', 'تحديد المرحلة الحالية والهدف والتحديات التي تحتاج إلى معالجة.'],
-  ['خطة خطوات قابلة للتنفيذ', 'ترتيب الأولويات إلى إجراءات قصيرة ومخرجات يمكن مراجعتها.'],
+  ['ملف إنجازات قابل للإثبات', 'توثيق العمل والنتائج والسياق والأدلة المسموح بمشاركتها في ملف مهني واضح.'],
+  ['إظهار القيمة المهنية', 'ربط المهارات بالنتائج والسياق والأدلة بدلاً من الاكتفاء بوصف المسؤوليات.'],
   ['محتوى وورش متخصصة', 'مقالات وأدوات وورش تربط المعرفة بالتطبيق، مع إعلان المتاح فعلياً فقط.'],
   ['فرص للتواصل مع مهنيين', 'مساحة لبناء علاقات مهنية وتبادل خبرة ضمن ضوابط واضحة.'],
   ['مساحة للكوتشنج', 'توضيح الهدف والاستعداد لحوار مهني مناسب دون وعود بنتيجة مسبقة.'],
-  ['بناء الملف والإنجازات', 'توثيق العمل والنتائج والأدلة المسموح بمشاركتها وإبراز القيمة المهنية.'],
+  ['تحديد الخطوة التالية', 'ترتيب هدف مهني واحد إلى إجراء قصير ومخرج يمكن مراجعته وقياسه.'],
  ]
  return <>
   <section className="hero wrap journey-hero">
    <div className="hero-copy">
     <div className="eyebrow"><span className="eyebrow-dot"/> مجتمع السيطرة المهنية · مساحة للتقدم والابتكار والبحث</div>
     <h1>ابنِ مسارك المهني بوضوح،<br/><em>وحوّل خبرتك إلى أثر قابل للإثبات</em></h1>
-    <p className="hero-lead">منصة تطوير مهني للمهنيين والكوتشات والباحثين والمبتكرين. ننطلق من واقع سوق العمل السعودي، ونخدم القطاع الصحي بعمق ضمن شبكة أوسع من التخصصات المهنية.</p>
+    <p className="hero-lead">نساعد المهنيين على توثيق أثر أعمالهم وتحويل الخبرة إلى ملف إنجازات واضح يفهمه أصحاب العمل. ونوفر للخريجين والباحثين عن عمل أدوات ومحتوى مجاني لبناء الخطوة المهنية التالية.</p>
     <div className="hero-actions">
-     <Link className="btn btn-primary" to="/career-compass" onClick={() => void trackSiteEvent('hero_primary_cta_click','/','career_compass')}>ابدأ تقييمك المهني <ArrowLeft size={17}/></Link>
-     <Link className="btn btn-outline" to="/waitlist">انضم إلى قائمة الانتظار <ArrowLeft size={17}/></Link>
+     <Link className="btn btn-primary" to="/achievement-portfolio" onClick={() => void trackSiteEvent('hero_primary_cta_click','/','achievement_portfolio')}>ابدأ بناء ملف إنجازاتك <ArrowLeft size={17}/></Link>
+     <Link className="btn btn-outline" to="/career-compass" onClick={() => void trackSiteEvent('career_path_click','/','career_compass')}>ابدأ بالبوصلة المهنية <ArrowLeft size={17}/></Link>
     </div>
     <div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>التسجيل العام غير متاح حالياً</b><small>يمكنك استكشاف المحتوى والأدوات العامة، والتعرّف على حالة الاهتمام المبكر بشفافية.</small></span></div>
    </div>
@@ -201,7 +201,7 @@ function PublicHome() {
    <ol className="journey-step-grid"><li><span>01</span><h3>اختر هدفك</h3><p>حدد ما إذا كنت تطوّر مسارك أو تبحث عن كوتشنج أو تبني مشروعاً أو تبحث عن تعاون.</p></li><li><span>02</span><h3>أكمل التقييم أو الملف المهني</h3><p>استخدم الأدوات العامة أو جهّز معلوماتك المهنية دون إدخال بيانات حساسة.</p></li><li><span>03</span><h3>احصل على الخطوة التالية المناسبة لك</h3><p>ابدأ بخطوة قابلة للتنفيذ، ثم راجع تقدمك وأدلتك مع الوقت.</p></li></ol>
   </section>
   <section className="section wrap journey-trust" aria-labelledby="journey-trust-title">
-   <div><span className="eyebrow">الشفافية قبل الأرقام</span><h2 id="journey-trust-title">نبني المجتمع على أساس موثوق.</h2><p>نحن في مرحلة بناء المجتمع الأولية، ونهيّئ قائمة الاهتمام المبكر بعد استكمال مراجعة الخصوصية. لن نعرض أعداد أعضاء أو ملفات كوتشات أو تجارب مستخدمين إلا إذا كانت حقيقية ومراجعة وبموافقة أصحابها.</p><p className="journey-trust-note">لا توجد حالياً عضوية عامة مفتوحة، ولا نعد بفرصة وظيفية أو ترقية أو زيادة دخل.</p></div>
+   <div><span className="eyebrow">الشفافية قبل الأرقام</span><h2 id="journey-trust-title">نبني المجتمع على أساس موثوق.</h2><p>نحن في مرحلة بناء المجتمع الأولية. نختبر الآن فكرة برنامج تطبيقي قصير لبناء ملف الإنجاز المهني، دون فتح بيع أو تحصيل رسوم قبل استكمال التحقق النظامي واختبار استعداد العملاء للدفع. ونوفر للخريجين والباحثين عن عمل أدوات ومحتوى عاماً مجانياً. لن نعرض أعداد أعضاء أو تجارب مستخدمين إلا إذا كانت حقيقية ومراجعة وبموافقة أصحابها.</p><p className="journey-trust-note">لا توجد حالياً عضوية عامة مفتوحة أو مدفوعات مفعّلة. لا نعد بوظيفة أو ترقية أو زيادة دخل، ولا نصف شهاداتنا بأنها اعتماد رسمي.</p></div>
    <div className="journey-trust-links"><Link to="/articles">اقرأ المقالات المتاحة <ArrowLeft size={15}/></Link><Link to="/career-journey">استكشف أدوات الرحلة المهنية <ArrowLeft size={15}/></Link><Link to="/linkedin-workshop">افتح ورشة LinkedIn الذاتية <ArrowLeft size={15}/></Link></div>
   </section>
   <section className="section wrap join-section"><div><span className="eyebrow">خطوتك القادمة تبدأ هنا</span><h2>ابدأ من هدف واضح، ثم ابنِ دليلك المهني.</h2><p>استكشف الأدوات المتاحة أو راجع حالة قائمة الاهتمام المبكر قبل مشاركة بياناتك.</p></div><Link className="btn btn-primary" to="/waitlist">تعرّف على قائمة الانتظار <ArrowLeft size={16}/></Link></section>
@@ -261,7 +261,7 @@ function PublicPage({ page }: { page: keyof typeof publicCopy }) {
 }
 
 const publicSeo: Record<string, { title: string; description: string }> = {
-  '/': { title: 'مجتمع السيطرة المهنية | بناء المسار والأثر', description: 'مجتمع مهني في السعودية يساعد الخريجين والباحثين عن عمل والمهنيين على تحديد المسار، وتطوير المهارات، وإبراز الإنجازات والقيمة المهنية.' },
+  '/': { title: 'مجتمع السيطرة المهنية | بناء المسار والأثر', description: 'مجتمع مهني في السعودية يساعد المهنيين على توثيق أثر العمل وبناء ملف إنجازات واضح، ويوفر للخريجين والباحثين عن عمل أدوات مجانية لتحديد المسار وإظهار المهارات.' },
   '/videos': { title: 'فيديوهات ودروس مهنية مجانية | مجتمع السيطرة', description: 'شاهد دروس مجتمع السيطرة المهنية ومقاطع YouTube المجانية مباشرة من الموقع.' },
   '/survey': { title: 'استبيان تجربة الزائر | مجتمع السيطرة المهنية', description: 'شاركنا رأيك في تجربة استخدام مجتمع السيطرة المهنية وساعدنا على تحسين المحتوى والأدوات.' },
   '/waitlist': { title: 'قائمة الاهتمام المبكر | مجتمع السيطرة المهنية', description: 'تعرّف على حالة استقبال طلبات الاهتمام المبكر في مجتمع السيطرة المهنية، واطّلع على سياسة الخصوصية قبل مشاركة بياناتك.' },
