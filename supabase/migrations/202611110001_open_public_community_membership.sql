@@ -82,7 +82,7 @@ WHEN (OLD.email_confirmed_at IS NULL AND NEW.email_confirmed_at IS NOT NULL)
 EXECUTE FUNCTION public.auto_approve_email_confirmed_member();
 
 -- Existing confirmed pending users can enter too; unconfirmed accounts stay pending.
-PERFORM set_config('saytara.account_approval_rpc', 'on', true);
+SELECT set_config('saytara.account_approval_rpc', 'on', true);
 UPDATE public.profiles p
    SET account_status = 'approved',
        account_reviewed_at = NULL,
@@ -92,7 +92,7 @@ UPDATE public.profiles p
  WHERE p.user_id = u.id
    AND p.account_status = 'pending'
    AND u.email_confirmed_at IS NOT NULL;
-PERFORM set_config('saytara.account_approval_rpc', 'off', true);
+SELECT set_config('saytara.account_approval_rpc', 'off', true);
 
 -- Profiles already default to public visibility. This index supports the open member directory.
 CREATE INDEX IF NOT EXISTS profiles_public_directory_idx
