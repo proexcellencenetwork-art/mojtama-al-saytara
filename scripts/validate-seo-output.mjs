@@ -128,7 +128,7 @@ for (const route of privateRoutes) {
     if (route.path === '/register/') {
       const signupEnabled = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
       if (signupEnabled) {
-        if (!html.includes('أنشئ ملفك وانضم إلى شبكة المهنيين') || !html.includes('تأكيد البريد الإلكتروني')) {
+        if (!html.includes('أنشئ ملفك وانضم إلى شبكة المهنيين') || !html.includes('أكّد بريدك الإلكتروني')) {
           fail.push('Pre-rendered registration page must clearly invite public signup and explain email confirmation.')
         }
       } else {
