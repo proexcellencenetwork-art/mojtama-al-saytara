@@ -49,6 +49,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [savingLead, setSavingLead] = useState<string | null>(null)
+  const [exportingCrm, setExportingCrm] = useState(false)
 
   const load = useCallback(async () => {
     if (role !== 'owner' || !supabase) { setAuthorized(false); setLoading(false); return }
@@ -105,6 +106,31 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     downloadCsv('saytara-leads.csv',['name','email','type','specialty','goal','status','source','referrer','campaign','marketing_opt_in','created_at'],(leadData?.leads ?? []).map(row => [row.full_name,row.email,userTypeLabel(row.user_type),row.specialty,goalLabel(row.goal),row.status,row.source_path,row.source_referrer,row.source_campaign,row.marketing_opt_in,row.created_at]))
   }
 
+  async function exportCrmArchive() {
+    if (!supabase || exportingCrm) return
+    setExportingCrm(true)
+    try {
+      const { data: archive, error: exportError } = await supabase.rpc('get_owner_crm_export')
+      if (exportError || !archive) {
+        setError('تعذر إنشاء النسخة الموحدة. تحقق من صلاحية المالك ثم أعد المحاولة.')
+        return
+      }
+      const blob = new Blob([JSON.stringify(archive, null, 2)], { type: 'application/json;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `mojtama-al-saytara-crm-${new Date().toISOString().slice(0, 10)}.json`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch {
+      setError('تعذر إنشاء النسخة الموحدة الآن. لم يتم تأكيد التصدير.')
+    } finally {
+      setExportingCrm(false)
+    }
+  }
+
   if (authorized === false) return <main className="app-main wrap analytics-page" dir="rtl"><section className="analytics-card"><ShieldCheck size={30}/><h1>لوحة المؤشرات للمالك فقط</h1><p>هذه الصفحة لا تعرض بيانات الزوار أو العملاء إلا بعد إثبات صلاحية المالك من قاعدة البيانات.</p></section></main>
 
   const overview = data?.overview
@@ -117,7 +143,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     { title: 'مشتركو البريد', value: overview?.newsletter_subscribers, icon: Mail },
   ]
   return <main className="app-main wrap analytics-page" dir="rtl">
-    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p></div><div className="analytics-actions"><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button></div></header>
+    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p></div><div className="analytics-actions"><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button><button className="btn btn-primary btn-small" type="button" onClick={() => void exportCrmArchive()} disabled={exportingCrm}><ArrowDownToLine size={15}/>{exportingCrm ? 'جارٍ تجهيز النسخة…' : 'تصدير نسخة CRM كاملة'}</button></div></header>
     {error && <p className="analytics-error" role="alert">{error}</p>}
     {loading && !data ? <section className="analytics-card">جارٍ تحميل المؤشرات…</section> : <>
       <section className="analytics-kpis">{cards.map(card => <article className="analytics-kpi" key={card.title}><span><card.icon size={19}/></span><small>{card.title}</small><strong>{number(card.value)}</strong></article>)}</section>
@@ -151,7 +177,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
       </section>
       <section className="analytics-card"><div className="analytics-section-heading"><div><h2><UserRoundCheck size={18}/> الزوار ذوو الاهتمام المحتمل</h2><p>درجة إشارية من تكرار الزيارة واستخدام الأدوات. لا تكشف هوية الشخص المجهول.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>الزائر</th><th>الدرجة</th><th>الصفحات</th><th>بدء أداة</th><th>إكمال أداة</th><th>أيام النشاط</th><th>آخر نشاط</th></tr></thead><tbody>{(data?.interested ?? []).map(row => <tr key={row.visitor_id}><td><b>{row.display_name}</b>{row.email&&<small dir="ltr">{row.email}</small>}<small dir="ltr">{row.user_id?'حساب مسجل':row.visitor_id.slice(0,8)+'…'}</small></td><td>{number(row.interest_score)}</td><td>{number(row.page_views)}</td><td>{number(row.tool_starts)}</td><td>{number(row.tool_completions)}</td><td>{number(row.active_days)}</td><td>{date(row.last_seen)}</td></tr>)}</tbody></table>{!data?.interested?.length&&<p className="analytics-empty">لا توجد إشارات اهتمام كافية حتى الآن.</p>}</div></section>
       <section className="analytics-card"><div className="analytics-section-heading"><div><h2>قائمة البريد الإلكتروني</h2><p>{number(overview?.newsletter_subscribers)} اشتراكًا محفوظًا بموافقة صريحة.</p></div><button className="btn btn-outline btn-small" type="button" onClick={exportSubscribers} disabled={!data?.subscribers?.length}><ArrowDownToLine size={15}/> تصدير CSV</button></div><div className="analytics-table-wrap"><table><thead><tr><th>البريد</th><th>مصدر الاشتراك</th><th>التاريخ</th><th>الموافقة</th></tr></thead><tbody>{(data?.subscribers ?? []).map(row => <tr key={row.email}><td dir="ltr">{row.email}</td><td dir="ltr">{pathLabel(row.source_path)}</td><td>{date(row.created_at)}</td><td>{date(row.consent_at)}</td></tr>)}</tbody></table>{!data?.subscribers?.length&&<p className="analytics-empty">لا يوجد مشتركون بعد.</p>}</div></section>
-      <p className="analytics-footnote"><ShieldCheck size={15}/> لا يتم جمع بيانات التتبع قبل موافقة الزائر. لا تُحفظ إجابات الأدوات أو نصوص النماذج. بيانات التواصل لا تُجمع إلا عبر نموذج صريح، وإدارة العملاء محصورة بالمالك.</p>
+      <p className="analytics-footnote"><ShieldCheck size={15}/> مصدر البيانات الموحد هو قاعدة Supabase الخاصة بالمجتمع. يمكنك تنزيل نسخة JSON تشمل العملاء المحتملين والزيارات والأنشطة والأعضاء والعضويات والاشتراكات والتقييمات. لا يتم جمع بيانات التتبع قبل موافقة الزائر، وإدارة وتصدير بيانات CRM محصوران بالمالك؛ الرسائل الخاصة وبيانات الموقع الدقيقة مستبعدة.</p>
     </>}
   </main>
 }
