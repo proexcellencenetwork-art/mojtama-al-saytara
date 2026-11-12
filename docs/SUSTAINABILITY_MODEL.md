@@ -2,6 +2,7 @@
 
 **Version:** 1.0  
 **Prepared:** 12 November 2026  
+**Status:** Preliminary proposal; no funding, sponsor, or partner commitment is implied.  
 **Purpose:** Keep the first cohort free while establishing a repeatable, financially and operationally sustainable PMC model.
 
 ## 1. First-cohort rule
