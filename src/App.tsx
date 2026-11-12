@@ -18,12 +18,10 @@ const ResetPasswordPage = lazy(() => import('./components/AuthPages').then(modul
 const LiveDashboardPage = lazy(() => import('./components/LiveDashboardPage').then(module => ({ default: module.LiveDashboardPage })))
 const LiveFeedPage = lazy(() => import('./components/LiveFeedPage').then(module => ({ default: module.LiveFeedPage })))
 const LivePublicPage = lazy(() => import('./components/LivePublicPage').then(module => ({ default: module.LivePublicPage })))
-const OwnerPortalPage = lazy(() => import('./components/OwnerPortalPage').then(module => ({ default: module.OwnerPortalPage })))
 const OwnerWorkspacePage = lazy(() => import('./components/OwnerWorkspacePage').then(module => ({ default: module.OwnerWorkspacePage })))
 const LearningProviderSetupPage = lazy(() => import('./components/LearningProviderSetupPage').then(module => ({ default: module.LearningProviderSetupPage })))
 const LearningCenterPage = lazy(() => import('./components/LearningCenterPage'))
 const LearningRoomPage = lazy(() => import('./components/LearningRoomPage'))
-const AnalyticsDashboardPage = lazy(() => import('./components/AnalyticsDashboardPage').then(module => ({ default: module.AnalyticsDashboardPage })))
 const PublicSurveyPage = lazy(() => import('./components/PublicSurveyPage'))
 const EducationalVideosPage = lazy(() => import('./components/EducationalVideosPage'))
 
