@@ -1,5 +1,19 @@
 # مجتمع السيطرة — دليل الإعداد من الصفر
 
+## Founding 20 programme — verified design status (12 November 2026)
+
+The five Founding 20 operating documents define a proposed, free 20-person pilot. They are programme design documents, not an announcement that recruitment is open or that mentors, employers, sponsors, or universities have committed.
+
+- [Programme design and selection framework](docs/FOUNDING_20_PROGRAM.md)
+- [Impact measurement and Community Value Index](docs/IMPACT_MEASUREMENT.md)
+- [Privacy and data architecture](docs/PRIVACY_ARCHITECTURE.md)
+- [Programme operations playbook](docs/PROGRAM_OPERATIONS.md)
+- [Sustainability model](docs/SUSTAINABILITY_MODEL.md)
+
+The existing PMC CRM and Supabase analytics are the intended foundation. A dedicated Founding 20 application route, cohort-specific records, and programme dashboard have **not** been implemented or launched. Do not publish an application call until the application journey, authorization tests, retention notice, and Saudi personal-data cross-border assessment for the current Singapore-region Supabase project are approved.
+
+This documentation does not change account registration, public intake, member roles, or production data.
+
 # حالة الإطلاق الحالية — 29 أكتوبر 2026
 
 هذه لقطة تحقق من مستودع GitHub وقاعدة Supabase بعد تحديث صلاحيات مركز التعلّم. الأعداد تشغيلية وقت الفحص وليست أرقامًا تسويقية.
