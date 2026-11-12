@@ -2,6 +2,7 @@
 
 **Version:** 1.0  
 **Prepared:** 12 November 2026  
+**Status:** Proposed framework; approve the rubric before the first baseline is collected.  
 **Purpose:** A repeatable, evidence-based measurement model for the first 20-person PMC cohort.
 
 ## 1. Measurement principles
@@ -155,6 +156,8 @@ A dimension that has not yet become measurable is **N/A**, not zero. For a provi
 Always display **measurement coverage** beside the provisional score: the sum of weights for due dimensions with valid data. Do not show a participant or cohort CVI as final until all five dimensions are due and the agreed coverage threshold is met. Proposed reporting threshold: at least 80% coverage, with the reason for every unavailable dimension shown.
 
 ### 5.3 Dimension scoring guidance
+
+Score outcome progress against each participant's agreed goal pathway (for example, first employment, role transition, promotion, research contribution, or a paid project). Do not use one universal employment target to rank participants with different starting points. A meaningful verified outcome should be judged against the individual plan; no employment outcome is guaranteed or required for graduation.
 
 - **A — Activity:** agreed deliverables completed ÷ agreed deliverables due, capped at 100; do not reward duplicate or low-value clicks.
 - **B — Engagement:** a balanced score from meaningful learning completion, project continuity, and mentor/peer engagement. Page views alone contribute nothing.
