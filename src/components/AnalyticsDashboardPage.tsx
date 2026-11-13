@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Activity, ArrowDownToLine, BarChart3, Eye, Mail, MapPin, RefreshCw, ShieldCheck, Target, Wrench, Laptop, Users, UserRoundCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import type { Role } from '../appTypes'
 import './AnalyticsDashboardPage.css'
 
 type AnalyticsPayload = {
@@ -40,7 +39,7 @@ const userTypeLabel = (value: string) => ({professional:'مهني',job_seeker:'�
 const goalLabel = (value: string) => ({job:'فرصة مهنية',skills:'تطوير المهارات',promotion:'ترقية',transition:'انتقال مهني',leadership:'قيادة',explore:'استكشاف'} as Record<string,string>)[value] || value
 const specialtyLabel = (value: string) => ({health_medical:'صحة وعلوم طبية',technology_ai:'تقنية وذكاء اصطناعي',business:'إدارة وأعمال',engineering:'هندسة',finance:'مالية ومحاسبة',human_resources:'موارد بشرية',education_research:'تعليم وبحث علمي',other:'أخرى'} as Record<string,string>)[value] || value
 
-export function AnalyticsDashboardPage({ role }: { role: Role }) {
+export function AnalyticsDashboardPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [days, setDays] = useState(30)
   const [data, setData] = useState<AnalyticsPayload | null>(null)
@@ -54,7 +53,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
   const [exportingCrm, setExportingCrm] = useState(false)
 
   const load = useCallback(async () => {
-    if (role !== 'owner' || !supabase) { setAuthorized(false); setLoading(false); return }
+    if (!supabase) { setAuthorized(false); setLoading(false); return }
     setLoading(true); setError('')
     const owner = await supabase.rpc('is_platform_owner')
     if (owner.error || owner.data !== true) { setAuthorized(false); setData(null); setDevices(null); setLeadData(null); setLoading(false); return }
@@ -78,7 +77,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     else setBehaviorData(behaviorResult.data as BehaviorPayload)
     if (deviceResult.error || leadResult.error || surveyResult.error || behaviorResult.error) setError('بعض الأقسام لم تُحمّل. حدّث الصفحة، وإذا استمر الخلل راجع صلاحيات وظائف لوحة المالك.')
     setLoading(false)
-  }, [role, days])
+  }, [days])
 
   useEffect(() => { void load() }, [load])
 
@@ -132,6 +131,8 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
       setExportingCrm(false)
     }
   }
+
+  if (authorized === null) return <main className="app-main wrap analytics-page" dir="rtl"><section className="analytics-card" role="status"><ShieldCheck size={24}/><h1>جارٍ التحقق من صلاحية المالك</h1><p>لن تظهر مؤشرات الزوار والعملاء إلا بعد تأكيد الصلاحية من قاعدة البيانات.</p></section></main>
 
   if (authorized === false) return <main className="app-main wrap analytics-page" dir="rtl"><section className="analytics-card"><ShieldCheck size={30}/><h1>لوحة المؤشرات للمالك فقط</h1><p>هذه الصفحة لا تعرض بيانات الزوار أو العملاء إلا بعد إثبات صلاحية المالك من قاعدة البيانات.</p></section></main>
 
