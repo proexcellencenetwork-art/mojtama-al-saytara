@@ -79,6 +79,7 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
   const workspaceActive = authenticated && (demo || accountStatus === 'approved')
   const staff = role === 'moderator' || role === 'manager' || role === 'owner'
   const workspaceQuickItems = [
+    ...(role === 'owner' ? [{ to: '/owner/analytics', label: 'لوحة التحليلات', icon: BarChart3 }] : []),
     { to: '/feed', label: 'الخلاصة', icon: Home },
     { to: '/groups', label: 'المجموعات', icon: Users },
     { to: '/messages', label: 'التواصل', icon: MessageCircle },
