@@ -686,30 +686,40 @@ function App() {
     let active = true
     void (async () => {
       try {
-        const { data, error } = await supabaseClient.from('profiles').select('display_name,account_status').eq('user_id', user.id).maybeSingle()
+        // Resolve the platform owner before relying on the profile row. The
+        // server-side RPC is authoritative and can safely unlock the owner
+        // workspace even when the profiles query is delayed or unavailable.
+        const [ownerResult, profileResult] = await Promise.all([
+          supabaseClient.rpc('is_platform_owner'),
+          supabaseClient.from('profiles').select('display_name,account_status').eq('user_id', user.id).maybeSingle(),
+        ])
         if (!active) return
+        const { data, error } = profileResult
         const metadataName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : ''
         setDisplayName(data?.display_name || metadataName || user.email?.split('@')[0] || 'حسابي')
+
+        if (!ownerResult.error && ownerResult.data === true) {
+          setRoleState('owner')
+          setAccountStatusRecord({ userId: user.id, status: 'approved' })
+          return
+        }
+
         if (error || !data) {
+          setRoleState('member')
           setAccountStatusRecord({ userId: user.id, status: 'unknown' })
           return
         }
         const status = data.account_status === 'approved' || data.account_status === 'rejected' || data.account_status === 'pending'
           ? data.account_status as AccountStatus
           : 'unknown'
-        if (status !== 'approved') { setAccountStatusRecord({ userId: user.id, status }); return }
-        const [roleResult, ownerResult] = await Promise.all([
-          supabaseClient.from('user_roles').select('role').eq('user_id', user.id),
-          supabaseClient.rpc('is_platform_owner'),
-        ])
-        if (!active) return
-        // The owner RPC is the authoritative platform-owner check. A separate
-        // user_roles read must not suppress owner access when that query fails.
-        if (!ownerResult.error && ownerResult.data === true) {
-          setRoleState('owner')
-          setAccountStatusRecord({ userId: user.id, status: 'approved' })
+        if (status !== 'approved') {
+          setRoleState('member')
+          setAccountStatusRecord({ userId: user.id, status })
           return
         }
+
+        const roleResult = await supabaseClient.from('user_roles').select('role').eq('user_id', user.id)
+        if (!active) return
         if (roleResult.error) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
         const roles = (roleResult.data ?? []).map(row => row.role as Role)
         const rank: Role[] = ['manager', 'moderator', 'coach', 'verified', 'member']
@@ -757,9 +767,16 @@ function App() {
   }
   const refreshAccountStatus = async () => {
     if (!supabaseClient || !user) { setAccountStatusRecord({ userId: user?.id ?? null, status: 'unknown' }); return }
+    const { data: ownerData, error: ownerError } = await supabaseClient.rpc('is_platform_owner')
+    if (!ownerError && ownerData === true) {
+      setRoleState('owner')
+      setAccountStatusRecord({ userId: user.id, status: 'approved' })
+      return
+    }
     const { data, error } = await supabaseClient.from('profiles').select('account_status').eq('user_id', user.id).maybeSingle()
-    if (error || !data) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
+    if (error || !data) { setRoleState('member'); setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
     const status = data.account_status
+    if (status !== 'approved') setRoleState('member')
     setAccountStatusRecord({ userId: user.id, status: status === 'approved' || status === 'pending' || status === 'rejected' ? status : 'unknown' })
   }
   const onSignOut = async () => {
