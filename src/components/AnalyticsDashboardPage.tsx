@@ -30,13 +30,14 @@ type Lead = {
 }
 type LeadPayload = { total?: number; new_count?: number; contacted_count?: number; qualified_count?: number; converted_count?: number; leads?: Lead[] }
 type SurveyPayload = { responses?:number; average_rating?:number|null; average_recommendation?:number|null; average_ease?:number|null; areas?:{area:string;responses:number}[]; used_areas?:{area:string;responses:number}[]; recent_comments?:{comment:string;overall_rating:number;created_at:string}[] }
-type BehaviorPayload = { returning_visitors?:number; repeat_tool_users?:number; tool_funnels?:{tool:string;starts:number;completions:number;completion_percent:number|null}[] }
+type BehaviorPayload = { returning_visitors?:number; repeat_tool_users?:number; tool_funnels?:{tool:string;starts:number;completions:number;completion_percent:number|null}[]; tool_intents?:{tool:string;goal:string;user_type:string;specialty:string;visitors:number}[] }
 
 const number = (value?: number) => new Intl.NumberFormat('ar-SA').format(value ?? 0)
 const date = (value?: string) => value ? new Date(value).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
 const pathLabel = (path: string) => ({ '/': 'الرئيسية', '/career-journey': 'الرحلة المهنية', '/career-compass': 'البوصلة المهنية', '/linkedin-audit': 'تدقيق LinkedIn', '/fresh-graduate': 'جاهزية الخريج', '/learning': 'مركز التعلّم', '/register': 'التسجيل', '/coaching': 'الكوتشنج', '/articles': 'المقالات', '/events': 'الفعاليات' } as Record<string,string>)[path] || path
 const userTypeLabel = (value: string) => ({professional:'مهني',job_seeker:'باحث عن عمل',graduate:'خريج',coach:'كوتش',researcher:'باحث',innovator:'مبتكر',other:'أخرى'} as Record<string,string>)[value] || value
 const goalLabel = (value: string) => ({job:'فرصة مهنية',skills:'تطوير المهارات',promotion:'ترقية',transition:'انتقال مهني',leadership:'قيادة',explore:'استكشاف'} as Record<string,string>)[value] || value
+const specialtyLabel = (value: string) => ({health_medical:'صحة وعلوم طبية',technology_ai:'تقنية وذكاء اصطناعي',business:'إدارة وأعمال',engineering:'هندسة',finance:'مالية ومحاسبة',human_resources:'موارد بشرية',education_research:'تعليم وبحث علمي',other:'أخرى'} as Record<string,string>)[value] || value
 
 export function AnalyticsDashboardPage({ role }: { role: Role }) {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
@@ -152,6 +153,12 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
         <div className="analytics-section-heading"><div><h2>مؤشرات التجربة من السلوك</h2><p>هذه إشارات استخدام وليست آراء مؤكدة: العودة قد تعني اهتماماً، وإكمال الأداة يعني إكمال الاستخدام، وعدم الإكمال قد يشير إلى احتكاك ويحتاج سؤال الزائر.</p></div></div>
         <div className="analytics-kpis">{[{title:'زوار عادوا في أيام مختلفة',value:behaviorData?.returning_visitors},{title:'زوار كرروا بدء الأدوات',value:behaviorData?.repeat_tool_users},{title:'إجمالي إكمال الأدوات',value:overview?.tool_completions}].map(item=><article className="analytics-kpi" key={item.title}><small>{item.title}</small><strong>{number(item.value)}</strong></article>)}</div>
         <div className="analytics-table-wrap"><table><thead><tr><th>الأداة</th><th>مرات البدء</th><th>مرات الإكمال</th><th>نسبة الإكمال</th></tr></thead><tbody>{(behaviorData?.tool_funnels??[]).map(row=><tr key={row.tool}><td>{pathLabel(row.tool||'غير محدد')}</td><td>{number(row.starts)}</td><td>{number(row.completions)}</td><td>{row.completion_percent==null?'—':number(row.completion_percent)+'%'}</td></tr>)}</tbody></table></div>
+        <div className="analytics-table-wrap">
+          <h3>اختيارات المستخدمين قبل دخول الأدوات</h3>
+          <p className="analytics-footnote">إشارات مهنية مجهولة تُحفظ فقط عندما يختار الزائر ذلك بعد موافقته على التحليلات. لا تتضمن اسماً أو بريداً أو إجابات الأداة.</p>
+          <table><thead><tr><th>الأداة</th><th>الهدف</th><th>نوع المستخدم</th><th>المجال</th><th>الزوار</th></tr></thead><tbody>{(behaviorData?.tool_intents??[]).map((row,i)=><tr key={row.tool+'-'+row.goal+'-'+row.user_type+'-'+row.specialty+'-'+i}><td>{pathLabel(row.tool||'غير محدد')}</td><td>{goalLabel(row.goal)}</td><td>{userTypeLabel(row.user_type)}</td><td>{specialtyLabel(row.specialty)}</td><td>{number(row.visitors)}</td></tr>)}</tbody></table>
+          {!behaviorData?.tool_intents?.length&&<p className="analytics-empty">لا توجد اختيارات محفوظة بعد. سيظهر هذا القسم بعد استخدام البطاقة التمهيدية مع الموافقة الاختيارية.</p>}
+        </div>
       </section>
       <section className="analytics-card">
         <div className="analytics-section-heading"><div><h2>استبيان تجربة الزائر</h2><p>نتائج الاستبيان المجهول خلال آخر 90 يومًا.</p></div><a className="btn btn-outline btn-small" href="/mojtama-al-saytara/survey/" target="_blank" rel="noreferrer">عرض صفحة الاستبيان</a></div>
