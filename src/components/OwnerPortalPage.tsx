@@ -41,7 +41,7 @@ const roleLabels: Record<ManagedRole, string> = {
 const statusLabels: Record<string, string> = { approved: 'معتمد', pending: 'قيد المراجعة', rejected: 'مرفوض' }
 const safeRows = <T,>(value: unknown): T[] => Array.isArray(value) ? value as T[] : []
 
-export function OwnerPortalPage({ role }: { role: Role }) {
+export function OwnerPortalPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [accounts, setAccounts] = useState<PlatformAccount[]>([])
   const [audit, setAudit] = useState<OwnerAudit[]>([])
@@ -63,11 +63,6 @@ export function OwnerPortalPage({ role }: { role: Role }) {
   )
 
   const load = useCallback(async () => {
-    if (role !== 'owner') {
-      setAuthorized(false)
-      setLoading(false)
-      return
-    }
     if (!supabase) {
       setAuthorized(false)
       setError('لوحة المالك تتطلب اتصال Supabase فعلياً.')
@@ -108,7 +103,7 @@ export function OwnerPortalPage({ role }: { role: Role }) {
         : nextAccounts.find(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)?.user_id || '')
     }
     setLoading(false)
-  }, [role])
+  }, [])
 
   useEffect(() => { void Promise.resolve().then(load) }, [load])
 
@@ -192,7 +187,6 @@ export function OwnerPortalPage({ role }: { role: Role }) {
     else { setNotice(nextAction === 'suspend' ? 'عُلّق دخول الحساب وسُجل السبب؛ لم تُحذف بياناته.' : 'استُعيد وصول الحساب وسُجل السبب.'); await load() }
   }
 
-  if (role !== 'owner') return <main className="app-main wrap owner-portal"><section className="owner-card owner-denied"><ShieldCheck size={30}/><h1>صلاحية المالك فقط.</h1><p>لا تُتاح أدوات المالك للمدير أو للأعضاء.</p></section></main>
   if (loading && authorized === null) return <main className="app-main wrap owner-portal"><section className="owner-card" role="status">جارٍ التحقق من صلاحية المالك…</section></main>
   if (authorized !== true) return <main className="app-main wrap owner-portal"><section className="owner-card owner-denied"><ShieldCheck size={30}/><h1>تعذر إثبات صلاحية المالك.</h1><p>{error || 'لا تملك هذه الصفحة صلاحية إدارة المنصة.'}</p><button className="btn btn-outline" type="button" onClick={() => void load()}><RefreshCw size={15}/> إعادة التحقق</button></section></main>
 
