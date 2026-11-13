@@ -25,6 +25,7 @@ begin
   if p_event_label is not null and char_length(p_event_label)>160 then return false; end if;
   if p_event_name='tool_intent' and (
     p_page_path not in ('/career-compass','/linkedin-audit','/fresh-graduate','/value-economy','/achievement-portfolio','/promotion-intelligence','/innovation-rd','/ai-career-leverage','/saudi-labor-market-radar')
+    or p_event_label is null
     or p_event_label !~ '^(job|skills|promotion|transition|leadership|explore)\|(professional|job_seeker|graduate|coach|researcher|innovator|other)\|(health_medical|technology_ai|business|engineering|finance|human_resources|education_research|other)$'
   ) then return false; end if;
   if p_device_category not in ('mobile','tablet','desktop','unknown') then p_device_category:='unknown'; end if;
