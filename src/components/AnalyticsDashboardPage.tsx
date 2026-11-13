@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Activity, ArrowDownToLine, BarChart3, Eye, Mail, MapPin, RefreshCw, ShieldCheck, Target, Wrench, Laptop, Users, UserRoundCheck } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Role } from '../appTypes'
@@ -144,7 +145,7 @@ export function AnalyticsDashboardPage({ role }: { role: Role }) {
     { title: 'مشتركو البريد', value: overview?.newsletter_subscribers, icon: Mail },
   ]
   return <main className="app-main wrap analytics-page" dir="rtl">
-    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p></div><div className="analytics-actions"><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button><button className="btn btn-primary btn-small" type="button" onClick={() => void exportCrmArchive()} disabled={exportingCrm}><ArrowDownToLine size={15}/>{exportingCrm ? 'جارٍ تجهيز النسخة…' : 'تصدير نسخة CRM كاملة'}</button></div></header>
+    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p></div><div className="analytics-actions"><Link className="btn btn-outline btn-small" to="/owner"><ShieldCheck size={15}/> مركز المالك</Link><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button><button className="btn btn-primary btn-small" type="button" onClick={() => void exportCrmArchive()} disabled={exportingCrm}><ArrowDownToLine size={15}/>{exportingCrm ? 'جارٍ تجهيز النسخة…' : 'تصدير نسخة CRM كاملة'}</button></div></header>
     {error && <p className="analytics-error" role="alert">{error}</p>}
     {loading && !data ? <section className="analytics-card">جارٍ تحميل المؤشرات…</section> : <>
       <section className="analytics-kpis">{cards.map(card => <article className="analytics-kpi" key={card.title}><span><card.icon size={19}/></span><small>{card.title}</small><strong>{number(card.value)}</strong></article>)}</section>
