@@ -703,10 +703,17 @@ function App() {
           supabaseClient.rpc('is_platform_owner'),
         ])
         if (!active) return
+        // The owner RPC is the authoritative platform-owner check. A separate
+        // user_roles read must not suppress owner access when that query fails.
+        if (!ownerResult.error && ownerResult.data === true) {
+          setRoleState('owner')
+          setAccountStatusRecord({ userId: user.id, status: 'approved' })
+          return
+        }
         if (roleResult.error) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); return }
         const roles = (roleResult.data ?? []).map(row => row.role as Role)
         const rank: Role[] = ['manager', 'moderator', 'coach', 'verified', 'member']
-        setRoleState(!ownerResult.error && ownerResult.data === true ? 'owner' : rank.find(candidate => roles.includes(candidate)) || 'member')
+        setRoleState(rank.find(candidate => roles.includes(candidate)) || 'member')
         setAccountStatusRecord({ userId: user.id, status: 'approved' })
       } catch {
         if (active) { setAccountStatusRecord({ userId: user.id, status: 'unknown' }); setRoleState('member') }
