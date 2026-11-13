@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-js'
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Activity, ArrowLeft, BadgeCheck, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, Wrench, X } from 'lucide-react'
+import { Activity, ArrowLeft, BadgeCheck, BarChart3, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, Wrench, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
 import { supabase } from './lib/supabase'
 import type { Role } from './appTypes'
@@ -100,6 +100,7 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
     ] : []),
     ...(role === 'owner' ? [
       { to: '/owner', label: 'مركز المالك', icon: ShieldCheck },
+      { to: '/owner/analytics', label: 'لوحة التحليلات', icon: BarChart3 },
       { to: '/owner/100ms', label: 'إعداد البث', icon: Video },
     ] : []),
   ]
