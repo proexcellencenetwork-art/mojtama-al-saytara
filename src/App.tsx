@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { RealtimeChannel, SupabaseClient, User } from '@supabase/supabase-js'
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Activity, ArrowLeft, BadgeCheck, BarChart3, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, HeartHandshake, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, Wrench, X } from 'lucide-react'
+import { Activity, ArrowLeft, BadgeCheck, BarChart3, Bell, BookOpen, Bookmark, BriefcaseMedical, CalendarDays, Check, Compass, FileText, Flag, Heart, Home, LockKeyhole, LogOut, Menu, MessageCircle, Moon, MoreHorizontal, Plus, Search, Send, Settings, Shield, ShieldCheck, Sparkles, Sun, UserPlus, Users, Video, Wrench, X } from 'lucide-react'
 import { isSupabaseConfigured } from './lib/supabase-config'
 import { supabase } from './lib/supabase'
 import type { Role } from './appTypes'
@@ -66,12 +66,25 @@ const navItems = [
   { to: '/learning', label: 'مركز التعلّم', icon: Video },
 ]
 
+function BrandSymbol({ className = 'brand-symbol' }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 132 132" fill="none" aria-hidden="true" focusable="false">
+    <circle cx="66" cy="66" r="58" stroke="currentColor" strokeWidth="2.5"/>
+    <circle cx="66" cy="66" r="40" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 5"/>
+    <path d="M66 4V22" stroke="#D7263D" strokeWidth="3"/>
+    <path d="M66 110V128M4 66H22M110 66H128" stroke="currentColor" strokeWidth="2.5"/>
+    <circle cx="66" cy="66" r="3.5" fill="#D7263D"/>
+    <text x="66" y="78" textAnchor="middle" fontFamily="Tajawal, sans-serif" fontWeight="900" fontSize="38" fill="currentColor">س</text>
+  </svg>
+}
 function Brand({ light = false }: { light?: boolean }) {
-  return <Link to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="مجتمع السيطرة المهنية - الرئيسية"><span className="brand-mark"><HeartHandshake size={21} strokeWidth={1.8}/><i /></span><span className="brand-word">مجتمع <b>السيطرة المهنية</b><small>Professional Mastery Community</small></span></Link>
+  return <Link to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="مجتمع السيطرة المهنية - الرئيسية">
+    <span className="brand-mark"><BrandSymbol /></span>
+    <span className="brand-word"><b>مجتمع السيطرة المهنية</b><small>FUTURE MED LEADERS</small><em>دقة الأداء، سيطرة القرار السريري</em></span>
+  </Link>
 }
 function Verified({ role }: { role: Role }) { return role !== 'member' ? <span className={`verified-mark ${role === 'coach' ? 'coach-mark' : ''}`} title={roleNames[role]}><BadgeCheck size={14}/></span> : null }
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
-function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة لبناء القيمة وإظهار الأثر: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/professionals">الدليل المهني</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
+function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة لبناء القيمة وإظهار الأثر: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/professionals">الدليل المهني</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href={`${import.meta.env.BASE_URL}brand/`}>دليل الهوية</a><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
 
 function Header({ demo, authenticated, accountStatus, displayName, role, toggleTheme, dark, unread, unreadMessages, onSignOut }: { demo: boolean; authenticated: boolean; accountStatus: AccountStatus | null; displayName: string; role: Role; toggleTheme: () => void; dark: boolean; unread: number; unreadMessages: number; onSignOut: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
@@ -188,7 +201,7 @@ function PublicHome() {
     </div>
     <div className="hero-proof"><span className="proof-badge"><Shield size={15}/></span><span><b>التسجيل العام غير متاح حالياً</b><small>يمكنك استكشاف المحتوى والأدوات العامة، والتعرّف على حالة الاهتمام المبكر بشفافية.</small></span></div>
    </div>
-   <div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><HeartHandshake size={65} strokeWidth={1.2}/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Compass size={16}/></span><span><b>وضوح في الاتجاه</b><small>هدف وخطوة قابلة للتطبيق</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>قيمة يمكن إثباتها</b><small>إنجازات وأدلة ومخرجات</small></span></div><div className="art-ring-label">تطوّر · تواصل · أثر</div></div>
+   <div className="hero-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="art-core"><BrandSymbol className="brand-hero-symbol"/><span className="art-spark spark-a">✳</span><span className="art-spark spark-b">✦</span></div><div className="art-note note-top"><span className="note-icon"><Compass size={16}/></span><span><b>وضوح في الاتجاه</b><small>هدف وخطوة قابلة للتطبيق</small></span></div><div className="art-note note-bottom"><span className="note-icon note-gold"><BadgeCheck size={16}/></span><span><b>قيمة يمكن إثباتها</b><small>إنجازات وأدلة ومخرجات</small></span></div><div className="art-ring-label">تطوّر · تواصل · أثر</div></div>
   </section>
   <section className="section wrap journey-benefits" aria-labelledby="journey-benefits-title">
    <div className="section-heading"><div><span className="eyebrow">قيمة عملية وليست وعوداً عامة</span><h2 id="journey-benefits-title">ماذا ستحصل عليه داخل المجتمع؟</h2><p>نربط التعلّم بخطوة واضحة ومخرج مهني يمكن تطويره ومراجعته.</p></div></div>
@@ -244,7 +257,7 @@ function PublicPage({ page }: { page: keyof typeof publicCopy }) {
   <div className="community-direction-heading"><span className="eyebrow"><Flag size={15}/> بوصلتنا</span><h2>لماذا وُجد المجتمع؟ وإلى أين يتجه؟</h2><p>نريد أن تصبح الخبرة المهنية نقطة انطلاق للتعلم والتعاون والابتكار والأثر — لا مجرد سيرة ذاتية أو محتوى متفرق.</p></div>
   <div className="community-direction-feature-grid">
    <article className="community-direction-feature"><span className="direction-icon"><Compass size={20}/></span><span className="direction-label">الرؤية</span><h3>شبكة مهنية سعودية مترابطة تصنع قيمة قابلة للإثبات.</h3><p>أن يجد الأفراد مساحة تساعدهم على النمو، وتحوّل المعرفة والخبرة إلى تقدم مهني وابتكار وبحث مسؤول.</p></article>
-   <article className="community-direction-feature"><span className="direction-icon"><HeartHandshake size={20}/></span><span className="direction-label">الرسالة</span><h3>نربط الأشخاص بالأدوات والمعرفة والتعاون.</h3><p>نقدّم مسارات عملية ومحتوى موثوقًا وورشًا وتجارب مجتمعية تساعد على الانتقال من السؤال إلى خطوة واضحة قابلة للتقييم.</p></article>
+   <article className="community-direction-feature"><span className="direction-icon"><BrandSymbol className="brand-mini-symbol"/></span><span className="direction-label">الرسالة</span><h3>نربط الأشخاص بالأدوات والمعرفة والتعاون.</h3><p>نقدّم مسارات عملية ومحتوى موثوقًا وورشًا وتجارب مجتمعية تساعد على الانتقال من السؤال إلى خطوة واضحة قابلة للتقييم.</p></article>
   </div>
   <div className="community-direction-goals"><div className="direction-section-heading"><span className="eyebrow">أهدافنا العملية</span><h2>ما الذي نريد تحقيقه؟</h2></div><div className="direction-goal-grid">
    <article><span>01</span><h3>تمكين المسار المهني</h3><p>مساعدة الخريجين والباحثين عن عمل والمهنيين على توضيح اتجاههم، وتحسين حضورهم، وتوثيق إنجازاتهم.</p></article>
