@@ -1,5 +1,21 @@
 # مجتمع السيطرة — دليل الإعداد من الصفر
 
+## الهوية البصرية الرسمية — نوفمبر 2026
+
+هذا هو المرجع الرسمي لألوان وشعار وترويسة مجتمع السيطرة المهنية:
+
+- [دليل الهوية المعروض على الموقع](https://proexcellencenetwork-art.github.io/mojtama-al-saytara/brand/).
+- [دليل الاستخدام العربي](docs/BRAND_IDENTITY_GUIDE_AR.md).
+- [الشعار الدائري](public/brand-mark.svg) و[الشعار الأفقي](public/brand-lockup.svg).
+- لوحة الألوان: كحلي `#0B2545`، كحلي ثانوي `#13315C`، أحمر `#D7263D`، ورقي دافئ `#F4F0E6`، وحبر `#20262E`.
+- العبارة التعريفية: **دقة الأداء، سيطرة القرار السريري** — **FUTURE MED LEADERS**.
+- الخطوط: Tajawal للنصوص العربية، وIBM Plex Mono للبيانات والوسوم القصيرة.
+- علامة الدائرة/المعايرة وحرف «س» هي الرمز الأساسي. لا تستبدلها بقلب أو مصافحة أو أيقونة عامة.
+
+تطبّق الهوية على رأس الموقع، ورسمة الواجهة، والتذييل، وأيقونة المتصفح، ودليل الهوية. لا يغيّر تحديث الهوية وظائف التسجيل أو صلاحيات العضوية أو البيانات التشغيلية. لا تستخدم وعوداً وظيفية أو مالية أو وصف «اعتماد رسمي» من دون دليل.
+
+---
+
 ## Founding 20 programme — verified design status (12 November 2026)
 
 The five Founding 20 operating documents define a proposed, free 20-person pilot. They are programme design documents, not an announcement that recruitment is open or that mentors, employers, sponsors, or universities have committed.
