@@ -7,6 +7,7 @@ import './backend.css'
 import './seo.css'
 import './fonts.css'
 import './performance.css'
+import './brand.css'
 
 // GitHub Pages serves 404.html for dynamic deep links. Restore the original same-origin
 // path before BrowserRouter reads location so room IDs keep working after refresh.
