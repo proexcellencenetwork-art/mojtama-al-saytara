@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="20" fill="#e1f4ef"/><path d="M32 49s-17-10.4-17-22.4A9.2 9.2 0 0 1 32 21a9.2 9.2 0 0 1 17 5.6C49 38.6 32 49 32 49Z" fill="none" stroke="#087f7d" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 15h5m-2.5-2.5v5M48 13h4m-2-2v4" stroke="#bb8b43" stroke-width="2.4" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 132" role="img" aria-labelledby="title">
+<title id="title">شعار مجتمع السيطرة المهنية</title>
+<circle cx="66" cy="66" r="58" fill="#0B2545" stroke="#F4F0E6" stroke-width="2.5"/>
+<circle cx="66" cy="66" r="40" fill="none" stroke="#F4F0E6" stroke-width="1.2" stroke-dasharray="3 5"/>
+<path d="M66 4V22" stroke="#D7263D" stroke-width="3"/>
+<path d="M66 110V128M4 66H22M110 66H128" stroke="#F4F0E6" stroke-width="2.5"/>
+<circle cx="66" cy="66" r="3.5" fill="#D7263D"/>
+<text x="66" y="78" text-anchor="middle" font-family="Tajawal,Arial,sans-serif" font-weight="900" font-size="38" fill="#F4F0E6">س</text>
+</svg>
