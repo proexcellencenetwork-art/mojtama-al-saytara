@@ -23,7 +23,7 @@
     app?.classList.toggle('dark', dark)
 
     const themeColor = document.querySelector('meta[name="theme-color"]')
-    themeColor?.setAttribute('content', dark ? '#171717' : '#f7faf9')
+    themeColor?.setAttribute('content', dark ? '#07182D' : '#F4F0E6')
 
     if (themeButton) {
       themeButton.setAttribute('type', 'button')
