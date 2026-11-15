@@ -69,11 +69,13 @@ const navItems = [
 function BrandSymbol({ className = 'brand-symbol' }: { className?: string }) {
   return <svg className={className} viewBox="0 0 128 128" fill="none" aria-hidden="true" focusable="false">
     <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="3"/>
-    <circle cx="64" cy="64" r="41" stroke="currentColor" strokeWidth="1.6" opacity=".24"/>
-    <path d="M64 7V21" stroke="#D7263D" strokeWidth="4" strokeLinecap="round"/>
-    <path d="M27 76C35 60 42 48 51 48C59 48 59 77 67 77C76 77 77 47 86 47C95 47 96 76 104 76" stroke="currentColor" strokeWidth="7.5" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M25 89H103" stroke="currentColor" strokeWidth="2" opacity=".28"/>
-    <circle cx="64" cy="89" r="4.2" fill="#D7263D"/>
+    <circle cx="64" cy="64" r="47" stroke="#D7263D" strokeWidth="2.2"/>
+    <circle cx="64" cy="64" r="37" stroke="currentColor" strokeWidth="3.2"/>
+    <circle cx="64" cy="64" r="28.5" stroke="currentColor" strokeWidth="1.5" opacity=".65"/>
+    <path d="M64 8V22" stroke="#D7263D" strokeWidth="4" strokeLinecap="round"/>
+    <path d="M23 70C33 70 36 45 46 45C56 45 57 83 67 83C77 83 78 43 88 43C98 43 100 70 105 70" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M24 90H104" stroke="currentColor" strokeWidth="1.8" opacity=".6"/>
+    <circle cx="64" cy="90" r="4" fill="#D7263D"/>
   </svg>
 }
 function Brand({ light = false }: { light?: boolean }) {
