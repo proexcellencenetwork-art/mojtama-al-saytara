@@ -124,3 +124,67 @@
  .brand-word b { font-size:.76rem; }
  .brand-word small { font-size:.4rem;letter-spacing:.025em; }
 }
+
+/* Visual signature and first-paint logo composition for the public HTML shell. */
+.hero-art { position:relative;display:grid;place-items:center;isolation:isolate; }
+.hero-art .art-core {
+  position:relative;z-index:2;display:grid;place-items:center;
+  width:clamp(150px,20vw,220px);aspect-ratio:1;border:1px solid rgb(244 240 230 / 38%);
+  border-radius:50%;background:#0B2545;color:#F4F0E6;
+  box-shadow:0 20px 55px rgb(11 37 69 / 18%);
+}
+.brand-hero-symbol { display:block;width:58%;height:auto; }
+.hero-art .art-orbit {
+  position:absolute;z-index:1;border:1px solid rgb(11 37 69 / 14%);
+  border-radius:50%;pointer-events:none;
+}
+.hero-art .orbit-one { width:74%;aspect-ratio:1; }
+.hero-art .orbit-two { width:92%;aspect-ratio:1;border-style:dashed;border-color:rgb(215 38 61 / 38%); }
+.hero-art .art-ring-label {
+  position:absolute;z-index:3;bottom:1.2rem;inset-inline:1rem;
+  color:var(--brand);font-size:.78rem;font-weight:900;letter-spacing:.04em;text-align:center;
+}
+.app.dark .hero-art .art-ring-label { color:var(--paper); }
+.app.dark .hero-art .art-core { background:var(--paper);color:var(--brand);border-color:#D7263D; }
+.app.dark .hero-art .art-orbit { border-color:rgb(244 240 230 / 22%); }
+.app.dark .hero-art .orbit-two { border-color:rgb(215 38 61 / 55%); }
+.brand-visual {
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,.8fr);align-items:center;gap:clamp(1.2rem,4vw,3rem);
+ margin-block:3rem;padding:clamp(1.2rem,4vw,2.5rem);border:1px solid var(--line);border-radius:1.4rem;
+ background:color-mix(in srgb,var(--paper) 82%,var(--paper));
+}
+.brand-visual-copy h2 { margin:.45rem 0 .65rem;color:var(--brand);font-size:clamp(1.5rem,3vw,2.15rem);line-height:1.5; }
+.brand-visual-copy p { max-width:48ch;color:var(--muted);line-height:1.9; }
+.brand-visual-mark {
+ display:grid;justify-items:center;gap:.65rem;padding:1.5rem;border-radius:1.15rem;
+ background:#0B2545;color:#F4F0E6;text-align:center;
+}
+.brand-visual-mark img { display:block;width:clamp(100px,14vw,148px);height:auto; }
+.brand-visual-mark span { font-size:1.05rem;font-weight:900; }
+.brand-visual-mark small { color:#FF8793;font:800 .58rem Arial,sans-serif;letter-spacing:.08em;direction:ltr; }
+.footer-brand .brand-mark { width:2.8rem;height:2.8rem; }
+.footer-brand .brand-word b { font-size:.88rem; }
+.footer-brand .brand-word small { font-size:.45rem; }
+.app.dark .brand-visual { background:#0B2545;border-color:#2D4564; }
+.app.dark .brand-visual-copy h2 { color:#F4F0E6; }
+.app.dark .brand-visual-mark { background:#F4F0E6;color:#0B2545; }
+.app.dark .brand-visual-mark small { color:#D7263D; }
+.app.dark .skip-link { background:#D7263D;color:#fff; }
+.app.dark .proof-badge { background:#3A2936;color:#FF8793; }
+.app.dark .feature-main { background:linear-gradient(145deg,#13315C,#0B2545);border-color:#2D4564; }
+.app.dark .feature-icon,.app.dark .panel-icon { background:#17365E;color:#F4F0E6; }
+.app.dark .quote-section { background:#13315C;border-color:#2D4564; }
+.app.dark .mobile-dashboard-nav { background:rgb(7 24 45 / 96%);border-color:#2D4564; }
+.app.dark .mobile-dashboard-nav a.current,.app.dark .mobile-dashboard-nav a:hover { color:#FF8793;background:rgb(215 38 61 / 10%); }
+.app.dark .comment-form input:focus { border-color:#D7263D;box-shadow:0 0 0 3px rgb(215 38 61 / 18%); }
+.community-invite-welcome {
+ border-color:color-mix(in srgb,#D7263D 26%,var(--line));
+ background:color-mix(in srgb,#D7263D 5%,var(--paper));
+}
+@media(max-width:760px) {
+ .hero-art { min-height:300px; }
+ .hero-art .art-ring-label { bottom:.75rem;font-size:.7rem; }
+ .brand-visual { grid-template-columns:1fr; }
+ .brand-visual-mark { padding:1.2rem; }
+ .footer-brand .brand-mark { width:2.5rem;height:2.5rem; }
+}
