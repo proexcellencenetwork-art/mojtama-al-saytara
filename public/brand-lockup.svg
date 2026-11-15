@@ -1,16 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 170" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 190" role="img" aria-labelledby="title desc">
 <title id="title">مجتمع السيطرة المهنية</title>
-<desc id="desc">الأداء الحقيقي، قيمة قابلة للإثبات.</desc>
-<g transform="translate(5 21)">
-<circle cx="64" cy="64" r="58" fill="#0B2545"/>
-<circle cx="64" cy="64" r="52" fill="none" stroke="#F4F0E6" stroke-width="2.8"/>
-<circle cx="64" cy="64" r="38" fill="none" stroke="#F4F0E6" stroke-width="1.5" opacity=".3"/>
-<path d="M64 8V22" stroke="#D7263D" stroke-width="4" stroke-linecap="round"/>
-<path d="M27 76C35 60 42 48 51 48C59 48 59 77 67 77C76 77 77 47 86 47C95 47 96 76 104 76" fill="none" stroke="#F4F0E6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M25 89H103" stroke="#F4F0E6" stroke-width="2" opacity=".3"/>
-<circle cx="64" cy="89" r="4.2" fill="#D7263D"/>
+<desc id="desc">الأداء الحقيقي والقيمة المهنية القابلة للإثبات.</desc>
+<g transform="translate(12 25)">
+<circle cx="70" cy="70" r="66" fill="#0B2545" stroke="#F4F0E6" stroke-width="2.5"/>
+<circle cx="70" cy="70" r="55" fill="none" stroke="#D7263D" stroke-width="2.8"/>
+<circle cx="70" cy="70" r="43" fill="none" stroke="#F4F0E6" stroke-width="3.4"/>
+<circle cx="70" cy="70" r="33" fill="none" stroke="#F4F0E6" stroke-width="1.7" opacity=".65"/>
+<path d="M70 5V22" stroke="#D7263D" stroke-width="4" stroke-linecap="round"/>
+<path d="M22 77C34 77 37 47 49 47C61 47 62 90 74 90C86 90 87 45 99 45C111 45 114 77 119 77" fill="none" stroke="#F4F0E6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24 108H116" stroke="#F4F0E6" stroke-width="1.8" opacity=".6"/>
+<circle cx="70" cy="108" r="4.5" fill="#D7263D"/>
 </g>
-<text x="155" y="72" font-family="Tajawal, Noto Sans Arabic, Arial, sans-serif" font-size="39" font-weight="900" fill="#0B2545">مجتمع السيطرة المهنية</text>
-<text x="158" y="105" font-family="Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="2" fill="#D7263D">PROFESSIONAL MASTERY COMMUNITY</text>
-<text x="158" y="138" font-family="Tajawal, Noto Sans Arabic, Arial, sans-serif" font-size="22" font-weight="700" fill="#20262E">أداء حقيقي. قيمة قابلة للإثبات.</text>
+<text x="190" y="80" font-family="Tajawal, Noto Sans Arabic, Arial, sans-serif" font-size="42" font-weight="900" fill="#0B2545">مجتمع السيطرة المهنية</text>
+<text x="194" y="117" font-family="Arial, sans-serif" font-size="16" font-weight="800" letter-spacing="2" fill="#D7263D">PROFESSIONAL MASTERY COMMUNITY</text>
+<text x="194" y="154" font-family="Tajawal, Noto Sans Arabic, Arial, sans-serif" font-size="22" font-weight="700" fill="#20262E">أداء حقيقي. قيمة قابلة للإثبات.</text>
 </svg>
