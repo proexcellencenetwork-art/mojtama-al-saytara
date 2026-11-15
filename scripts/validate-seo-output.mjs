@@ -175,6 +175,10 @@ if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFou
 if (!notFoundHtml.includes('class="brand-mark"') || !notFoundHtml.includes('class="brand-symbol"') || !notFoundHtml.includes('PMC · PROFESSIONAL MASTERY')) fail.push('404 page must carry the current official brand lockup.')
 const identityPage = await readFile(resolve(dist,'brand/index.html'),'utf8')
 if (!identityPage.includes('brand-mark.svg') || !identityPage.includes('brand-lockup.svg') || !identityPage.includes('#0B2545') || !identityPage.includes('#D7263D') || !identityPage.includes('أداء حقيقي. قيمة قابلة للإثبات.')) fail.push('Public identity guide is incomplete or out of date.')
+if (!identityPage.includes('../assets/tajawal-arabic-400-CyCXRvzh.woff2') || !identityPage.includes('../assets/tajawal-arabic-700-D2-eand5.woff2')) fail.push('Public identity guide must reference both self-hosted Tajawal font weights.')
+for (const font of ['tajawal-arabic-400-CyCXRvzh.woff2','tajawal-arabic-700-D2-eand5.woff2']) {
+  try { await access(resolve(dist,'assets',font)) } catch { fail.push(`Identity guide font asset missing: ${font}`) }
+}
 if (/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(identityPage)) fail.push('Public identity guide must use local fonts only.')
 const manifestJson = JSON.parse(await readFile(resolve(dist,'manifest.webmanifest'),'utf8'))
 if (manifestJson.name !== 'مجتمع السيطرة المهنية' || manifestJson.theme_color !== '#0B2545' || manifestJson.background_color !== '#F4F0E6') fail.push('PWA manifest identity name or theme colors are inconsistent.')
