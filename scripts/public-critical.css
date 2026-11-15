@@ -188,3 +188,18 @@
  .brand-visual-mark { padding:1.2rem; }
  .footer-brand .brand-mark { width:2.5rem;height:2.5rem; }
 }
+
+:root[data-theme="dark"] .hero-art,.app.dark .hero-art {
+ background:repeating-linear-gradient(0deg,rgb(244 240 230 / 3%) 0 1px,transparent 1px 32px),
+ repeating-linear-gradient(90deg,rgb(244 240 230 / 3%) 0 1px,transparent 1px 32px),
+ radial-gradient(ellipse at center,#17365E 0,#0B2545 60%,#07182D 100%);
+ border-color:#2D4564;
+}
+:root[data-theme="dark"] .hero-art .art-core { background:#F4F0E6;color:#0B2545;border-color:#D7263D; }
+:root[data-theme="dark"] .hero-art .art-ring-label { color:#F4F0E6; }
+:root[data-theme="dark"] .hero-art .orbit-one { border-color:rgb(244 240 230 / 22%); }
+:root[data-theme="dark"] .hero-art .orbit-two { border-color:rgb(215 38 61 / 55%); }
+:root[data-theme="dark"] .brand-visual { background:#0B2545;border-color:#2D4564; }
+:root[data-theme="dark"] .brand-visual-copy h2 { color:#F4F0E6; }
+:root[data-theme="dark"] .brand-visual-mark { background:#F4F0E6;color:#0B2545; }
+:root[data-theme="dark"] .brand-visual-mark small { color:#D7263D; }
