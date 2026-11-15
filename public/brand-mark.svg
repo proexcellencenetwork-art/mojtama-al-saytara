@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
 <title id="title">الشعار الرسمي لمجتمع السيطرة المهنية</title>
-<rect width="128" height="128" rx="30" fill="#0B2545"/>
-<circle cx="64" cy="64" r="54" fill="none" stroke="#F4F0E6" stroke-width="3"/>
-<circle cx="64" cy="64" r="39" fill="none" stroke="#F4F0E6" stroke-width="1.6" opacity=".28"/>
-<path d="M64 10V23" stroke="#D7263D" stroke-width="4" stroke-linecap="round"/>
-<path d="M27 76C35 60 42 48 51 48C59 48 59 77 67 77C76 77 77 47 86 47C95 47 96 76 104 76" fill="none" stroke="#F4F0E6" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M25 89H103" stroke="#F4F0E6" stroke-width="2" opacity=".3"/>
-<circle cx="64" cy="89" r="4.2" fill="#D7263D"/>
+<circle cx="64" cy="64" r="56" fill="none" stroke="#F4F0E6" stroke-width="3"/>
+<circle cx="64" cy="64" r="47" fill="none" stroke="#D7263D" stroke-width="2.2"/>
+<circle cx="64" cy="64" r="37" fill="none" stroke="#F4F0E6" stroke-width="3.2"/>
+<circle cx="64" cy="64" r="28.5" fill="none" stroke="#F4F0E6" stroke-width="1.5" opacity=".65"/>
+<path d="M64 8V22" stroke="#D7263D" stroke-width="4" stroke-linecap="round"/>
+<path d="M23 70C33 70 36 45 46 45C56 45 57 83 67 83C77 83 78 43 88 43C98 43 100 70 105 70" fill="none" stroke="#F4F0E6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24 90H104" stroke="#F4F0E6" stroke-width="1.8" opacity=".6"/>
+<circle cx="64" cy="90" r="4" fill="#D7263D"/>
 </svg>
