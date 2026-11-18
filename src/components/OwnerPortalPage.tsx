@@ -81,6 +81,7 @@ export function OwnerPortalPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)
   const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
+  const [accountsAvailable, setAccountsAvailable] = useState(false)
   const [commandCenter, setCommandCenter] = useState<CommandCenterSnapshot | null>(null)
   const [commandCenterPeriod, setCommandCenterPeriod] = useState(30)
   const [commandCenterLoading, setCommandCenterLoading] = useState(true)
@@ -106,6 +107,7 @@ export function OwnerPortalPage() {
       setAuthorized(false)
       setAccounts([])
       setAudit([])
+      setAccountsAvailable(false)
       setCommandCenter(null)
       setCommandCenterLoading(false)
       setLoading(false)
@@ -138,7 +140,9 @@ export function OwnerPortalPage() {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
       setAccounts([])
       setAudit([])
+      setAccountsAvailable(false)
     } else {
+      setAccountsAvailable(true)
       setOwnerInvitationsEnabled(invitationSettingResult.data === true)
       const metricData = communityMetricResult.data as Partial<CommunityMetricSettings> | null
       setCommunityMetric({ visible: metricData?.visible === true, mode: metricData?.mode === 'goal' ? 'goal' : 'actual', goal: Number.isInteger(metricData?.goal) ? Math.max(0, Math.min(1000000, metricData!.goal!)) : 100 })
@@ -279,8 +283,8 @@ export function OwnerPortalPage() {
               { label: 'أكملوا استخدام أداة', value: commandCenter?.analytics?.overview?.tool_completions, note: 'مرات الإكمال المسجلة', icon: BadgeCheck },
               { label: 'مشتركو البريد', value: commandCenter?.analytics?.overview?.newsletter_subscribers, note: 'اشتراكات نشطة إجمالاً', icon: Mail },
               { label: 'ردود الاستبيان', value: commandCenter?.survey?.responses, note: 'ضمن الفترة المختارة', icon: MessageSquare },
-              { label: 'حسابات معتمدة', value: accounts.filter(account => account.account_status === 'approved' && !account.is_platform_owner).length, note: 'من قائمة الحسابات المحمّلة', icon: ShieldCheck },
-              { label: 'قيد المراجعة', value: accounts.filter(account => account.account_status === 'pending').length, note: 'حسابات تنتظر قرار الإدارة', icon: UserCog },
+              { label: 'حسابات معتمدة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'approved' && !account.is_platform_owner).length : undefined, note: 'من قائمة الحسابات المحمّلة', icon: ShieldCheck },
+              { label: 'قيد المراجعة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'pending').length : undefined, note: 'حسابات تنتظر قرار الإدارة', icon: UserCog },
             ].map(item => <article className="owner-command-kpi" key={item.label}>
               <span className="owner-command-kpi-icon"><item.icon size={18}/></span>
               <small>{item.label}</small>
