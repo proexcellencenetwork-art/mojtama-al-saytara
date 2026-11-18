@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, BarChart3, RefreshCw, Send, ShieldCheck, UserCog, UserPlus, Users } from 'lucide-react'
+import { Activity, ArrowLeft, BadgeCheck, BarChart3, Eye, Mail, MessageSquare, RefreshCw, Send, ShieldCheck, Target, UserCog, UserPlus, Users } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './OwnerPortalPage.css'
