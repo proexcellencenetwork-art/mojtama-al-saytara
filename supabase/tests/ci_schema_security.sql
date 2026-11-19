@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(25);
+select plan(30);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
@@ -42,6 +42,159 @@ select ok(
   AND public.get_public_community_metric() -> 'actual_count' = 'null'::jsonb,
   'public member count is not returned while the owner hides the metric'
 );
+
+
+-- Self-contained professional portfolio RLS regression test.
+-- Uses synthetic Auth users and a transaction rollback; never requires live member accounts.
+select ok(to_regclass('public.professional_portfolio_items') is not null, 'professional portfolio table exists');
+select ok(
+  coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.professional_portfolio_items')), false),
+  'RLS is enabled on professional portfolio records'
+);
+
+insert into auth.users(id, email, raw_user_meta_data, email_confirmed_at) values
+  ('20000000-0000-4000-8000-000000000031', 'portfolio-ci-a@example.test', '{"name":"Portfolio CI A"}'::jsonb, now()),
+  ('20000000-0000-4000-8000-000000000032', 'portfolio-ci-b@example.test', '{"name":"Portfolio CI B"}'::jsonb, now()),
+  ('20000000-0000-4000-8000-000000000033', 'portfolio-ci-pending@example.test', '{"name":"Portfolio CI pending"}'::jsonb, now());
+
+-- The auth trigger creates pending profiles. Approve only the two synthetic test owners
+-- through the same guarded test-only transaction setting used by the account approval tests.
+select set_config('saytara.account_approval_rpc', 'on', true);
+update public.profiles
+set account_status = 'approved', visibility = 'public'
+where user_id in (
+  '20000000-0000-4000-8000-000000000031',
+  '20000000-0000-4000-8000-000000000032'
+);
+select set_config('saytara.account_approval_rpc', 'off', true);
+
+insert into public.professional_portfolio_items(id, user_id, item_type, title, description, visibility) values
+  ('30000000-0000-4000-8000-000000000031', '20000000-0000-4000-8000-000000000031', 'project', 'Public project A', 'Public project description', 'public'),
+  ('30000000-0000-4000-8000-000000000032', '20000000-0000-4000-8000-000000000031', 'solved_problem', 'Private problem A', 'Private problem description', 'private'),
+  ('30000000-0000-4000-8000-000000000033', '20000000-0000-4000-8000-000000000032', 'skill', 'Private skill B', 'Private skill description', 'private'),
+  ('30000000-0000-4000-8000-000000000034', '20000000-0000-4000-8000-000000000033', 'result', 'Pending profile result', 'Must not be publicly exposed', 'public');
+
+set local role authenticated;
+do $
+declare
+  v_a constant uuid := '20000000-0000-4000-8000-000000000031';
+  v_b constant uuid := '20000000-0000-4000-8000-000000000032';
+  v_pending constant uuid := '20000000-0000-4000-8000-000000000033';
+  v_a_public constant uuid := '30000000-0000-4000-8000-000000000031';
+  v_a_private constant uuid := '30000000-0000-4000-8000-000000000032';
+  v_b_private constant uuid := '30000000-0000-4000-8000-000000000033';
+  v_count integer;
+  v_rows integer;
+  v_denied boolean;
+begin
+  perform set_config('request.jwt.claim.sub', v_a::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_a::text, 'role', 'authenticated')::text, true);
+
+  select count(*) into v_count from public.professional_portfolio_items where id = v_a_private;
+  if v_count <> 1 then raise exception 'FAIL: owner A cannot read their own private portfolio record'; end if;
+
+  update public.professional_portfolio_items
+  set title = 'Private problem A updated by owner'
+  where id = v_a_private;
+  get diagnostics v_rows = row_count;
+  if v_rows <> 1 then raise exception 'FAIL: owner A cannot update their own portfolio record'; end if;
+
+  insert into public.professional_portfolio_items(user_id, item_type, title, description)
+  values (v_a, 'skill', 'Skill added by owner A', 'A self-owned test record');
+  get diagnostics v_rows = row_count;
+  if v_rows <> 1 then raise exception 'FAIL: owner A cannot insert their own portfolio record'; end if;
+
+  perform set_config('request.jwt.claim.sub', v_b::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_b::text, 'role', 'authenticated')::text, true);
+
+  select count(*) into v_count from public.professional_portfolio_items where id = v_a_private;
+  if v_count <> 0 then raise exception 'FAIL: owner B can read owner A private record'; end if;
+
+  select count(*) into v_count from public.professional_portfolio_items where id = v_a_public;
+  if v_count <> 1 then raise exception 'FAIL: an approved member cannot read another member public record'; end if;
+
+  update public.professional_portfolio_items set title = 'Unauthorized edit'
+  where id = v_a_public;
+  get diagnostics v_rows = row_count;
+  if v_rows <> 0 then raise exception 'FAIL: owner B modified owner A public record'; end if;
+
+  delete from public.professional_portfolio_items where id = v_a_private;
+  get diagnostics v_rows = row_count;
+  if v_rows <> 0 then raise exception 'FAIL: owner B deleted owner A private record'; end if;
+
+  v_denied := false;
+  begin
+    insert into public.professional_portfolio_items(user_id, item_type, title, description)
+    values (v_a, 'skill', 'Impersonated record', 'Owner B must not insert for owner A');
+  exception when insufficient_privilege then
+    v_denied := true;
+  end;
+  if not v_denied then raise exception 'FAIL: owner B inserted a record under owner A user_id'; end if;
+
+  delete from public.professional_portfolio_items where id = v_b_private;
+  get diagnostics v_rows = row_count;
+  if v_rows <> 1 then raise exception 'FAIL: owner B cannot delete their own private record'; end if;
+
+  perform set_config('request.jwt.claim.sub', v_pending::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_pending::text, 'role', 'authenticated')::text, true);
+  v_denied := false;
+  begin
+    insert into public.professional_portfolio_items(user_id, item_type, title, description)
+    values (v_pending, 'skill', 'Pending member record', 'Pending accounts must not manage portfolio rows');
+  exception when insufficient_privilege then
+    v_denied := true;
+  end;
+  if not v_denied then raise exception 'FAIL: an unapproved account managed portfolio records'; end if;
+end;
+$;
+reset role;
+select ok(true, 'approved members can manage only their own portfolio records; public reads do not grant cross-member writes');
+
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.role', 'anon', true);
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $
+declare
+  v_count integer;
+begin
+  select count(*) into v_count from public.professional_portfolio_items
+  where id = '30000000-0000-4000-8000-000000000031';
+  if v_count <> 1 then raise exception 'FAIL: anonymous visitor cannot read the explicitly public record of an approved public profile'; end if;
+
+  select count(*) into v_count from public.professional_portfolio_items
+  where id = '30000000-0000-4000-8000-000000000032';
+  if v_count <> 0 then raise exception 'FAIL: anonymous visitor can read a private portfolio record'; end if;
+
+  select count(*) into v_count from public.professional_portfolio_items
+  where id = '30000000-0000-4000-8000-000000000034';
+  if v_count <> 0 then raise exception 'FAIL: anonymous visitor can read a portfolio record owned by a pending profile'; end if;
+end;
+$;
+reset role;
+select ok(true, 'anonymous visitors see only explicit public records from approved public profiles');
+
+update public.profiles
+set visibility = 'private'
+where user_id = '20000000-0000-4000-8000-000000000031';
+set local role anon;
+select set_config('request.jwt.claim.sub', '', true);
+select set_config('request.jwt.claim.role', 'anon', true);
+select set_config('request.jwt.claims', '{"role":"anon"}', true);
+do $
+declare
+  v_count integer;
+begin
+  select count(*) into v_count from public.professional_portfolio_items
+  where id = '30000000-0000-4000-8000-000000000031';
+  if v_count <> 0 then raise exception 'FAIL: public portfolio record is visible after its owner makes the profile private'; end if;
+end;
+$;
+reset role;
+select ok(true, 'making the owner profile private hides previously public portfolio records');
 
 select * from finish();
 rollback;
