@@ -344,7 +344,6 @@ export function AchievementPortfolioPage() {
               })}</div>}
           </section>
         </>}
-    }
   </main>
 }
 
