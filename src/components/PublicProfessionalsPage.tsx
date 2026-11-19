@@ -39,6 +39,7 @@ const publicPortfolioKinds: { id: PublicPortfolioItem['item_type']; label: strin
 
 export default function PublicProfessionalsPage() {
   const [profiles, setProfiles] = useState<ProfessionalProfile[]>([])
+  const [publicProfileCount, setPublicProfileCount] = useState<number | null>(null)
   const [portfolioItems, setPortfolioItems] = useState<PublicPortfolioItem[]>([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -52,16 +53,19 @@ export default function PublicProfessionalsPage() {
         setLoading(false)
         return
       }
-      const { data, error: requestError } = await supabase
+      const { data, error: requestError, count } = await supabase
         .from('profiles')
-        .select('user_id,username,display_name,headline,profession,specialty,workplace,bio,photo_url,experience_years,interests,goals,city')
+        .select('user_id,username,display_name,headline,profession,specialty,workplace,bio,photo_url,experience_years,interests,goals,city', { count: 'exact' })
         .eq('account_status', 'approved')
         .eq('visibility', 'public')
         .order('display_name', { ascending: true })
         .limit(250)
       if (!active) return
-      if (requestError) setError('تعذر تحميل الملفات المهنية العامة حالياً.')
-      else {
+      if (requestError) {
+        setPublicProfileCount(null)
+        setError('تعذر تحميل الملفات المهنية العامة حالياً.')
+      } else {
+        setPublicProfileCount(count)
         const nextProfiles = (data || []) as ProfessionalProfile[]
         setProfiles(nextProfiles)
         if (nextProfiles.length) {
@@ -105,7 +109,7 @@ export default function PublicProfessionalsPage() {
           <Link className="btn btn-outline" to="/membership">تعرّف على العضوية</Link>
         </div>
       </div>
-      <div className="professionals-hero-stat"><strong>{profiles.length.toLocaleString('ar')}</strong><span>ملفاً مهنياً عاماً معتمداً في الدليل</span><small>يظهر الملف بعد تأكيد البريد وإكمال بياناته الأساسية وإتاحته للعامة.</small></div>
+      <div className="professionals-hero-stat"><strong>{publicProfileCount === null ? '—' : publicProfileCount.toLocaleString('ar')}</strong><span>ملفاً مهنياً عاماً معتمداً في الدليل</span><small>العدد الإجمالي المطابق لصلاحيات الدليل؛ تُحمّل الصفحة حتى 250 ملفاً للتصفح.</small></div>
     </header>
 
     <section className="professionals-directory" aria-labelledby="professionals-directory-title">
