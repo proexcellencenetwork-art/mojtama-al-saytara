@@ -55,7 +55,7 @@ select ok(
 insert into auth.users(id, email, raw_user_meta_data, email_confirmed_at) values
   ('20000000-0000-4000-8000-000000000031', 'portfolio-ci-a@example.test', '{"name":"Portfolio CI A"}'::jsonb, now()),
   ('20000000-0000-4000-8000-000000000032', 'portfolio-ci-b@example.test', '{"name":"Portfolio CI B"}'::jsonb, now()),
-  ('20000000-0000-4000-8000-000000000033', 'portfolio-ci-pending@example.test', '{"name":"Portfolio CI pending"}'::jsonb, now());
+  ('20000000-0000-4000-8000-000000000033', 'portfolio-ci-pending@example.test', '{"name":"Portfolio CI pending"}'::jsonb, NULL);
 
 -- The auth trigger creates pending profiles. Approve only the two synthetic test owners
 -- through the same guarded test-only transaction setting used by the account approval tests.
