@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, BookOpen, Check, CircleHelp, Download, Eye, EyeOff, FolderKanban, Lightbulb, LineChart, LockKeyhole, Pencil, Plus, ShieldCheck, Sparkles, Target, Trash2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, CircleHelp, Download, Eye, EyeOff, FolderKanban, Lightbulb, LineChart, LockKeyhole, Pencil, Plus, ShieldCheck, Sparkles, Target, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { buildPositioningStatement, scorePromotionReadiness, type ReadinessItem } from '../lib/careerLogic'
 import { supabase } from '../lib/supabase'
