@@ -75,7 +75,7 @@ insert into public.professional_portfolio_items(id, user_id, item_type, title, d
   ('30000000-0000-4000-8000-000000000034', '20000000-0000-4000-8000-000000000033', 'result', 'Pending profile result', 'Must not be publicly exposed', 'public');
 
 set local role authenticated;
-do $
+do $portfolio_ci$
 declare
   v_a constant uuid := '20000000-0000-4000-8000-000000000031';
   v_b constant uuid := '20000000-0000-4000-8000-000000000032';
@@ -149,7 +149,7 @@ begin
   end;
   if not v_denied then raise exception 'FAIL: an unapproved account managed portfolio records'; end if;
 end;
-$;
+$portfolio_ci$;
 reset role;
 select ok(true, 'approved members can manage only their own portfolio records; public reads do not grant cross-member writes');
 
@@ -157,7 +157,7 @@ set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select set_config('request.jwt.claim.role', 'anon', true);
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-do $
+do $portfolio_ci$
 declare
   v_count integer;
 begin
@@ -173,7 +173,7 @@ begin
   where id = '30000000-0000-4000-8000-000000000034';
   if v_count <> 0 then raise exception 'FAIL: anonymous visitor can read a portfolio record owned by a pending profile'; end if;
 end;
-$;
+$portfolio_ci$;
 reset role;
 select ok(true, 'anonymous visitors see only explicit public records from approved public profiles');
 
@@ -184,7 +184,7 @@ set local role anon;
 select set_config('request.jwt.claim.sub', '', true);
 select set_config('request.jwt.claim.role', 'anon', true);
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
-do $
+do $portfolio_ci$
 declare
   v_count integer;
 begin
@@ -192,7 +192,7 @@ begin
   where id = '30000000-0000-4000-8000-000000000031';
   if v_count <> 0 then raise exception 'FAIL: public portfolio record is visible after its owner makes the profile private'; end if;
 end;
-$;
+$portfolio_ci$;
 reset role;
 select ok(true, 'making the owner profile private hides previously public portfolio records');
 
