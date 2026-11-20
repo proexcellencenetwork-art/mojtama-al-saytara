@@ -51,6 +51,7 @@ export function AnalyticsDashboardPage() {
   const [error, setError] = useState('')
   const [savingLead, setSavingLead] = useState<string | null>(null)
   const [exportingCrm, setExportingCrm] = useState(false)
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null)
 
   const load = useCallback(async () => {
     if (!supabase) { setAuthorized(false); setLoading(false); return }
@@ -62,7 +63,7 @@ export function AnalyticsDashboardPage() {
       supabase.rpc('get_owner_site_analytics', { p_days: days }),
       supabase.rpc('get_owner_device_analytics', { p_days: days }),
       supabase.rpc('get_owner_lead_pipeline', { p_limit: 150 }),
-      supabase.rpc('get_owner_public_survey_summary', { p_days: 90 }),
+      supabase.rpc('get_owner_public_survey_summary', { p_days: days }),
       supabase.rpc('get_owner_behavioral_insights', { p_days: days }),
     ])
     if (analyticsResult.error) { setError('تعذر تحميل مؤشرات الزيارات. تحقق من صلاحيات المالك ثم أعد المحاولة.'); setData(null) }
@@ -76,6 +77,7 @@ export function AnalyticsDashboardPage() {
     if (behaviorResult.error) setBehaviorData(null)
     else setBehaviorData(behaviorResult.data as BehaviorPayload)
     if (deviceResult.error || leadResult.error || surveyResult.error || behaviorResult.error) setError('بعض الأقسام لم تُحمّل. حدّث الصفحة، وإذا استمر الخلل راجع صلاحيات وظائف لوحة المالك.')
+    setUpdatedAt(new Date())
     setLoading(false)
   }, [days])
 
@@ -137,6 +139,8 @@ export function AnalyticsDashboardPage() {
   if (authorized === false) return <main className="app-main wrap analytics-page" dir="rtl"><section className="analytics-card"><ShieldCheck size={30}/><h1>لوحة المؤشرات للمالك فقط</h1><p>هذه الصفحة لا تعرض بيانات الزوار أو العملاء إلا بعد إثبات صلاحية المالك من قاعدة البيانات.</p></section></main>
 
   const overview = data?.overview
+  const trendRows = (data?.daily ?? []).slice(-14)
+  const maxDailyViews = Math.max(1, ...trendRows.map(row => row.page_views))
   const cards = [
     { title: 'مشاهدات الصفحات', value: overview?.page_views, icon: Eye },
     { title: 'زوار مميزون', value: overview?.unique_visitors, icon: Activity },
@@ -146,10 +150,23 @@ export function AnalyticsDashboardPage() {
     { title: 'مشتركو البريد', value: overview?.newsletter_subscribers, icon: Mail },
   ]
   return <main className="app-main wrap analytics-page" dir="rtl">
-    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p></div><div className="analytics-actions"><Link className="btn btn-outline btn-small" to="/owner"><ShieldCheck size={15}/> مركز المالك</Link><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button><button className="btn btn-primary btn-small" type="button" onClick={() => void exportCrmArchive()} disabled={exportingCrm}><ArrowDownToLine size={15}/>{exportingCrm ? 'جارٍ تجهيز النسخة…' : 'تصدير نسخة CRM كاملة'}</button></div></header>
+    <header className="analytics-heading"><div><span className="eyebrow">قياس النمو · للمالك فقط</span><h1>مركز إدارة الزوار والعملاء</h1><p>رحلة الزائر، الأدوات، مصادر الوصول، الأجهزة، العملاء المحتملون والتحويل إلى أعضاء. القياس يبدأ بعد الموافقة فقط.</p><small className="analytics-meta">المصدر: تحليلات الموقع بموافقة الزائر · آخر تحديث: {updatedAt ? date(updatedAt.toISOString()) : "لم يكتمل التحميل بعد"}</small></div><div className="analytics-actions"><Link className="btn btn-outline btn-small" to="/owner"><ShieldCheck size={15}/> مركز المالك</Link><select aria-label="الفترة الزمنية" value={days} onChange={event => setDays(Number(event.target.value))}><option value={7}>آخر 7 أيام</option><option value={30}>آخر 30 يومًا</option><option value={90}>آخر 90 يومًا</option></select><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> تحديث</button><button className="btn btn-primary btn-small" type="button" onClick={() => void exportCrmArchive()} disabled={exportingCrm}><ArrowDownToLine size={15}/>{exportingCrm ? 'جارٍ تجهيز النسخة…' : 'تصدير نسخة CRM كاملة'}</button></div></header>
     {error && <p className="analytics-error" role="alert">{error}</p>}
     {loading && !data ? <section className="analytics-card">جارٍ تحميل المؤشرات…</section> : <>
       <section className="analytics-kpis">{cards.map(card => <article className="analytics-kpi" key={card.title}><span><card.icon size={19}/></span><small>{card.title}</small><strong>{number(card.value)}</strong></article>)}</section>
+      <section className="analytics-card">
+        <div className="analytics-section-heading"><div><h2>اتجاه الزيارات اليومية</h2><p>مشاهدات الصفحات والزوار المميزون حسب اليوم، بوقت الرياض. يعرض آخر 14 يوماً من الفترة المختارة، ولا تُسجل الزيارة قبل موافقة الزائر.</p></div></div>
+        {trendRows.length ? <>
+          <div className="analytics-daily-chart" role="img" aria-label="مخطط مشاهدات الصفحات اليومية للآخر 14 يوماً">
+            {trendRows.map(row => <div className="analytics-daily-item" key={row.day} title={`${row.day}: ${number(row.page_views)} مشاهدة · ${number(row.visitors)} زائر`}>
+              <div className="analytics-daily-bar"><span style={{ height: `${Math.max(3, row.page_views / maxDailyViews * 100)}%` }}/></div>
+              <strong>{number(row.page_views)}</strong>
+              <small>{new Date(row.day + 'T00:00:00').toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' })}</small>
+            </div>)}
+          </div>
+          <div className="analytics-table-wrap"><table><thead><tr><th>التاريخ</th><th>مشاهدات الصفحات</th><th>الزوار</th></tr></thead><tbody>{trendRows.map(row => <tr key={row.day}><td>{new Date(row.day + 'T00:00:00').toLocaleDateString('ar-SA', { dateStyle: 'medium' })}</td><td>{number(row.page_views)}</td><td>{number(row.visitors)}</td></tr>)}</tbody></table></div>
+        </> : <p className="analytics-empty">لا توجد بيانات يومية بعد. ستظهر هنا بعد موافقة الزوار على التحليلات وتسجيل زيارات فعلية.</p>}
+      </section>
 
       <section className="analytics-card">
         <div className="analytics-section-heading"><div><h2>مؤشرات التجربة من السلوك</h2><p>هذه إشارات استخدام وليست آراء مؤكدة: العودة قد تعني اهتماماً، وإكمال الأداة يعني إكمال الاستخدام، وعدم الإكمال قد يشير إلى احتكاك ويحتاج سؤال الزائر.</p></div></div>
@@ -163,7 +180,7 @@ export function AnalyticsDashboardPage() {
         </div>
       </section>
       <section className="analytics-card">
-        <div className="analytics-section-heading"><div><h2>استبيان تجربة الزائر</h2><p>نتائج الاستبيان المجهول خلال آخر 90 يومًا.</p></div><a className="btn btn-outline btn-small" href="/mojtama-al-saytara/survey/" target="_blank" rel="noreferrer">عرض صفحة الاستبيان</a></div>
+        <div className="analytics-section-heading"><div><h2>استبيان تجربة الزائر</h2><p>نتائج الاستبيان المجهول ضمن الفترة المحددة: آخر {days} يوماً.</p></div><a className="btn btn-outline btn-small" href="/mojtama-al-saytara/survey/" target="_blank" rel="noreferrer">عرض صفحة الاستبيان</a></div>
         <div className="analytics-kpis">{[{title:'عدد الردود',value:surveyData?.responses},{title:'متوسط الرضا / 5',value:surveyData?.average_rating},{title:'سهولة الاستخدام / 5',value:surveyData?.average_ease},{title:'التوصية / 10',value:surveyData?.average_recommendation}].map(item=><article className="analytics-kpi" key={item.title}><small>{item.title}</small><strong>{item.value==null?'—':typeof item.value==='number'?item.value.toLocaleString('ar-SA',{maximumFractionDigits:2}):number(item.value)}</strong></article>)}</div>
         <div className="analytics-two-col"><div className="analytics-table-wrap"><h3>أكثر مجالات التحسين طلبًا</h3><table><thead><tr><th>المجال</th><th>الردود</th></tr></thead><tbody>{(surveyData?.areas??[]).map(row=><tr key={row.area}><td>{row.area}</td><td>{number(row.responses)}</td></tr>)}</tbody></table></div><div className="analytics-table-wrap"><h3>ما الذي استخدمه الزوار؟</h3><table><thead><tr><th>المحتوى</th><th>الردود</th></tr></thead><tbody>{(surveyData?.used_areas??[]).map(row=><tr key={row.area}><td>{row.area}</td><td>{number(row.responses)}</td></tr>)}</tbody></table></div></div>
         <div className="analytics-table-wrap"><h3>ملاحظات الزوار</h3>{(surveyData?.recent_comments??[]).map((row,i)=><p key={i}>“{row.comment}” <small>· تقييم {row.overall_rating}/5 · {date(row.created_at)}</small></p>)}{!surveyData?.recent_comments?.length&&<p className="analytics-empty">لا توجد ملاحظات مكتوبة بعد.</p>}</div>
