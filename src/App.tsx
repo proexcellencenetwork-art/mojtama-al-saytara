@@ -26,6 +26,11 @@ const LearningRoomPage = lazy(() => import('./components/LearningRoomPage'))
 const AnalyticsDashboardPage = lazy(() => import('./components/AnalyticsDashboardPage').then(module => ({ default: module.AnalyticsDashboardPage })))
 const PublicSurveyPage = lazy(() => import('./components/PublicSurveyPage'))
 const EducationalVideosPage = lazy(() => import('./components/EducationalVideosPage'))
+const StrategicTracksPage = lazy(() => import('./components/StrategicOverviewPages').then(module => ({ default: module.StrategicTracksPage })))
+const ProgramsPage = lazy(() => import('./components/StrategicOverviewPages').then(module => ({ default: module.ProgramsPage })))
+const InnovationResearchHubPage = lazy(() => import('./components/StrategicOverviewPages').then(module => ({ default: module.InnovationResearchHubPage })))
+const ContributePage = lazy(() => import('./components/StrategicOverviewPages').then(module => ({ default: module.ContributePage })))
+const ContactPage = lazy(() => import('./components/StrategicOverviewPages').then(module => ({ default: module.ContactPage })))
 
 const CareerJourneyHome = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerJourneyHome })))
 const CareerCompassPage = lazy(() => import('./components/CareerJourneyPages').then(module => ({ default: module.CareerCompassPage })))
@@ -128,6 +133,11 @@ function Header({ demo, authenticated, accountStatus, displayName, role, toggleT
         <button type="button" className="workspace-nav-action" onClick={() => { setOpen(false); void onSignOut() }}><LogOut size={15}/> تسجيل الخروج</button>
       </> : <>
         <NavLink to="/career-journey" onClick={() => setOpen(false)}>الرحلة المهنية</NavLink>
+        <NavLink to="/tracks" onClick={() => setOpen(false)}>المسارات</NavLink>
+        <NavLink to="/programs" onClick={() => setOpen(false)}>البرامج</NavLink>
+        <NavLink to="/innovation-hub" onClick={() => setOpen(false)}>الابتكار والبحث</NavLink>
+        <NavLink to="/contribute" onClick={() => setOpen(false)}>ساهم</NavLink>
+        <NavLink to="/contact" onClick={() => setOpen(false)}>تواصل</NavLink>
         <NavLink to="/about" onClick={() => setOpen(false)}>عن المجتمع</NavLink>
         <NavLink to="/professionals" onClick={() => setOpen(false)}>الدليل المهني</NavLink>
         <NavLink to="/coaching" onClick={() => setOpen(false)}>الكوتشنج</NavLink>
@@ -310,6 +320,11 @@ const publicSeo: Record<string, { title: string; description: string }> = {
   '/professional-positioning': { title: 'التموضع المهني | مجتمع السيطرة', description: 'أنشئ مسودة تعريف مهني تربط جمهورك ومشكلته بقدرتك ودليلك المهني.' },
   '/linkedin-workshop': { title: 'ورشة اختراق LinkedIn | مجتمع السيطرة', description: 'ورشة ذاتية لتحويل ملف LinkedIn إلى أصل مهني مع تمارين وخطة مراجعة 30 يوماً.' },
   '/content-studio': { title: 'استوديو المحتوى | مجتمع السيطرة', description: 'إدارة تحريرية خاصة بمقالات ومصادر ومشتقات النشر الاجتماعي.' },
+  '/tracks': { title: 'المسارات الاستراتيجية | مجتمع السيطرة المهنية', description: 'استكشف مسارات التقدم المهني والابتكار والبحث، واختر نقطة بداية تربط جهدك بمخرج مهني يمكن إثباته.' },
+  '/programs': { title: 'البرامج والأدوات المهنية | مجتمع السيطرة المهنية', description: 'تصفح الأدوات والمسارات المهنية المنشورة وصنّفها حسب هدفك، مع توضيح ما هو متاح فعلياً.' },
+  '/innovation-hub': { title: 'مركز الابتكار والبحث | مجتمع السيطرة المهنية', description: 'مساحة للابتكار والبحث والأدلة، مع Future Med Leaders كمبادرة تخصصية ضمن مجتمع السيطرة المهنية.' },
+  '/contribute': { title: 'المساهمة والتطوع | مجتمع السيطرة المهنية', description: 'تعرف على طرق المساهمة بالخبرة والمراجعة المعرفية والابتكار في مجتمع السيطرة المهنية.' },
+  '/contact': { title: 'التواصل | مجتمع السيطرة المهنية', description: 'قنوات التواصل والملاحظات الرسمية لمجتمع السيطرة المهنية.' },
 }
 const privatePaths = new Set(['/owner/videos', '/survey', '/login', '/register', '/reset-password', '/feed', '/profile', '/connections', '/messages', '/notifications', '/groups', '/verification', '/moderation', '/admin', '/settings', '/owner', '/learning', '/content-studio', '/learning-room'])
 
@@ -812,7 +827,7 @@ function App() {
   }
   const authenticated = signedIn || demo
   const routes = Object.keys(publicCopy) as (keyof typeof publicCopy)[]
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><SiteAnalyticsTracker/><AnalyticsConsentBanner/><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><a href="#main-content" className="skip-link">تجاوز إلى المحتوى الرئيسي</a><Header demo={demo} authenticated={authenticated} accountStatus={accountStatus} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark} unread={unread} unreadMessages={unreadMessages} onSignOut={onSignOut}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<div id="main-content" tabIndex={-1}><Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/><Route path="/waitlist" element={<Navigate replace to="/register"/>}/>
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><SiteAnalyticsTracker/><AnalyticsConsentBanner/><RouteMetadata/><SupabaseCallbackRouter/><div className={dark ? 'app dark' : 'app'}><a href="#main-content" className="skip-link">تجاوز إلى المحتوى الرئيسي</a><Header demo={demo} authenticated={authenticated} accountStatus={accountStatus} displayName={displayName} role={role} toggleTheme={toggleTheme} dark={dark} unread={unread} unreadMessages={unreadMessages} onSignOut={onSignOut}/>{demoMode && <aside className="demo-banner" role="status"><b>وضع تجريبي:</b> لم يُعثر على إعدادات Supabase صالحة؛ الحسابات والمنشورات التجريبية لا تُحفظ كبيانات حقيقية. <Link to="/register">دليل ربط قاعدة البيانات</Link></aside>}<div id="main-content" tabIndex={-1}><Suspense fallback={<main className="public-page wrap"><p role="status">جارٍ تحميل الصفحة...</p></main>}><Routes><Route path="/" element={<PublicHome/>}/><Route path="/tracks" element={<><StrategicTracksPage/><Footer/></>}/><Route path="/programs" element={<><ProgramsPage/><Footer/></>}/><Route path="/innovation-hub" element={<><InnovationResearchHubPage/><Footer/></>}/><Route path="/contribute" element={<><ContributePage/><Footer/></>}/><Route path="/contact" element={<><ContactPage/><Footer/></>}/><Route path="/waitlist" element={<Navigate replace to="/register"/>}/>
       <Route path="/professionals" element={<><PublicProfessionalsPage/><Footer/></>}/><Route path="/survey" element={<><PublicSurveyPage/><Footer/></>}/><Route path="/videos" element={<><EducationalVideosPage role={role}/><Footer/></>}/><Route path="/videos/:slug" element={<><EducationalVideosPage role={role}/><Footer/></>}/><Route path="/saudi-labor-market" element={<Navigate replace to="/saudi-labor-market-radar"/>}/><Route path="/learning-center" element={<Navigate replace to="/learning"/>}/>{routes.map(key => <Route path={`/${key}`} key={key} element={<PublicPage page={key}/>}/>)}{publicCareerRoutes.map(([path, Page]) => {
         const toolPath = path as string
         const content = toolPaths.has(toolPath)
