@@ -116,7 +116,7 @@
 - الرابط: https://github.com/proexcellencenetwork-art/mojtama-al-saytara/pull/77
 - الفرع: `fix/site-wide-brand-identity-2026`
 - HEAD: `99882ce955edaee0c78a1251c5fff6b749d0ff7c`
-- مفتوح وغير مدمج؛ فحوص البناء وSEO وCodeQL الأخيرة ناجحة.
+- مفتوح وغير مدمج؛ فحوص البناء وSEO وCodeQL الأخيرة ناجحة (Pull Request Validation run 44803516737 وCodeQL run 44803516860).
 - أصلحنا توليد صنف العلامة ليكون `class="brand"` دقيقاً، وصححنا شعار Organization structured data إلى `brand-mark.svg`، وأعدنا صورة صفحة «عن المجتمع» المتجاوبة AVIF/WebP مع الأبعاد والتحميل الكسول.
 - لا تفترض نشر الهوية قبل الدمج والنشر.
 
@@ -125,7 +125,7 @@
 - الرابط: https://github.com/proexcellencenetwork-art/mojtama-al-saytara/pull/83
 - الفرع: `docs/founding20-operating-docs-2026-11-20`
 - HEAD: `f0c801e19dd8b0aa139274ac771144b28d57d04c`
-- مفتوح وغير مدمج؛ فحص Pull Request Validation ناجح.
+- مفتوح وغير مدمج؛ فحص Pull Request Validation ناجح (run 44802979776).
 - يعيد ثلاث وثائق ناقصة على أحدث main مع الحفاظ على وثيقتي القياس والاستدامة الموجودتين. لا يفتح التقديم ولا يغير بيانات الأعضاء.
 
 ### PR #84 — مكتبة المعرفة المهنية
@@ -133,7 +133,7 @@
 - الرابط: https://github.com/proexcellencenetwork-art/mojtama-al-saytara/pull/84
 - الفرع: `feat/professional-knowledge-hub-clean-2026-11-20`
 - HEAD عند بدء الفحوص: `ccb2923df2578b509ee02e607b10cbe828e27b6d`
-- مفتوح ومبني على main؛ فحوص البناء وTypeScript قيد التشغيل.
+- مفتوح ومبني على main؛ جميع الفحوص الأخيرة ناجحة: البناء وTypeScript والمحتوى وSEO (run 44804180933) وCodeQL (run 44804181906).
 - يضيف `/explore/` ببحث عربي وتصفية حسب المجال، 10 أدلة متخصصة، HTML ثابت قابل للفهرسة، وفحص SEO لوجود البحث وفهرس النتائج.
 - رابط واتساب لا يظهر إلا إذا كان `src/content/community-links.json` يحتوي رابط قناة صحيحاً. القيمة الحالية فارغة.
 - التغييرات تشمل `PublicExplorePage` ومسارات App وprerender وSEO والبحث المحلي في `public-site.js`.
@@ -142,7 +142,7 @@
 
 - PR #80 أساس ملف الإنجاز ومؤشر الجاهزية ومجاميع البيانات والحملات.
 - PR #79 يعتمد على #80 ويعرض المجاميع داخل مركز القيادة.
-- PR #77 و#84 يتداخلان في `src/App.tsx` و`scripts/prerender-pages.mjs` و`public/public-site.js`; لا تدمجهما بالتوازي قبل ترتيب قاعدة الفروع وإعادة تشغيل CI على HEAD النهائي.
+- PR #77 و#84 يتداخلان في `src/App.tsx` و`scripts/prerender-pages.mjs` و`public/public-site.js`; لا تدمجهما بالتوازي قبل ترتيب قاعدة الفروع وإعادة تشغيل CI على HEAD النهائي. PR #56 أُغلق بوصفه مستبدلاً بـ#84 بعد نجاح CI.
 - PR #83 توثيقي مستقل.
 - لا دمج أو نشر دون تفويض صريح.
 
