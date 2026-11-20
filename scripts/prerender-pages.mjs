@@ -182,8 +182,12 @@ function communityDirectionHtml() {
   </section>`;
 }
 function brandIllustration() {
+  const sizes = '(max-width: 720px) calc(100vw - 68px), 500px'
+  const avif = `<source type="image/avif" srcset="${assetUrl('images/brand-community-480.avif')} 480w, ${assetUrl('images/brand-community-1200.avif')} 1200w" sizes="${sizes}">`
+  const webp = `<source type="image/webp" srcset="${assetUrl('images/brand-community-480.webp')} 480w, ${assetUrl('images/brand-community-1200.webp')} 1200w" sizes="${sizes}">`
   return `<section class="brand-visual" aria-labelledby="brand-visual-heading">
     <div class="brand-visual-copy"><span class="eyebrow">هوية واحدة · تطبيق موحّد</span><h2 id="brand-visual-heading">أداء حقيقي. قيمة قابلة للإثبات.</h2><p>نعتمد لغة بصرية واحدة في الموقع والمحتوى والمستندات: الكحلي للثبات، والأحمر لنقطة التركيز، والورقي لمساحة قراءة هادئة.</p>${htmlLink('/brand','اطّلع على دليل الهوية','text-link')}</div>
+    <picture>${avif}${webp}<img src="${ogImage}" srcset="${assetUrl('images/brand-community-480.webp')} 480w, ${assetUrl('images/brand-community-1200.webp')} 1200w" sizes="${sizes}" width="1200" height="630" loading="lazy" decoding="async" alt="تصوير بصري لهوية مجتمع السيطرة المهنية وروح التواصل المهني"></picture>
     <a class="brand-visual-mark" href="${safeText(urlFor('/brand'))}" aria-label="فتح دليل هوية مجتمع السيطرة المهنية"><img src="${safeText(assetUrl('brand-mark.svg'))}" width="128" height="128" loading="lazy" decoding="async" alt=""><span>مجتمع السيطرة المهنية</span><small>PROFESSIONAL MASTERY COMMUNITY</small></a>
   </section>`
 }
