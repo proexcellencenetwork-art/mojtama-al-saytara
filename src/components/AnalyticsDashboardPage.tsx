@@ -176,7 +176,7 @@ export function AnalyticsDashboardPage() {
         <article className="analytics-card"><div className="analytics-section-heading"><div><h2>مصادر الزيارات</h2><p>UTM أو نطاق الإحالة؛ الزيارة المباشرة قد لا تكشف مصدرها.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>المصدر</th><th>المشاهدات</th><th>الزوار</th></tr></thead><tbody>{(data?.sources ?? []).map(row => <tr key={row.source}><td dir="auto">{row.source}</td><td>{number(row.page_views)}</td><td>{number(row.visitors)}</td></tr>)}</tbody></table></div></article>
       </section>
       <section className="analytics-card">
-        <div className="analytics-section-heading"><div><h2>أداء الحملات وروابط UTM</h2><p>تجميع مجهول لمصدر الزيارة والوسيط والحملة، مع بدايات وإكمال الأدوات. هذا قياس للأحداث المسجلة بعد الموافقة وليس دليلاً على مبيعات أو تحويلات غير مسجلة.</p></div></div>
+        <div className="analytics-section-heading"><div><h2>أداء الحملات وروابط UTM</h2><p>تجميع مجهول لمصدر الزيارة والوسيط والحملة، مع بدايات وإكمال الأدوات. هذا قياس للأحداث المسجلة بعد الموافقة وليس دليلاً على مبيعات أو تحويلات غير مسجلة.</p><p className="analytics-footnote">صيغة موحدة مقترحة للرابط: <code dir="ltr">?utm_source=linkedin&amp;utm_medium=social&amp;utm_campaign=career-workshop-2026</code>؛ استخدم اسماً ثابتاً للحملة في كل منشوراتها.</p></div></div>
         <div className="analytics-table-wrap">
           <table><thead><tr><th>الحملة</th><th>المصدر</th><th>الوسيط</th><th>المشاهدات</th><th>الزوار</th><th>بدء أداة</th><th>إكمال أداة</th></tr></thead>
             <tbody>{(data?.campaigns ?? []).map((row,i)=><tr key={row.source+'-'+row.medium+'-'+row.campaign+'-'+i}>
