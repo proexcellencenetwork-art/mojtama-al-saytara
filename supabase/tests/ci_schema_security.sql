@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(33);
+select plan(36);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
@@ -50,6 +50,7 @@ select ok(to_regclass('public.professional_portfolio_items') is not null, 'profe
 select ok(to_regprocedure('public.get_owner_professional_portfolio_summary()') is not null, 'owner portfolio aggregate function exists');
 select ok(not has_function_privilege('anon', 'public.get_owner_professional_portfolio_summary()', 'EXECUTE'), 'anonymous visitors cannot execute owner portfolio aggregate');
 select ok(has_function_privilege('authenticated', 'public.get_owner_professional_portfolio_summary()', 'EXECUTE'), 'authenticated callers reach the owner-checked portfolio aggregate');
+select ok(not has_function_privilege('anon', 'public.get_owner_site_analytics(integer)', 'EXECUTE'), 'anonymous visitors cannot execute owner analytics');
 select ok(
   coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.professional_portfolio_items')), false),
   'RLS is enabled on professional portfolio records'
@@ -58,7 +59,8 @@ select ok(
 insert into auth.users(id, email, raw_user_meta_data, email_confirmed_at) values
   ('20000000-0000-4000-8000-000000000031', 'portfolio-ci-a@example.test', '{"name":"Portfolio CI A"}'::jsonb, now()),
   ('20000000-0000-4000-8000-000000000032', 'portfolio-ci-b@example.test', '{"name":"Portfolio CI B"}'::jsonb, now()),
-  ('20000000-0000-4000-8000-000000000033', 'portfolio-ci-pending@example.test', '{"name":"Portfolio CI pending"}'::jsonb, NULL);
+  ('20000000-0000-4000-8000-000000000033', 'portfolio-ci-pending@example.test', '{"name":"Portfolio CI pending"}'::jsonb, NULL),
+  ('20000000-0000-4000-8000-000000000034', 'portfolio-ci-owner@example.test', '{"name":"Portfolio CI owner"}'::jsonb, now());
 
 -- The auth trigger creates pending profiles. Approve only the two synthetic test owners
 -- through the same guarded test-only transaction setting used by the account approval tests.
@@ -67,9 +69,29 @@ update public.profiles
 set account_status = 'approved', visibility = 'public'
 where user_id in (
   '20000000-0000-4000-8000-000000000031',
-  '20000000-0000-4000-8000-000000000032'
+  '20000000-0000-4000-8000-000000000032',
+  '20000000-0000-4000-8000-000000000034'
 );
 select set_config('saytara.account_approval_rpc', 'off', true);
+
+-- One synthetic platform owner is needed to exercise owner-only campaign analytics.
+insert into public.platform_owner(singleton, user_id, email_snapshot)
+values (true, '20000000-0000-4000-8000-000000000034', 'portfolio-ci-owner@example.test');
+
+insert into public.site_analytics_events(
+  event_name, page_path, event_label, visitor_id, source, medium, campaign
+) values
+  ('page_view', '/career-journey', null, '50000000-0000-4000-8000-000000000001', 'linkedin', 'social', 'pmc-november-ci'),
+  ('tool_start', '/career-compass', 'career-compass', '50000000-0000-4000-8000-000000000001', 'linkedin', 'social', 'pmc-november-ci'),
+  ('tool_complete', '/career-compass', 'career-compass', '50000000-0000-4000-8000-000000000001', 'linkedin', 'social', 'pmc-november-ci');
+
+insert into public.onboarding_leads(
+  full_name, email, specialty, goal, processing_consent_at,
+  privacy_notice_version, source_path, source_referrer, source_campaign, status
+) values (
+  'CI Campaign Lead', 'campaign-ci-lead@example.test', 'technology_ai', 'skills',
+  now(), 'ci-test', '/career-journey', 'linkedin.com', 'pmc-november-ci', 'qualified'
+);
 
 insert into public.professional_portfolio_items(id, user_id, item_type, title, description, visibility) values
   ('30000000-0000-4000-8000-000000000031', '20000000-0000-4000-8000-000000000031', 'project', 'Public project A', 'Public project description', 'public'),
@@ -210,6 +232,56 @@ end;
 $portfolio_ci$;
 reset role;
 select ok(true, 'making the owner profile private hides previously public portfolio records');
+
+-- The platform owner can inspect aggregate campaign traffic and lead attribution.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000034', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-000000000034","role":"authenticated"}', true);
+do $campaign_ci$
+declare
+  v_data jsonb;
+  v_denied boolean := false;
+begin
+  v_data := public.get_owner_site_analytics(30);
+  if not exists (
+    select 1 from jsonb_array_elements(v_data->'campaigns') c
+    where c->>'source' = 'linkedin'
+      and c->>'medium' = 'social'
+      and c->>'campaign' = 'pmc-november-ci'
+      and (c->>'page_views')::integer = 1
+      and (c->>'visitors')::integer = 1
+      and (c->>'tool_starts')::integer = 1
+      and (c->>'tool_completions')::integer = 1
+  ) then
+    raise exception 'FAIL: owner campaign metrics did not aggregate the synthetic UTM visits and tool events';
+  end if;
+
+  if not exists (
+    select 1 from jsonb_array_elements(v_data->'lead_campaigns') c
+    where c->>'campaign' = 'pmc-november-ci'
+      and (c->>'leads')::integer = 1
+      and (c->>'qualified_leads')::integer = 1
+  ) then
+    raise exception 'FAIL: owner lead campaign metrics did not aggregate the synthetic qualified lead';
+  end if;
+
+  perform set_config('request.jwt.claim.sub', '20000000-0000-4000-8000-000000000032', true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims', '{"sub":"20000000-0000-4000-8000-000000000032","role":"authenticated"}', true);
+  begin
+    perform public.get_owner_site_analytics(30);
+  exception when others then
+    v_denied := true;
+  end;
+  if not v_denied then
+    raise exception 'FAIL: an ordinary member read the owner campaign analytics';
+  end if;
+end;
+$campaign_ci$;
+reset role;
+select ok(true, 'owner receives aggregated UTM campaign traffic, tool funnel and campaign lead counts');
+select ok(true, 'ordinary member is denied access to owner campaign analytics');
 
 select * from finish();
 rollback;
