@@ -78,6 +78,19 @@ type PortfolioForm = {
   period_label: string
   visibility: PortfolioVisibility
 }
+type PortfolioProfileSnapshot = {
+  headline: string
+  profession: string
+  specialty: string
+  interests: string[]
+  goals: string[]
+}
+type PortfolioReadinessSignal = {
+  id: string
+  label: string
+  complete: boolean
+  nextStep: string
+}
 const portfolioKinds: { id: PortfolioItemType; label: string; plural: string; hint: string }[] = [
   { id: 'project', label: 'مشروع', plural: 'المشاريع', hint: 'ما المشروع؟ وما الجزء الذي تولّيته؟' },
   { id: 'solved_problem', label: 'مشكلة حللتها', plural: 'المشكلات التي حللتها', hint: 'ما المشكلة المهنية؟ وكيف تعاملت معها؟' },
@@ -92,6 +105,8 @@ const emptyPortfolioForm = (): PortfolioForm => ({
 export function AchievementPortfolioPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [items, setItems] = useState<PortfolioItem[]>([])
+  const [profileSnapshot, setProfileSnapshot] = useState<PortfolioProfileSnapshot | null>(null)
+  const [profileSnapshotError, setProfileSnapshotError] = useState('')
   const [form, setForm] = useState<PortfolioForm>(emptyPortfolioForm)
   const [filter, setFilter] = useState<PortfolioItemType | 'all'>('all')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -121,17 +136,37 @@ export function AchievementPortfolioPage() {
         return
       }
       if (active) setUserId(authData.user.id)
-      const { data, error: loadError } = await supabase
-        .from('professional_portfolio_items')
-        .select('id,user_id,item_type,title,description,result_summary,metric_value,metric_unit,period_label,visibility,created_at')
-        .eq('user_id', authData.user.id)
-        .order('created_at', { ascending: false })
+      const [portfolioResult, profileResult] = await Promise.all([
+        supabase
+          .from('professional_portfolio_items')
+          .select('id,user_id,item_type,title,description,result_summary,metric_value,metric_unit,period_label,visibility,created_at')
+          .eq('user_id', authData.user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('headline,profession,specialty,interests,goals')
+          .eq('user_id', authData.user.id)
+          .maybeSingle(),
+      ])
       if (!active) return
-      if (loadError) {
+      if (portfolioResult.error) {
         setError('تعذر تحميل الملف. تأكد من تطبيق تحديث قاعدة البيانات، ثم أعد المحاولة.')
       } else {
-        setItems((data || []) as PortfolioItem[])
+        setItems((portfolioResult.data || []) as PortfolioItem[])
         setError('')
+      }
+      if (profileResult.error || !profileResult.data) {
+        setProfileSnapshot(null)
+        setProfileSnapshotError('تعذر تحميل بيانات التموضع من ملفك الأساسي؛ لذلك لن نحسب المؤشر حالياً.')
+      } else {
+        setProfileSnapshot({
+          headline: profileResult.data.headline || '',
+          profession: profileResult.data.profession || '',
+          specialty: profileResult.data.specialty || '',
+          interests: Array.isArray(profileResult.data.interests) ? profileResult.data.interests : [],
+          goals: Array.isArray(profileResult.data.goals) ? profileResult.data.goals : [],
+        })
+        setProfileSnapshotError('')
       }
       setLoading(false)
     }
@@ -147,6 +182,31 @@ export function AchievementPortfolioPage() {
     () => Object.fromEntries(portfolioKinds.map(kind => [kind.id, items.filter(item => item.item_type === kind.id).length])) as Record<PortfolioItemType, number>,
     [items],
   )
+  const readinessSignals = useMemo<PortfolioReadinessSignal[]>(() => {
+    const hasPositioning = Boolean(
+      profileSnapshot && (profileSnapshot.headline.trim() || profileSnapshot.profession.trim()) && profileSnapshot.specialty.trim(),
+    )
+    const hasDirection = Boolean(profileSnapshot && (profileSnapshot.goals.length > 0 || profileSnapshot.interests.length > 0))
+    const resultItems = items.filter(item => item.item_type === 'result')
+    return [
+      { id: 'positioning', label: 'عنوان مهني وتخصص واضحان', complete: hasPositioning, nextStep: 'أكمل المسمّى أو العنوان المهني والتخصص في ملفك الأساسي.' },
+      { id: 'direction', label: 'اهتمامات أو أهداف مهنية', complete: hasDirection, nextStep: 'أضف اهتماماً أو هدفاً مهنياً يوضح الاتجاه الذي تستكشفه.' },
+      { id: 'projects', label: 'مشروع واحد على الأقل', complete: counts.project > 0, nextStep: 'سجّل مشروعاً واحداً ووضّح الجزء الذي تولّيته.' },
+      { id: 'problems', label: 'مشكلة مهنية تم حلها', complete: counts.solved_problem > 0, nextStep: 'أضف مشكلة تعاملت معها واشرح أسلوب الحل.' },
+      { id: 'skills', label: 'مهارتان موصوفتان على الأقل', complete: counts.skill >= 2, nextStep: 'أضف مهارتين مع وصف سياق استخدام كل واحدة.' },
+      { id: 'results', label: 'نتيجة أو أثر مسجل', complete: resultItems.length > 0, nextStep: 'سجّل نتيجة نوعية أو رقمية وحدّد دورك في تحقيقها.' },
+      {
+        id: 'measurable-result',
+        label: 'نتيجة موضحة بأثر أو قياس',
+        complete: resultItems.some(item => item.result_summary.trim() || item.metric_value !== null),
+        nextStep: 'أضف ملخص أثر لنتيجة أو قيمة رقمية مع وحدة قياس عند توفرها.',
+      },
+    ]
+  }, [counts, items, profileSnapshot])
+  const completedReadinessSignals = readinessSignals.filter(signal => signal.complete).length
+  const readinessCompletion = readinessSignals.length
+    ? Math.round((completedReadinessSignals / readinessSignals.length) * 100)
+    : null
   const selectedKind = portfolioKinds.find(kind => kind.id === form.item_type) || portfolioKinds[0]
 
   function resetForm() {
@@ -271,6 +331,34 @@ export function AchievementPortfolioPage() {
             {portfolioKinds.map(kind => <button type="button" key={kind.id} onClick={() => setFilter(kind.id)} className={filter === kind.id ? 'selected' : ''}>
               <b>{(counts[kind.id] || 0).toLocaleString('ar-SA')}</b><span>{kind.plural}</span>
             </button>)}
+          </section>
+
+          <section className="career-readiness-summary" aria-label="مؤشر اكتمال مؤشرات الجاهزية المهنية">
+            <div className="career-readiness-summary-heading">
+              <div>
+                <span className="eyebrow">مؤشر الجاهزية المهنية · إرشادي</span>
+                <h2>ما الذي يظهره ملفك عن خبرتك واتجاهك؟</h2>
+                <p>يُحسب من اكتمال بيانات التموضع والاهتمامات والمشاريع والمشكلات والمهارات والنتائج المحفوظة في حسابك.</p>
+              </div>
+              {profileSnapshotError
+                ? <strong className="career-readiness-summary-score" aria-label="المؤشر غير متاح">—</strong>
+                : <strong className="career-readiness-summary-score">{readinessCompletion}<small>/100</small></strong>}
+            </div>
+            {profileSnapshotError
+              ? <p className="career-readiness-summary-note" role="status">{profileSnapshotError}</p>
+              : <>
+                <div className="career-readiness-summary-track" role="progressbar" aria-label="اكتمال مؤشرات الملف المهني" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readinessCompletion ?? 0}>
+                  <span style={{ width: `${readinessCompletion ?? 0}%` }}/>
+                </div>
+                <p className="career-readiness-summary-count">{completedReadinessSignals} من {readinessSignals.length} مؤشرات مكتملة في البيانات الحالية</p>
+                <div className="career-readiness-summary-grid">
+                  {readinessSignals.map(signal => <article className={signal.complete ? 'is-complete' : 'is-missing'} key={signal.id}>
+                    <b>{signal.label}</b>
+                    <small>{signal.complete ? 'موجود في بيانات حسابك' : signal.nextStep}</small>
+                  </article>)}
+                </div>
+              </>}
+            <p className="career-readiness-summary-note">هذا المؤشر يقيس اكتمال المعلومات المسجلة فقط، ولا يقيس جودة الأداء أو احتمال التوظيف أو الترقية، ولا يمثل اعتماداً أو تقييماً علمياً. لا تحتاج إلى نشر أي بطاقة ليُحتسب وجودها في ملفك الخاص.</p>
           </section>
 
           <section className="career-portfolio-panel">
