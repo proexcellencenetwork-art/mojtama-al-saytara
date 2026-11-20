@@ -2,7 +2,7 @@
 -- The account-specific *_smoke.sql scripts require pre-created test accounts and are
 -- retained for deliberate manual UAT, not run by this self-contained CI suite.
 begin;
-select plan(30);
+select plan(33);
 
 select ok(to_regclass('public.profiles') is not null, 'profiles table exists');
 select ok(to_regclass('public.posts') is not null, 'posts table exists');
@@ -47,6 +47,9 @@ select ok(
 -- Self-contained professional portfolio RLS regression test.
 -- Uses synthetic Auth users and a transaction rollback; never requires live member accounts.
 select ok(to_regclass('public.professional_portfolio_items') is not null, 'professional portfolio table exists');
+select ok(to_regprocedure('public.get_owner_professional_portfolio_summary()') is not null, 'owner portfolio aggregate function exists');
+select ok(not has_function_privilege('anon', 'public.get_owner_professional_portfolio_summary()', 'EXECUTE'), 'anonymous visitors cannot execute owner portfolio aggregate');
+select ok(has_function_privilege('authenticated', 'public.get_owner_professional_portfolio_summary()', 'EXECUTE'), 'authenticated callers reach the owner-checked portfolio aggregate');
 select ok(
   coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.professional_portfolio_items')), false),
   'RLS is enabled on professional portfolio records'
@@ -148,6 +151,18 @@ begin
     v_denied := true;
   end;
   if not v_denied then raise exception 'FAIL: an unapproved account managed portfolio records'; end if;
+
+  -- A regular approved member may execute the owner-checked RPC, but must be rejected by its internal owner check.
+  perform set_config('request.jwt.claim.sub', v_b::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_b::text, 'role', 'authenticated')::text, true);
+  v_denied := false;
+  begin
+    perform public.get_owner_professional_portfolio_summary();
+  exception when others then
+    v_denied := true;
+  end;
+  if not v_denied then raise exception 'FAIL: a regular member read owner portfolio aggregates'; end if;
 end;
 $portfolio_ci$;
 reset role;
