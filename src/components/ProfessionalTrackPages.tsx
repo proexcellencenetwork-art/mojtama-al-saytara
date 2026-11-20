@@ -106,6 +106,7 @@ export function AchievementPortfolioPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [items, setItems] = useState<PortfolioItem[]>([])
   const [profileSnapshot, setProfileSnapshot] = useState<PortfolioProfileSnapshot | null>(null)
+  const [portfolioDataAvailable, setPortfolioDataAvailable] = useState(false)
   const [profileSnapshotError, setProfileSnapshotError] = useState('')
   const [form, setForm] = useState<PortfolioForm>(emptyPortfolioForm)
   const [filter, setFilter] = useState<PortfolioItemType | 'all'>('all')
@@ -150,8 +151,10 @@ export function AchievementPortfolioPage() {
       ])
       if (!active) return
       if (portfolioResult.error) {
+        setPortfolioDataAvailable(false)
         setError('تعذر تحميل الملف. تأكد من تطبيق تحديث قاعدة البيانات، ثم أعد المحاولة.')
       } else {
+        setPortfolioDataAvailable(true)
         setItems((portfolioResult.data || []) as PortfolioItem[])
         setError('')
       }
@@ -183,6 +186,7 @@ export function AchievementPortfolioPage() {
     [items],
   )
   const readinessSignals = useMemo<PortfolioReadinessSignal[]>(() => {
+    if (!portfolioDataAvailable || !profileSnapshot) return []
     const hasPositioning = Boolean(
       profileSnapshot && (profileSnapshot.headline.trim() || profileSnapshot.profession.trim()) && profileSnapshot.specialty.trim(),
     )
@@ -202,7 +206,7 @@ export function AchievementPortfolioPage() {
         nextStep: 'أضف ملخص أثر لنتيجة أو قيمة رقمية مع وحدة قياس عند توفرها.',
       },
     ]
-  }, [counts, items, profileSnapshot])
+  }, [counts, items, portfolioDataAvailable, profileSnapshot])
   const completedReadinessSignals = readinessSignals.filter(signal => signal.complete).length
   const readinessCompletion = readinessSignals.length
     ? Math.round((completedReadinessSignals / readinessSignals.length) * 100)
@@ -340,12 +344,12 @@ export function AchievementPortfolioPage() {
                 <h2>ما الذي يظهره ملفك عن خبرتك واتجاهك؟</h2>
                 <p>يُحسب من اكتمال بيانات التموضع والاهتمامات والمشاريع والمشكلات والمهارات والنتائج المحفوظة في حسابك.</p>
               </div>
-              {profileSnapshotError
+              {readinessCompletion === null
                 ? <strong className="career-readiness-summary-score" aria-label="المؤشر غير متاح">—</strong>
                 : <strong className="career-readiness-summary-score">{readinessCompletion}<small>/100</small></strong>}
             </div>
-            {profileSnapshotError
-              ? <p className="career-readiness-summary-note" role="status">{profileSnapshotError}</p>
+            {readinessCompletion === null
+              ? <p className="career-readiness-summary-note" role="status">{profileSnapshotError || 'تعذر تحميل بيانات ملفك المهني كاملة؛ لذلك لن نعرض نسبة قد تكون مضللة.'}</p>
               : <>
                 <div className="career-readiness-summary-track" role="progressbar" aria-label="اكتمال مؤشرات الملف المهني" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readinessCompletion ?? 0}>
                   <span style={{ width: `${readinessCompletion ?? 0}%` }}/>
