@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, BookOpen, Check, CircleHelp, Download,  Lightbulb, LineChart, LockKeyhole, Plus, ShieldCheck, Sparkles, Target, Trash2 } from 'lucide-react'
+import { ArrowLeft, BookOpen, Check, CircleHelp, Download, Eye, EyeOff, FolderKanban, Lightbulb, LineChart, LockKeyhole, Pencil, Plus, ShieldCheck, Sparkles, Target, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { buildPositioningStatement, scorePromotionReadiness, type ReadinessItem } from '../lib/careerLogic'
 import { supabase } from '../lib/supabase'
@@ -53,9 +53,392 @@ export function ValueEconomyPage() {
 
 function SectionTitle({ eyebrow = 'من المسار المهني', title, description }: { eyebrow?: string; title: string; description?: string }) { return <div className="career-section-heading">{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2>{description && <p>{description}</p>}</div> }
 
-export function AchievementPortfolioPage() {
-  return <main className="public-page wrap career-page"><nav className="breadcrumbs"><Link to="/">الرئيسية</Link><span>/</span><Link to="/career-journey">الرحلة المهنية</Link><span>/</span><span>ملف الإنجازات</span></nav><header className="career-page-intro"><span className="eyebrow"><BadgeCheck size={15}/> ملف من الأدلة لا من الادعاءات</span><h1>ملف الإنجازات المهني</h1><p className="hero-lead">حوّل العمل إلى بطاقة واضحة: المشكلة، دورك، الإجراء، النتيجة والدليل. احتفظ بالأصل في مكان معتمد، وأنشئ نسخة عرض منقحة ومصرحاً بها فقط.</p></header><EvidenceTracker title="Evidence Tracker · ملف إنجازاتي" helper="يسجل هذا النموذج عناصر تذكير محلية على جهازك فقط؛ لا يرفع البيانات ولا يقبل مرفقات."/><section className="career-template-grid"><SectionTitle title="قالب بطاقة إنجاز STAR + دليل"/><div className="career-star-grid">{[['Situation · السياق','ما المشكلة أو الظرف؟ اكتب سياقاً عاماً من دون بيانات تعريفية.'],['Task · المهمة','ما مسؤوليتك وحدود صلاحيتك؟'],['Action · الفعل','ما الخطوات التي نفذتها أنت؟ ميّز مساهمتك عن عمل الفريق.'],['Result · النتيجة','ما التغير أو التعلم؟ اذكر الوحدة والفترة ومصدر القياس إن وُجد.'],['Evidence · الدليل','ما نوع الدليل ومكانه المصرّح به؟ لا تنقل ملفات أو لقطات سرية.']].map(([heading,text]) => <article key={heading}><b>{heading}</b><p>{text}</p></article>)}</div><div className="career-privacy-note"><ShieldCheck size={16}/><span>التحقق من الصلاحية يسبق جاذبية القصة. لا تضف بيانات مرضى أو سجلات عملاء أو لوحات داخلية. التنقيح وحده ليس تصريحاً؛ راجع سياسة الجهة واطلب موافقة عند الشك.</span></div><div className="career-inline-links"><Link to="/articles/achievement-portfolio">اقرأ الدليل الموثق لبناء ملف الإنجازات <ArrowLeft size={14}/></Link><Link to="/value-economy">حوّل الدليل إلى قيمة مهنية <ArrowLeft size={14}/></Link><Link to="/linkedin-workshop">ورشة LinkedIn <ArrowLeft size={14}/></Link></div></section></main>
+type PortfolioItemType = 'project' | 'solved_problem' | 'skill' | 'result'
+type PortfolioVisibility = 'private' | 'public'
+type PortfolioItem = {
+  id: string
+  user_id: string
+  item_type: PortfolioItemType
+  title: string
+  description: string
+  result_summary: string
+  metric_value: number | string | null
+  metric_unit: string
+  period_label: string
+  visibility: PortfolioVisibility
+  created_at: string
 }
+type PortfolioForm = {
+  item_type: PortfolioItemType
+  title: string
+  description: string
+  result_summary: string
+  metric_value: string
+  metric_unit: string
+  period_label: string
+  visibility: PortfolioVisibility
+}
+type PortfolioProfileSnapshot = {
+  headline: string
+  profession: string
+  specialty: string
+  interests: string[]
+  goals: string[]
+}
+type PortfolioReadinessSignal = {
+  id: string
+  label: string
+  complete: boolean
+  nextStep: string
+}
+const portfolioKinds: { id: PortfolioItemType; label: string; plural: string; hint: string }[] = [
+  { id: 'project', label: 'مشروع', plural: 'المشاريع', hint: 'ما المشروع؟ وما الجزء الذي تولّيته؟' },
+  { id: 'solved_problem', label: 'مشكلة حللتها', plural: 'المشكلات التي حللتها', hint: 'ما المشكلة المهنية؟ وكيف تعاملت معها؟' },
+  { id: 'skill', label: 'مهارة', plural: 'المهارات', hint: 'ما المهارة التي تستخدمها فعلياً؟ وفي أي سياق؟' },
+  { id: 'result', label: 'نتيجة', plural: 'النتائج', hint: 'ما النتيجة التي حققتها؟ وضّح دورك وحدود مساهمتك.' },
+]
+const emptyPortfolioForm = (): PortfolioForm => ({
+  item_type: 'project', title: '', description: '', result_summary: '',
+  metric_value: '', metric_unit: '', period_label: '', visibility: 'private',
+})
+
+export function AchievementPortfolioPage() {
+  const [userId, setUserId] = useState<string | null>(null)
+  const [items, setItems] = useState<PortfolioItem[]>([])
+  const [profileSnapshot, setProfileSnapshot] = useState<PortfolioProfileSnapshot | null>(null)
+  const [portfolioDataAvailable, setPortfolioDataAvailable] = useState(false)
+  const [profileSnapshotError, setProfileSnapshotError] = useState('')
+  const [form, setForm] = useState<PortfolioForm>(emptyPortfolioForm)
+  const [filter, setFilter] = useState<PortfolioItemType | 'all'>('all')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    let active = true
+    async function loadPortfolio() {
+      if (!supabase) {
+        if (active) {
+          setError('حفظ الملف المهني غير متاح في نسخة العرض؛ يلزم ربط قاعدة بيانات المجتمع.')
+          setLoading(false)
+        }
+        return
+      }
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+      if (authError || !authData.user) {
+        if (active) {
+          setUserId(null)
+          setItems([])
+          setError('سجّل الدخول بحسابك المعتمد لعرض ملفك المهني وإدارته.')
+          setLoading(false)
+        }
+        return
+      }
+      if (active) setUserId(authData.user.id)
+      const [portfolioResult, profileResult] = await Promise.all([
+        supabase
+          .from('professional_portfolio_items')
+          .select('id,user_id,item_type,title,description,result_summary,metric_value,metric_unit,period_label,visibility,created_at')
+          .eq('user_id', authData.user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('profiles')
+          .select('headline,profession,specialty,interests,goals')
+          .eq('user_id', authData.user.id)
+          .maybeSingle(),
+      ])
+      if (!active) return
+      if (portfolioResult.error) {
+        setPortfolioDataAvailable(false)
+        setError('تعذر تحميل الملف. تأكد من تطبيق تحديث قاعدة البيانات، ثم أعد المحاولة.')
+      } else {
+        setPortfolioDataAvailable(true)
+        setItems((portfolioResult.data || []) as PortfolioItem[])
+        setError('')
+      }
+      if (profileResult.error || !profileResult.data) {
+        setProfileSnapshot(null)
+        setProfileSnapshotError('تعذر تحميل بيانات التموضع من ملفك الأساسي؛ لذلك لن نحسب المؤشر حالياً.')
+      } else {
+        setProfileSnapshot({
+          headline: profileResult.data.headline || '',
+          profession: profileResult.data.profession || '',
+          specialty: profileResult.data.specialty || '',
+          interests: Array.isArray(profileResult.data.interests) ? profileResult.data.interests : [],
+          goals: Array.isArray(profileResult.data.goals) ? profileResult.data.goals : [],
+        })
+        setProfileSnapshotError('')
+      }
+      setLoading(false)
+    }
+    void loadPortfolio()
+    return () => { active = false }
+  }, [])
+
+  const filteredItems = useMemo(
+    () => filter === 'all' ? items : items.filter(item => item.item_type === filter),
+    [filter, items],
+  )
+  const counts = useMemo(
+    () => Object.fromEntries(portfolioKinds.map(kind => [kind.id, items.filter(item => item.item_type === kind.id).length])) as Record<PortfolioItemType, number>,
+    [items],
+  )
+  const readinessSignals = useMemo<PortfolioReadinessSignal[]>(() => {
+    if (!portfolioDataAvailable || !profileSnapshot) return []
+    const hasPositioning = Boolean(
+      profileSnapshot && (profileSnapshot.headline.trim() || profileSnapshot.profession.trim()) && profileSnapshot.specialty.trim(),
+    )
+    const hasDirection = Boolean(profileSnapshot && (profileSnapshot.goals.length > 0 || profileSnapshot.interests.length > 0))
+    const resultItems = items.filter(item => item.item_type === 'result')
+    return [
+      { id: 'positioning', label: 'عنوان مهني وتخصص واضحان', complete: hasPositioning, nextStep: 'أكمل المسمّى أو العنوان المهني والتخصص في ملفك الأساسي.' },
+      { id: 'direction', label: 'اهتمامات أو أهداف مهنية', complete: hasDirection, nextStep: 'أضف اهتماماً أو هدفاً مهنياً يوضح الاتجاه الذي تستكشفه.' },
+      { id: 'projects', label: 'مشروع واحد على الأقل', complete: counts.project > 0, nextStep: 'سجّل مشروعاً واحداً ووضّح الجزء الذي تولّيته.' },
+      { id: 'problems', label: 'مشكلة مهنية تم حلها', complete: counts.solved_problem > 0, nextStep: 'أضف مشكلة تعاملت معها واشرح أسلوب الحل.' },
+      { id: 'skills', label: 'مهارتان موصوفتان على الأقل', complete: counts.skill >= 2, nextStep: 'أضف مهارتين مع وصف سياق استخدام كل واحدة.' },
+      { id: 'results', label: 'نتيجة أو أثر مسجل', complete: resultItems.length > 0, nextStep: 'سجّل نتيجة نوعية أو رقمية وحدّد دورك في تحقيقها.' },
+      {
+        id: 'measurable-result',
+        label: 'نتيجة موضحة بأثر أو قياس',
+        complete: resultItems.some(item => item.result_summary.trim() || item.metric_value !== null),
+        nextStep: 'أضف ملخص أثر لنتيجة أو قيمة رقمية مع وحدة قياس عند توفرها.',
+      },
+    ]
+  }, [counts, items, portfolioDataAvailable, profileSnapshot])
+  const completedReadinessSignals = readinessSignals.filter(signal => signal.complete).length
+  const readinessCompletion = readinessSignals.length
+    ? Math.round((completedReadinessSignals / readinessSignals.length) * 100)
+    : null
+  const selectedKind = portfolioKinds.find(kind => kind.id === form.item_type) || portfolioKinds[0]
+
+  function resetForm() {
+    setForm(emptyPortfolioForm())
+    setEditingId(null)
+  }
+
+  async function refreshItems() {
+    if (!supabase || !userId) return
+    const { data, error: refreshError } = await supabase
+      .from('professional_portfolio_items')
+      .select('id,user_id,item_type,title,description,result_summary,metric_value,metric_unit,period_label,visibility,created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    if (refreshError) setError('حُفظ التغيير، لكن تعذر تحديث القائمة. أعد تحميل الصفحة.')
+    else setItems((data || []) as PortfolioItem[])
+  }
+
+  async function saveItem(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase || !userId) {
+      setError('سجّل الدخول بحسابك المعتمد أولاً.')
+      return
+    }
+    const title = form.title.trim()
+    const description = form.description.trim()
+    const metricValue = form.metric_value.trim() ? Number(form.metric_value) : null
+    const metricUnit = form.metric_unit.trim()
+    if (title.length < 2 || description.length < 2) {
+      setNotice('أضف عنواناً ووصفاً واضحين قبل الحفظ.')
+      return
+    }
+    if (metricValue !== null && (!Number.isFinite(metricValue) || metricValue < 0 || !metricUnit)) {
+      setNotice('أدخل قيمة رقمية غير سالبة ووحدة قياس، أو اترك الحقول الرقمية فارغة.')
+      return
+    }
+    setSaving(true)
+    setNotice('')
+    setError('')
+    const payload = {
+      user_id: userId,
+      item_type: form.item_type,
+      title,
+      description,
+      result_summary: form.item_type === 'skill' ? '' : form.result_summary.trim(),
+      metric_value: form.item_type === 'skill' ? null : metricValue,
+      metric_unit: form.item_type === 'skill' || metricValue === null ? '' : metricUnit,
+      period_label: form.item_type === 'skill' || metricValue === null ? '' : form.period_label.trim(),
+      visibility: form.visibility,
+    }
+    const result = editingId
+      ? await supabase.from('professional_portfolio_items').update(payload).eq('id', editingId).eq('user_id', userId).select('id').maybeSingle()
+      : await supabase.from('professional_portfolio_items').insert(payload).select('id').single()
+    if (result.error) {
+      setError('تعذر حفظ البطاقة. تحقق من اتصال الحساب ثم حاول مجدداً.')
+    } else if (!result.data) {
+      setError('لم يتم العثور على البطاقة المطلوب تعديلها ضمن سجلات حسابك.')
+    } else {
+      resetForm()
+      setNotice(editingId ? 'تم تحديث البطاقة.' : 'تمت إضافة البطاقة إلى ملفك.')
+      await refreshItems()
+    }
+    setSaving(false)
+  }
+
+  function editItem(item: PortfolioItem) {
+    setEditingId(item.id)
+    setForm({
+      item_type: item.item_type,
+      title: item.title,
+      description: item.description,
+      result_summary: item.result_summary || '',
+      metric_value: item.metric_value === null ? '' : String(item.metric_value),
+      metric_unit: item.metric_unit || '',
+      period_label: item.period_label || '',
+      visibility: item.visibility,
+    })
+    setNotice('تعدّل الآن بطاقة واحدة. احفظ التغييرات أو ألغِ التعديل.')
+    setError('')
+  }
+
+  async function deleteItem(item: PortfolioItem) {
+    if (!supabase || !userId || !window.confirm(`حذف بطاقة «${item.title}» من ملفك؟`)) return
+    const { error: deleteError } = await supabase
+      .from('professional_portfolio_items')
+      .delete()
+      .eq('id', item.id)
+      .eq('user_id', userId)
+    if (deleteError) setError('تعذر حذف البطاقة. حاول مرة أخرى.')
+    else {
+      setItems(current => current.filter(row => row.id !== item.id))
+      if (editingId === item.id) resetForm()
+      setNotice('تم حذف البطاقة من ملفك.')
+    }
+  }
+
+  return <main className="public-page wrap career-page">
+    <nav className="breadcrumbs"><Link to="/">الرئيسية</Link><span>/</span><Link to="/career-journey">الرحلة المهنية</Link><span>/</span><span>ملف الإنجاز</span></nav>
+    <header className="career-page-intro">
+      <span className="eyebrow"><FolderKanban size={15}/> أعمالك وما تضيفه للمهنة</span>
+      <h1>ملف الإنجاز المهني</h1>
+      <p className="hero-lead">اجمع مشاريعك، والمشكلات التي حللتها، والمهارات التي تستخدمها، والنتائج التي حققتها في مكان واحد مرتبط بحسابك.</p>
+    </header>
+
+    <div className="career-privacy-note">
+      <ShieldCheck size={17}/>
+      <span>تُحفظ البطاقات في حسابك، وتبدأ خاصة. لا تظهر أي بطاقة في الدليل العام إلا عندما تختار «عام» بنفسك، وبشرط أن يكون ملفك المهني الأساسي عاماً ومعتمداً. لا تضف أسماء مرضى أو عملاء أو معلومات سرية تخص جهة العمل. هذا النموذج لا يقبل شهادات أو مرفقات أو روابط خارجية.</span>
+    </div>
+
+    {loading
+      ? <p className="career-empty-state" role="status">جارٍ تحميل ملفك المهني…</p>
+      : !userId
+        ? <section className="career-portfolio-panel">
+            <h2>ملفك المهني محفوظ بحسابك</h2>
+            <p>{error || 'سجّل الدخول حتى تبدأ.'}</p>
+            <Link className="btn btn-primary" to="/login">تسجيل الدخول <ArrowLeft size={15}/></Link>
+          </section>
+        : <>
+          {error && <p className="career-portfolio-error" role="alert">{error}</p>}
+          <section className="career-portfolio-summary" aria-label="ملخص ملفك المهني">
+            <div><strong>{items.length.toLocaleString('ar-SA')}</strong><span>كل البطاقات</span></div>
+            {portfolioKinds.map(kind => <button type="button" key={kind.id} onClick={() => setFilter(kind.id)} className={filter === kind.id ? 'selected' : ''}>
+              <b>{(counts[kind.id] || 0).toLocaleString('ar-SA')}</b><span>{kind.plural}</span>
+            </button>)}
+          </section>
+
+          <section className="career-readiness-summary" aria-label="مؤشر اكتمال مؤشرات الجاهزية المهنية">
+            <div className="career-readiness-summary-heading">
+              <div>
+                <span className="eyebrow">مؤشر الجاهزية المهنية · إرشادي</span>
+                <h2>ما الذي يظهره ملفك عن خبرتك واتجاهك؟</h2>
+                <p>يُحسب من اكتمال بيانات التموضع والاهتمامات والمشاريع والمشكلات والمهارات والنتائج المحفوظة في حسابك.</p>
+              </div>
+              {readinessCompletion === null
+                ? <strong className="career-readiness-summary-score" aria-label="المؤشر غير متاح">—</strong>
+                : <strong className="career-readiness-summary-score">{readinessCompletion}<small>/100</small></strong>}
+            </div>
+            {readinessCompletion === null
+              ? <p className="career-readiness-summary-note" role="status">{profileSnapshotError || 'تعذر تحميل بيانات ملفك المهني كاملة؛ لذلك لن نعرض نسبة قد تكون مضللة.'}</p>
+              : <>
+                <div className="career-readiness-summary-track" role="progressbar" aria-label="اكتمال مؤشرات الملف المهني" aria-valuemin={0} aria-valuemax={100} aria-valuenow={readinessCompletion ?? 0}>
+                  <span style={{ width: `${readinessCompletion ?? 0}%` }}/>
+                </div>
+                <p className="career-readiness-summary-count">{completedReadinessSignals} من {readinessSignals.length} مؤشرات مكتملة في البيانات الحالية</p>
+                <div className="career-readiness-summary-grid">
+                  {readinessSignals.map(signal => <article className={signal.complete ? 'is-complete' : 'is-missing'} key={signal.id}>
+                    <b>{signal.label}</b>
+                    <small>{signal.complete ? 'موجود في بيانات حسابك' : signal.nextStep}</small>
+                  </article>)}
+                </div>
+              </>}
+            <p className="career-readiness-summary-note">هذا المؤشر يقيس اكتمال المعلومات المسجلة فقط، ولا يقيس جودة الأداء أو احتمال التوظيف أو الترقية، ولا يمثل اعتماداً أو تقييماً علمياً. لا تحتاج إلى نشر أي بطاقة ليُحتسب وجودها في ملفك الخاص.</p>
+          </section>
+
+          <section className="career-portfolio-panel">
+            <div className="career-portfolio-heading">
+              <div><span className="eyebrow">{editingId ? 'تعديل بطاقة' : 'إضافة إلى ملفك'}</span><h2>{editingId ? 'حدّث معلومات البطاقة' : 'أضف عملاً أو مهارة أو نتيجة'}</h2></div>
+              {editingId && <button className="btn btn-quiet btn-small" type="button" onClick={resetForm}>إلغاء التعديل</button>}
+            </div>
+            <form className="career-portfolio-form" onSubmit={saveItem}>
+              <label>نوع البطاقة
+                <select value={form.item_type} onChange={event => setForm(current => ({ ...current, item_type: event.target.value as PortfolioItemType }))}>
+                  {portfolioKinds.map(kind => <option key={kind.id} value={kind.id}>{kind.label}</option>)}
+                </select>
+              </label>
+              <label>العنوان
+                <input required minLength={2} maxLength={120} value={form.title} onChange={event => setForm(current => ({ ...current, title: event.target.value }))} placeholder="مثال: تطوير آلية متابعة العمل"/>
+              </label>
+              <label className="career-portfolio-wide">وصف العمل أو المهارة
+                <textarea required minLength={2} maxLength={1200} rows={3} value={form.description} onChange={event => setForm(current => ({ ...current, description: event.target.value }))} placeholder={selectedKind.hint}/>
+              </label>
+              {form.item_type !== 'skill' && <>
+                <label className="career-portfolio-wide">النتيجة أو الأثر (اختياري)
+                  <textarea maxLength={1000} rows={2} value={form.result_summary} onChange={event => setForm(current => ({ ...current, result_summary: event.target.value }))} placeholder="ما الذي تغير؟ وما دورك في النتيجة؟"/>
+                </label>
+                <div className="career-portfolio-metrics career-portfolio-wide">
+                  <label>قيمة رقمية (اختياري)
+                    <input type="number" min="0" step="0.001" value={form.metric_value} onChange={event => setForm(current => ({ ...current, metric_value: event.target.value }))} placeholder="مثال: 12"/>
+                  </label>
+                  <label>وحدة القياس
+                    <input maxLength={32} value={form.metric_unit} onChange={event => setForm(current => ({ ...current, metric_unit: event.target.value }))} placeholder="ساعة، نسبة، مهمة..."/>
+                  </label>
+                  <label>الفترة
+                    <input maxLength={60} value={form.period_label} onChange={event => setForm(current => ({ ...current, period_label: event.target.value }))} placeholder="مثال: الربع الأول 2026"/>
+                  </label>
+                </div>
+              </>}
+              <label>من يمكنه رؤية البطاقة؟
+                <select value={form.visibility} onChange={event => setForm(current => ({ ...current, visibility: event.target.value as PortfolioVisibility }))}>
+                  <option value="private">خاص — أنا فقط</option>
+                  <option value="public">عام — ضمن الدليل المهني</option>
+                </select>
+              </label>
+              <p className="career-portfolio-inline-note"><LockKeyhole size={14}/> الوضع الافتراضي خاص. يمكنك تغيير الظهور لاحقاً بتعديل البطاقة.</p>
+              <div className="career-portfolio-actions">
+                <button className="btn btn-primary" type="submit" disabled={saving}><Check size={15}/>{saving ? 'جارٍ الحفظ…' : editingId ? 'حفظ التعديلات' : 'إضافة البطاقة'}</button>
+                {editingId && <button className="btn btn-outline" type="button" onClick={resetForm} disabled={saving}>إلغاء</button>}
+              </div>
+            </form>
+            {notice && <p className="career-local-message" role="status">{notice}</p>}
+          </section>
+
+          <section className="career-portfolio-items">
+            <div className="career-portfolio-heading">
+              <div><span className="eyebrow">إدارة ملفك</span><h2>{filter === 'all' ? 'كل بطاقاتك' : portfolioKinds.find(kind => kind.id === filter)?.plural}</h2></div>
+              <button type="button" className={filter === 'all' ? 'selected' : ''} onClick={() => setFilter('all')}>عرض الكل</button>
+            </div>
+            {filteredItems.length === 0
+              ? <p className="career-empty-state">لا توجد بطاقات في هذا القسم بعد. ابدأ بإضافة مشروع أو مهارة أو نتيجة من عملك.</p>
+              : <div className="career-portfolio-grid">{filteredItems.map(item => {
+                const kind = portfolioKinds.find(row => row.id === item.item_type) || portfolioKinds[0]
+                return <article className="career-portfolio-card" key={item.id}>
+                  <div className="career-portfolio-card-top"><span>{kind.label}</span><span className={item.visibility === 'public' ? 'is-public' : 'is-private'}>{item.visibility === 'public' ? <><Eye size={13}/> عام</> : <><EyeOff size={13}/> خاص</>}</span></div>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  {item.result_summary && <div className="career-portfolio-result"><b>النتيجة أو الأثر</b><span>{item.result_summary}</span></div>}
+                  {item.metric_value !== null && <div className="career-portfolio-measure"><strong>{Number(item.metric_value).toLocaleString('ar-SA', { maximumFractionDigits: 3 })}</strong><span>{item.metric_unit}</span>{item.period_label && <small>{item.period_label}</small>}</div>}
+                  <div className="career-portfolio-card-actions">
+                    <button type="button" onClick={() => editItem(item)}><Pencil size={14}/> تعديل</button>
+                    <button type="button" onClick={() => void deleteItem(item)}><Trash2 size={14}/> حذف</button>
+                  </div>
+                </article>
+              })}</div>}
+          </section>
+        </>}
+  </main>
+}
+
 
 const promotionCatalog = [
   { id:'scope', label:'فهم نطاق الدور التالي', prompt:'اكتب 2–3 مسؤوليات أو قرارات من وصف رسمي للدور التالي.' },
