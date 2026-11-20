@@ -67,24 +67,26 @@ const navItems = [
 ]
 
 function BrandSymbol({ className = 'brand-symbol' }: { className?: string }) {
-  return <svg className={className} viewBox="0 0 132 132" fill="none" aria-hidden="true" focusable="false">
-    <circle cx="66" cy="66" r="58" stroke="currentColor" strokeWidth="2.5"/>
-    <circle cx="66" cy="66" r="40" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 5"/>
-    <path d="M66 4V22" stroke="#D7263D" strokeWidth="3"/>
-    <path d="M66 110V128M4 66H22M110 66H128" stroke="currentColor" strokeWidth="2.5"/>
-    <circle cx="66" cy="66" r="3.5" fill="#D7263D"/>
-    <text x="66" y="78" textAnchor="middle" fontFamily="Tajawal, sans-serif" fontWeight="900" fontSize="38" fill="currentColor">س</text>
+  return <svg className={className} viewBox="0 0 128 128" fill="none" aria-hidden="true" focusable="false">
+    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="3"/>
+    <circle cx="64" cy="64" r="47" stroke="#D7263D" strokeWidth="2.2"/>
+    <circle cx="64" cy="64" r="37" stroke="currentColor" strokeWidth="3.2"/>
+    <circle cx="64" cy="64" r="28.5" stroke="currentColor" strokeWidth="1.5" opacity=".65"/>
+    <path d="M64 8V22" stroke="#D7263D" strokeWidth="4" strokeLinecap="round"/>
+    <path d="M23 70C33 70 36 45 46 45C56 45 57 83 67 83C77 83 78 43 88 43C98 43 100 70 105 70" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M24 90H104" stroke="currentColor" strokeWidth="1.8" opacity=".6"/>
+    <circle cx="64" cy="90" r="4" fill="#D7263D"/>
   </svg>
 }
 function Brand({ light = false }: { light?: boolean }) {
   return <Link to="/" className={`brand ${light ? 'brand-light' : ''}`} aria-label="مجتمع السيطرة المهنية - الرئيسية">
     <span className="brand-mark"><BrandSymbol /></span>
-    <span className="brand-word"><b>مجتمع السيطرة المهنية</b><small>FUTURE MED LEADERS</small><em>دقة الأداء، سيطرة القرار السريري</em></span>
+    <span className="brand-word"><b>مجتمع السيطرة المهنية</b><small>PMC · PROFESSIONAL MASTERY</small></span>
   </Link>
 }
 function Verified({ role }: { role: Role }) { return role !== 'member' ? <span className={`verified-mark ${role === 'coach' ? 'coach-mark' : ''}`} title={roleNames[role]}><BadgeCheck size={14}/></span> : null }
 function Avatar({ letter, tone = 0, size = 'md' }: { letter: string; tone?: number; size?: string }) { return <span className={`avatar avatar-${tone % 5} avatar-${size}`}>{letter}</span> }
-function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>مساحة مهنية آمنة لبناء القيمة وإظهار الأثر: السيطرة على مسارك، لا على الآخرين.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/professionals">الدليل المهني</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href={`${import.meta.env.BASE_URL}brand/`}>دليل الهوية</a><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
+function Footer() { return <footer className="site-footer"><div className="wrap footer-inner"><Brand/><span>أداء حقيقي. قيمة قابلة للإثبات. شبكة مهنية تساعدك على إظهار الأثر والتقدم.</span><div className="footer-links"><Link to="/videos">الفيديوهات</Link><Link to="/professionals">الدليل المهني</Link><Link to="/survey">قيّم تجربتك</Link><Link to="/faq">الأسئلة الشائعة</Link><Link to="/membership">العضوية</Link><Link to="/privacy">الخصوصية</Link><Link to="/terms">الشروط</Link><Link to="/charter">ميثاق السلوك</Link><a href={`${import.meta.env.BASE_URL}brand/`}>دليل الهوية</a><a href="https://lnkd.in/p/dy_ShV2B" target="_blank" rel="noopener noreferrer">LinkedIn</a></div><small>© ٢٠٢٦ مجتمع السيطرة</small></div><div className="wrap"><NewsletterSignup/></div></footer> }
 
 function Header({ demo, authenticated, accountStatus, displayName, role, toggleTheme, dark, unread, unreadMessages, onSignOut }: { demo: boolean; authenticated: boolean; accountStatus: AccountStatus | null; displayName: string; role: Role; toggleTheme: () => void; dark: boolean; unread: number; unreadMessages: number; onSignOut: () => Promise<void> }) {
   const [open, setOpen] = useState(false)

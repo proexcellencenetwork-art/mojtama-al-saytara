@@ -71,6 +71,9 @@ for (const route of publicRoutes) {
   if (description) publicDescriptions.add(description)
   if (!canonical?.startsWith(siteUrl)) fail.push(`Canonical URL does not match VITE_SITE_URL: ${route.path}`)
   if (!html.includes('<html lang="ar" dir="rtl">')) fail.push(`Arabic RTL document attributes missing: ${route.path}`)
+  if (!html.includes('class="brand"') || !html.includes('class="brand-mark"') || !html.includes('class="brand-symbol"')) fail.push(`Official logo lockup missing from page header: ${route.path}`)
+  if (!html.includes('مجتمع السيطرة المهنية') || !html.includes('PMC · PROFESSIONAL MASTERY')) fail.push(`Consistent brand naming is missing: ${route.path}`)
+  if (html.includes('class="brand-mark">♡') || html.includes('FUTURE MED LEADERS')) fail.push(`Legacy/inconsistent brand lockup detected: ${route.path}`)
   if (!html.includes('hreflang="ar"')) fail.push(`Arabic hreflang missing: ${route.path}`)
   if (!html.includes('og:image') || !html.includes('twitter:card')) fail.push(`Social metadata missing: ${route.path}`)
   if (!/<h1\b[^>]*>\s*[^<]/i.test(html)) fail.push(`Rendered H1 missing: ${route.path}`)
@@ -100,6 +103,8 @@ for (const route of publicRoutes) {
   }
   const scripts = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(match => safeJson(match[1])).filter(Boolean)
   if (!scripts.some(item => item['@type'] === 'Organization') || !scripts.some(item => item['@type'] === 'WebSite') || !scripts.some(item => item['@type'] === 'BreadcrumbList')) fail.push(`Required Organization/WebSite/BreadcrumbList schema missing: ${route.path}`)
+  const organization = scripts.find(item => item['@type'] === 'Organization')
+  if (organization && organization.logo !== new URL('brand-mark.svg', siteRoot).toString()) fail.push(`Organization schema logo must point to the official brand mark: ${route.path}`)
   if (route.path === '/faq/') {
     const faqSchema = scripts.find(item => item['@type'] === 'FAQPage')
     if (!faqSchema) fail.push('FAQPage schema missing.')
@@ -125,6 +130,7 @@ for (const route of privateRoutes) {
   try {
     const html = await readFile(file, 'utf8')
     if (!/name="robots" content="noindex,nofollow"/i.test(html)) fail.push(`Private page is indexable: ${route.path}`)
+    if (!html.includes('class="brand-mark"') || !html.includes('class="brand-symbol"') || !html.includes('PMC · PROFESSIONAL MASTERY')) fail.push(`Consistent brand lockup missing from private route: ${route.path}`)
     if (route.path === '/register/') {
       const signupEnabled = process.env.VITE_PUBLIC_SIGNUP_ENABLED !== 'false'
       if (signupEnabled) {
@@ -166,6 +172,16 @@ for (const entry of sitemapEntries) {
 }
 const notFoundHtml = await readFile(resolve(dist,'404.html'),'utf8')
 if (!notFoundHtml.includes('name="robots" content="noindex,nofollow"') || notFoundHtml.includes('rel="canonical"')) fail.push('404 page must be noindex and must not declare a false canonical URL.')
+if (!notFoundHtml.includes('class="brand-mark"') || !notFoundHtml.includes('class="brand-symbol"') || !notFoundHtml.includes('PMC · PROFESSIONAL MASTERY')) fail.push('404 page must carry the current official brand lockup.')
+const identityPage = await readFile(resolve(dist,'brand/index.html'),'utf8')
+if (!identityPage.includes('brand-mark.svg') || !identityPage.includes('brand-lockup.svg') || !identityPage.includes('#0B2545') || !identityPage.includes('#D7263D') || !identityPage.includes('أداء حقيقي. قيمة قابلة للإثبات.')) fail.push('Public identity guide is incomplete or out of date.')
+if (!identityPage.includes('../assets/tajawal-arabic-400-CyCXRvzh.woff2') || !identityPage.includes('../assets/tajawal-arabic-700-D2-eand5.woff2')) fail.push('Public identity guide must reference both self-hosted Tajawal font weights.')
+for (const font of ['tajawal-arabic-400-CyCXRvzh.woff2','tajawal-arabic-700-D2-eand5.woff2']) {
+  try { await access(resolve(dist,'assets',font)) } catch { fail.push(`Identity guide font asset missing: ${font}`) }
+}
+if (/fonts\.googleapis\.com|fonts\.gstatic\.com/.test(identityPage)) fail.push('Public identity guide must use local fonts only.')
+const manifestJson = JSON.parse(await readFile(resolve(dist,'manifest.webmanifest'),'utf8'))
+if (manifestJson.name !== 'مجتمع السيطرة المهنية' || manifestJson.theme_color !== '#0B2545' || manifestJson.background_color !== '#F4F0E6') fail.push('PWA manifest identity name or theme colors are inconsistent.')
 if (!manifest.routes.some(route => route.path === '/learning-room/:id/')) fail.push('Private workshop-room route pattern is missing from the manifest.')
 if (!notFoundHtml.includes('__saytara_route')) fail.push('GitHub Pages dynamic route recovery is missing from 404.html.')
 const robots = await readFile(resolve(dist, 'robots.txt'), 'utf8')
@@ -180,7 +196,7 @@ const disallowedPrivateRoutes = privateRoutes.filter(route => {
   })
 })
 if (disallowedPrivateRoutes.length) fail.push(`robots.txt blocks routes with noindex metadata: ${disallowedPrivateRoutes.map(route => route.path).join(', ')}`)
-for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','favicon.svg','public-site.js','images/brand-community-480.avif','images/brand-community-480.webp','images/brand-community-1200.avif','images/brand-community-1200.webp','fonts/OFL.txt']) {
+for (const file of ['404.html','sitemap.xml','robots.txt','manus-routes.json','manifest.webmanifest','og-social.png','icon-192.png','icon-512.png','apple-touch-icon.png','brand-mark.svg','brand-lockup.svg','favicon.svg','public-site.js','brand/index.html','images/brand-community-480.avif','images/brand-community-480.webp','images/brand-community-1200.avif','images/brand-community-1200.webp','fonts/OFL.txt']) {
   try { await access(resolve(dist,file)) } catch { fail.push(`Required static asset missing: ${file}`) }
 }
 const index = await readFile(resolve(dist,'index.html'),'utf8')
