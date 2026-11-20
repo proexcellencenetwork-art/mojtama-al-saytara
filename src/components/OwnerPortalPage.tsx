@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import { Activity, ArrowLeft, BadgeCheck, BarChart3, Eye, Mail, MessageSquare, RefreshCw, Send, ShieldCheck, Target, UserCog, UserPlus, Users } from 'lucide-react'
+import { Activity, ArrowLeft, BadgeCheck, BarChart3, Eye, FileText, Mail, MessageSquare, RefreshCw, Send, ShieldCheck, Target, UserCog, UserPlus, Users } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './OwnerPortalPage.css'
@@ -37,11 +37,22 @@ type CommandCenterAnalytics = {
 type CommandCenterLeadSummary = { total?: number; new_count?: number; qualified_count?: number; converted_count?: number }
 type CommandCenterSurveySummary = { responses?: number; average_rating?: number | null }
 type CommandCenterBehaviorSummary = { returning_visitors?: number; repeat_tool_users?: number }
+type CommandCenterPortfolioSummary = {
+  total_items?: number
+  members_with_items?: number
+  projects?: number
+  solved_problems?: number
+  skills?: number
+  results?: number
+  public_items?: number
+  private_items?: number
+}
 type CommandCenterSnapshot = {
   analytics: CommandCenterAnalytics | null
   leads: CommandCenterLeadSummary | null
   survey: CommandCenterSurveySummary | null
   behavior: CommandCenterBehaviorSummary | null
+  portfolio: CommandCenterPortfolioSummary | null
 }
 const metricNumber = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat('ar-SA').format(value) : '—'
 type OwnerAudit = {
@@ -117,7 +128,7 @@ export function OwnerPortalPage() {
     setAuthorized(true)
     setCommandCenterLoading(true)
     setCommandCenterError('')
-    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult, analyticsResult, leadsResult, surveyResult, behaviorResult] = await Promise.all([
+    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult, analyticsResult, leadsResult, surveyResult, behaviorResult, portfolioResult] = await Promise.all([
       supabase.rpc('list_platform_accounts_activity'),
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
@@ -126,13 +137,15 @@ export function OwnerPortalPage() {
       supabase.rpc('get_owner_lead_pipeline', { p_limit: 1 }),
       supabase.rpc('get_owner_public_survey_summary', { p_days: commandCenterPeriod }),
       supabase.rpc('get_owner_behavioral_insights', { p_days: commandCenterPeriod }),
+      supabase.rpc('get_owner_professional_portfolio_summary'),
     ])
     const analytics = analyticsResult.error ? null : analyticsResult.data as CommandCenterAnalytics
     const leads = leadsResult.error ? null : leadsResult.data as CommandCenterLeadSummary
     const survey = surveyResult.error ? null : surveyResult.data as CommandCenterSurveySummary
     const behavior = behaviorResult.error ? null : behaviorResult.data as CommandCenterBehaviorSummary
-    setCommandCenter({ analytics, leads, survey, behavior })
-    const dashboardFailures = [analyticsResult, leadsResult, surveyResult, behaviorResult].filter(result => result.error).length
+    const portfolio = portfolioResult.error ? null : portfolioResult.data as CommandCenterPortfolioSummary
+    setCommandCenter({ analytics, leads, survey, behavior, portfolio })
+    const dashboardFailures = [analyticsResult, leadsResult, surveyResult, behaviorResult, portfolioResult].filter(result => result.error).length
     setCommandCenterError(dashboardFailures ? 'تعذر تحميل بعض مؤشرات مركز القيادة. البيانات التي ظهرت فقط هي البيانات التي أعادتها قاعدة البيانات بنجاح.' : '')
     setCommandCenterUpdatedAt(new Date().toISOString())
     setCommandCenterLoading(false)
@@ -282,6 +295,7 @@ export function OwnerPortalPage() {
               { label: 'بدأوا استخدام أداة', value: commandCenter?.analytics?.overview?.tool_starts, note: 'مرات بدء الاستخدام', icon: Activity },
               { label: 'أكملوا استخدام أداة', value: commandCenter?.analytics?.overview?.tool_completions, note: 'مرات الإكمال المسجلة', icon: BadgeCheck },
               { label: 'مشتركو البريد', value: commandCenter?.analytics?.overview?.newsletter_subscribers, note: 'اشتراكات نشطة إجمالاً', icon: Mail },
+              { label: 'سجلات الإنجاز المهني', value: commandCenter?.portfolio?.total_items, note: 'مجموع البطاقات التي أنشأها الأعضاء', icon: FileText },
               { label: 'ردود الاستبيان', value: commandCenter?.survey?.responses, note: 'ضمن الفترة المختارة', icon: MessageSquare },
               { label: 'حسابات معتمدة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'approved' && !account.is_platform_owner).length : undefined, note: 'من قائمة الحسابات المحمّلة', icon: ShieldCheck },
               { label: 'قيد المراجعة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'pending').length : undefined, note: 'حسابات تنتظر قرار الإدارة', icon: UserCog },
@@ -298,6 +312,7 @@ export function OwnerPortalPage() {
             <div><b>مستخدمون متكررون للأدوات</b><strong>{metricNumber(commandCenter?.behavior?.repeat_tool_users)}</strong><small>زوار بدأوا الأدوات أكثر من مرة</small></div>
             <div><b>متوسط تقييم التجربة</b><strong>{typeof commandCenter?.survey?.average_rating === 'number' ? commandCenter.survey.average_rating.toLocaleString('ar-SA', { maximumFractionDigits: 2 }) + ' / 5' : '—'}</strong><small>لا يظهر متوسط دون ردود صالحة</small></div>
             <div><b>مسار العملاء المحتملين</b><strong>{metricNumber(commandCenter?.leads?.new_count)} جديد</strong><small>{metricNumber(commandCenter?.leads?.qualified_count)} مؤهل · {metricNumber(commandCenter?.leads?.converted_count)} تحولوا</small></div>
+            <div><b>تفصيل الإنجازات المهنية</b><strong>{metricNumber(commandCenter?.portfolio?.members_with_items)} عضو لديه سجلات</strong><small>{metricNumber(commandCenter?.portfolio?.projects)} مشروع · {metricNumber(commandCenter?.portfolio?.solved_problems)} مشكلة · {metricNumber(commandCenter?.portfolio?.skills)} مهارة · {metricNumber(commandCenter?.portfolio?.results)} نتيجة</small></div>
           </div>
 
           <div className="owner-command-lists">
