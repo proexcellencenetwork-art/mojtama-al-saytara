@@ -10,6 +10,8 @@ type AnalyticsPayload = {
   pages?: { page_path: string; page_views: number; visitors: number }[]
   tools?: { tool: string; starts: number; completions: number; users: number }[]
   sources?: { source: string; page_views: number; visitors: number }[]
+  campaigns?: { source: string; medium: string; campaign: string; page_views: number; visitors: number; tool_starts: number; tool_completions: number }[]
+  lead_campaigns?: { campaign: string; leads: number; qualified_leads: number; converted_leads: number }[]
   locations?: { timezone: string; locale: string; visitors: number }[]
   daily?: { day: string; page_views: number; visitors: number }[]
   interested?: { visitor_id: string; user_id: string | null; display_name: string; email: string | null; interest_score: number; page_views: number; tool_starts: number; tool_completions: number; active_days: number; last_seen: string }[]
@@ -172,6 +174,28 @@ export function AnalyticsDashboardPage() {
       <section className="analytics-two-col">
         <article className="analytics-card"><div className="analytics-section-heading"><div><h2>الأدوات المهنية</h2><p>البداية والإكمال وعدد الزوار الذين بدأوا الأداة.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>الأداة/المسار</th><th>البدء</th><th>الإكمال</th><th>الزوار</th></tr></thead><tbody>{(data?.tools ?? []).map(row => <tr key={row.tool}><td>{pathLabel(row.tool)}</td><td>{number(row.starts)}</td><td>{number(row.completions)}</td><td>{number(row.users)}</td></tr>)}</tbody></table>{!data?.tools?.length && <p className="analytics-empty">لم تُسجل استخدامات أدوات بعد.</p>}</div></article>
         <article className="analytics-card"><div className="analytics-section-heading"><div><h2>مصادر الزيارات</h2><p>UTM أو نطاق الإحالة؛ الزيارة المباشرة قد لا تكشف مصدرها.</p></div></div><div className="analytics-table-wrap"><table><thead><tr><th>المصدر</th><th>المشاهدات</th><th>الزوار</th></tr></thead><tbody>{(data?.sources ?? []).map(row => <tr key={row.source}><td dir="auto">{row.source}</td><td>{number(row.page_views)}</td><td>{number(row.visitors)}</td></tr>)}</tbody></table></div></article>
+      </section>
+      <section className="analytics-card">
+        <div className="analytics-section-heading"><div><h2>أداء الحملات وروابط UTM</h2><p>تجميع مجهول لمصدر الزيارة والوسيط والحملة، مع بدايات وإكمال الأدوات. هذا قياس للأحداث المسجلة بعد الموافقة وليس دليلاً على مبيعات أو تحويلات غير مسجلة.</p><p className="analytics-footnote">صيغة موحدة مقترحة للرابط: <code dir="ltr">?utm_source=linkedin&amp;utm_medium=social&amp;utm_campaign=career-workshop-2026</code>؛ استخدم اسماً ثابتاً للحملة في كل منشوراتها.</p></div></div>
+        <div className="analytics-table-wrap">
+          <table><thead><tr><th>الحملة</th><th>المصدر</th><th>الوسيط</th><th>المشاهدات</th><th>الزوار</th><th>بدء أداة</th><th>إكمال أداة</th></tr></thead>
+            <tbody>{(data?.campaigns ?? []).map((row,i)=><tr key={row.source+'-'+row.medium+'-'+row.campaign+'-'+i}>
+              <td dir="auto"><b>{row.campaign}</b></td><td dir="auto">{row.source}</td><td dir="auto">{row.medium}</td>
+              <td>{number(row.page_views)}</td><td>{number(row.visitors)}</td><td>{number(row.tool_starts)}</td><td>{number(row.tool_completions)}</td>
+            </tr>)}</tbody>
+          </table>
+          {!data?.campaigns?.length&&<p className="analytics-empty">لا توجد أحداث حملة منسوبة إلى UTM أو إحالة في الفترة المختارة. استخدم روابط UTM موحدة في الحملات القادمة.</p>}
+        </div>
+        <div className="analytics-table-wrap">
+          <h3>طلبات الاهتمام حسب الحملة</h3>
+          <p className="analytics-footnote">هذه أعداد طلبات الاهتمام التي حملت اسم حملة عند إرسال النموذج؛ لا تُنسب تلقائياً إلى الزيارات إذا اختلفت قيمة الوسم.</p>
+          <table><thead><tr><th>الحملة</th><th>طلبات الاهتمام</th><th>مؤهلة</th><th>تحولت إلى أعضاء</th></tr></thead>
+            <tbody>{(data?.lead_campaigns ?? []).map(row=><tr key={row.campaign}>
+              <td dir="auto">{row.campaign}</td><td>{number(row.leads)}</td><td>{number(row.qualified_leads)}</td><td>{number(row.converted_leads)}</td>
+            </tr>)}</tbody>
+          </table>
+          {!data?.lead_campaigns?.length&&<p className="analytics-empty">لا توجد طلبات اهتمام مرتبطة بحملة في الفترة المختارة.</p>}
+        </div>
       </section>
       <section className="analytics-card"><div className="analytics-section-heading"><div><h2><Laptop size={18}/> الأجهزة وأنظمة التشغيل والمتصفحات</h2><p>تصنيف تقريبي من معلومات المتصفح وحجم نافذة العرض، ولا يجمع بصمة جهاز أو عنوان IP.</p></div></div><div className="analytics-two-col">
         <div className="analytics-table-wrap"><h3>نوع الجهاز</h3><table><thead><tr><th>الجهاز</th><th>الزوار</th><th>المشاهدات</th></tr></thead><tbody>{(devices?.devices ?? []).map(row=><tr key={row.device}><td>{row.device==='mobile'?'جوال':row.device==='tablet'?'لوحي':row.device==='desktop'?'كمبيوتر':'غير معروف'}</td><td>{number(row.visitors)}</td><td>{number(row.page_views)}</td></tr>)}</tbody></table></div>

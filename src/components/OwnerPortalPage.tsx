@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { FormEvent } from 'react'
-import { ArrowLeft, BadgeCheck, BarChart3, RefreshCw, Send, ShieldCheck, UserCog, UserPlus, Users } from 'lucide-react'
+import { Activity, ArrowLeft, BadgeCheck, BarChart3, Eye, FileText, Mail, MessageSquare, RefreshCw, Send, ShieldCheck, Target, UserCog, UserPlus, Users } from 'lucide-react'
 import type { Role } from '../appTypes'
 import { supabase } from '../lib/supabase'
 import './OwnerPortalPage.css'
@@ -19,6 +19,42 @@ type PlatformAccount = {
   last_sign_in_at: string | null
 }
 type CommunityMetricSettings = { visible: boolean; mode: 'actual' | 'goal'; goal: number }
+
+type CommandCenterAnalytics = {
+  overview?: {
+    page_views?: number
+    unique_visitors?: number
+    tool_starts?: number
+    tool_completions?: number
+    newsletter_subscribers?: number
+    interest_visitors?: number
+  }
+  pages?: { page_path: string; page_views: number; visitors: number }[]
+  sources?: { source: string; page_views: number; visitors: number }[]
+  tools?: { tool: string; starts: number; completions: number; users: number }[]
+  daily?: { day: string; page_views: number; visitors: number }[]
+}
+type CommandCenterLeadSummary = { total?: number; new_count?: number; qualified_count?: number; converted_count?: number }
+type CommandCenterSurveySummary = { responses?: number; average_rating?: number | null }
+type CommandCenterBehaviorSummary = { returning_visitors?: number; repeat_tool_users?: number }
+type CommandCenterPortfolioSummary = {
+  total_items?: number
+  members_with_items?: number
+  projects?: number
+  solved_problems?: number
+  skills?: number
+  results?: number
+  public_items?: number
+  private_items?: number
+}
+type CommandCenterSnapshot = {
+  analytics: CommandCenterAnalytics | null
+  leads: CommandCenterLeadSummary | null
+  survey: CommandCenterSurveySummary | null
+  behavior: CommandCenterBehaviorSummary | null
+  portfolio: CommandCenterPortfolioSummary | null
+}
+const metricNumber = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat('ar-SA').format(value) : '—'
 type OwnerAudit = {
   id: number
   actor_id: string
@@ -56,6 +92,12 @@ export function OwnerPortalPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [ownerInvitationsEnabled, setOwnerInvitationsEnabled] = useState(true)
   const [communityMetric, setCommunityMetric] = useState<CommunityMetricSettings>({ visible: false, mode: 'actual', goal: 100 })
+  const [accountsAvailable, setAccountsAvailable] = useState(false)
+  const [commandCenter, setCommandCenter] = useState<CommandCenterSnapshot | null>(null)
+  const [commandCenterPeriod, setCommandCenterPeriod] = useState(30)
+  const [commandCenterLoading, setCommandCenterLoading] = useState(true)
+  const [commandCenterError, setCommandCenterError] = useState('')
+  const [commandCenterUpdatedAt, setCommandCenterUpdatedAt] = useState<string | null>(null)
 
   const eligibleAccounts = useMemo(
     () => accounts.filter(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner),
@@ -76,22 +118,44 @@ export function OwnerPortalPage() {
       setAuthorized(false)
       setAccounts([])
       setAudit([])
+      setAccountsAvailable(false)
+      setCommandCenter(null)
+      setCommandCenterLoading(false)
       setLoading(false)
       if (ownerCheck.error) setError('تعذر التحقق من صلاحية المالك. أعد المحاولة بعد اكتمال التهيئة.')
       return
     }
     setAuthorized(true)
-    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult] = await Promise.all([
+    setCommandCenterLoading(true)
+    setCommandCenterError('')
+    const [accountsResult, auditResult, invitationSettingResult, communityMetricResult, analyticsResult, leadsResult, surveyResult, behaviorResult, portfolioResult] = await Promise.all([
       supabase.rpc('list_platform_accounts_activity'),
       supabase.rpc('list_platform_owner_audit', { p_limit: 50 }),
       supabase.rpc('is_owner_invitations_enabled'),
       supabase.rpc('get_owner_community_metric_settings'),
+      supabase.rpc('get_owner_site_analytics', { p_days: commandCenterPeriod }),
+      supabase.rpc('get_owner_lead_pipeline', { p_limit: 1 }),
+      supabase.rpc('get_owner_public_survey_summary', { p_days: commandCenterPeriod }),
+      supabase.rpc('get_owner_behavioral_insights', { p_days: commandCenterPeriod }),
+      supabase.rpc('get_owner_professional_portfolio_summary'),
     ])
+    const analytics = analyticsResult.error ? null : analyticsResult.data as CommandCenterAnalytics
+    const leads = leadsResult.error ? null : leadsResult.data as CommandCenterLeadSummary
+    const survey = surveyResult.error ? null : surveyResult.data as CommandCenterSurveySummary
+    const behavior = behaviorResult.error ? null : behaviorResult.data as CommandCenterBehaviorSummary
+    const portfolio = portfolioResult.error ? null : portfolioResult.data as CommandCenterPortfolioSummary
+    setCommandCenter({ analytics, leads, survey, behavior, portfolio })
+    const dashboardFailures = [analyticsResult, leadsResult, surveyResult, behaviorResult, portfolioResult].filter(result => result.error).length
+    setCommandCenterError(dashboardFailures ? 'تعذر تحميل بعض مؤشرات مركز القيادة. البيانات التي ظهرت فقط هي البيانات التي أعادتها قاعدة البيانات بنجاح.' : '')
+    setCommandCenterUpdatedAt(new Date().toISOString())
+    setCommandCenterLoading(false)
     if (accountsResult.error || auditResult.error || invitationSettingResult.error || communityMetricResult.error) {
       setError('تعذر تحميل لوحة المالك. تحقّق من تطبيق migration ثم أعد المحاولة.')
       setAccounts([])
       setAudit([])
+      setAccountsAvailable(false)
     } else {
+      setAccountsAvailable(true)
       setOwnerInvitationsEnabled(invitationSettingResult.data === true)
       const metricData = communityMetricResult.data as Partial<CommunityMetricSettings> | null
       setCommunityMetric({ visible: metricData?.visible === true, mode: metricData?.mode === 'goal' ? 'goal' : 'actual', goal: Number.isInteger(metricData?.goal) ? Math.max(0, Math.min(1000000, metricData!.goal!)) : 100 })
@@ -103,7 +167,7 @@ export function OwnerPortalPage() {
         : nextAccounts.find(account => account.email_confirmed && account.account_status === 'approved' && !account.is_platform_owner)?.user_id || '')
     }
     setLoading(false)
-  }, [])
+  }, [commandCenterPeriod])
 
   useEffect(() => { void Promise.resolve().then(load) }, [load])
 
@@ -194,6 +258,113 @@ export function OwnerPortalPage() {
     <div className="page-title-row owner-heading"><div><span className="eyebrow">صلاحية منفصلة عن المدير</span><h1>مركز مالك المنصة</h1><p>هذه الأدوات تتحقق من المالك في قاعدة البيانات، ولا تكفي معرفة رابط الصفحة للوصول إليها.</p></div><div className="owner-heading-actions"><Link className="btn btn-primary btn-small" to="/owner/analytics"><BarChart3 size={15}/> مؤشرات الأداء</Link><button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading || busy}><RefreshCw size={15}/> تحديث</button></div></div>
     {notice && <div className="inline-message" role="status">{notice}</div>}
     {error && <div className="inline-message live-error" role="alert">{error}</div>}
+
+    <section className="owner-command-center" aria-labelledby="owner-command-center-title">
+      <div className="owner-command-header">
+        <div>
+          <span className="owner-command-kicker"><BarChart3 size={15}/> قيادة المجتمع بالأرقام</span>
+          <h2 id="owner-command-center-title">مركز القيادة</h2>
+          <p>صورة تشغيلية موحدة للزيارات والاهتمام والعملاء المحتملين واستخدام الأدوات ورضا الزوار.</p>
+        </div>
+        <div className="owner-command-controls">
+          <label>الفترة
+            <select value={commandCenterPeriod} onChange={event => setCommandCenterPeriod(Number(event.target.value))}>
+              <option value={7}>آخر 7 أيام</option>
+              <option value={30}>آخر 30 يوماً</option>
+              <option value={90}>آخر 90 يوماً</option>
+            </select>
+          </label>
+          <button className="btn btn-outline btn-small" type="button" onClick={() => void load()} disabled={loading || commandCenterLoading}>
+            <RefreshCw size={14}/> تحديث المؤشرات
+          </button>
+          <Link className="btn btn-primary btn-small" to="/owner/analytics"><BarChart3 size={14}/> التفاصيل والتحليلات</Link>
+          <small>{commandCenterUpdatedAt ? 'آخر تحديث: ' + new Date(commandCenterUpdatedAt).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' }) : 'لم يكتمل التحديث بعد'}</small>
+        </div>
+      </div>
+
+      {commandCenterError && <p className="owner-command-warning" role="status">{commandCenterError}</p>}
+      {commandCenterLoading && !commandCenter?.analytics
+        ? <p className="owner-command-state" role="status">جارٍ تحميل المؤشرات من قاعدة البيانات…</p>
+        : <>
+          <div className="owner-command-kpis">
+            {[
+              { label: 'مشاهدات الصفحات', value: commandCenter?.analytics?.overview?.page_views, note: 'ضمن الفترة المختارة', icon: Eye },
+              { label: 'زوار مميزون', value: commandCenter?.analytics?.overview?.unique_visitors, note: 'معرّفات ضمن القياس الموافق عليه', icon: Users },
+              { label: 'مهتمون محتملون', value: commandCenter?.analytics?.overview?.interest_visitors, note: 'وفق إشارات الاهتمام المسجلة', icon: Target },
+              { label: 'طلبات الاهتمام', value: commandCenter?.leads?.total, note: 'إجمالي العملاء المحتملين المسجلين', icon: UserPlus },
+              { label: 'بدأوا استخدام أداة', value: commandCenter?.analytics?.overview?.tool_starts, note: 'مرات بدء الاستخدام', icon: Activity },
+              { label: 'أكملوا استخدام أداة', value: commandCenter?.analytics?.overview?.tool_completions, note: 'مرات الإكمال المسجلة', icon: BadgeCheck },
+              { label: 'مشتركو البريد', value: commandCenter?.analytics?.overview?.newsletter_subscribers, note: 'اشتراكات نشطة إجمالاً', icon: Mail },
+              { label: 'سجلات الإنجاز المهني', value: commandCenter?.portfolio?.total_items, note: 'مجموع البطاقات التي أنشأها الأعضاء', icon: FileText },
+              { label: 'ردود الاستبيان', value: commandCenter?.survey?.responses, note: 'ضمن الفترة المختارة', icon: MessageSquare },
+              { label: 'حسابات معتمدة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'approved' && !account.is_platform_owner).length : undefined, note: 'من قائمة الحسابات المحمّلة', icon: ShieldCheck },
+              { label: 'قيد المراجعة', value: accountsAvailable ? accounts.filter(account => account.account_status === 'pending').length : undefined, note: 'حسابات تنتظر قرار الإدارة', icon: UserCog },
+            ].map(item => <article className="owner-command-kpi" key={item.label}>
+              <span className="owner-command-kpi-icon"><item.icon size={18}/></span>
+              <small>{item.label}</small>
+              <strong>{metricNumber(item.value)}</strong>
+              <em>{item.note}</em>
+            </article>)}
+          </div>
+
+          <div className="owner-command-insights">
+            <div><b>العودة للموقع</b><strong>{metricNumber(commandCenter?.behavior?.returning_visitors)}</strong><small>زوار عادوا في أكثر من يوم خلال الفترة</small></div>
+            <div><b>مستخدمون متكررون للأدوات</b><strong>{metricNumber(commandCenter?.behavior?.repeat_tool_users)}</strong><small>زوار بدأوا الأدوات أكثر من مرة</small></div>
+            <div><b>متوسط تقييم التجربة</b><strong>{typeof commandCenter?.survey?.average_rating === 'number' ? commandCenter.survey.average_rating.toLocaleString('ar-SA', { maximumFractionDigits: 2 }) + ' / 5' : '—'}</strong><small>لا يظهر متوسط دون ردود صالحة</small></div>
+            <div><b>مسار العملاء المحتملين</b><strong>{metricNumber(commandCenter?.leads?.new_count)} جديد</strong><small>{metricNumber(commandCenter?.leads?.qualified_count)} مؤهل · {metricNumber(commandCenter?.leads?.converted_count)} تحولوا</small></div>
+            <div><b>تفصيل الإنجازات المهنية</b><strong>{metricNumber(commandCenter?.portfolio?.members_with_items)} عضو لديه سجلات</strong><small>{metricNumber(commandCenter?.portfolio?.projects)} مشروع · {metricNumber(commandCenter?.portfolio?.solved_problems)} مشكلة · {metricNumber(commandCenter?.portfolio?.skills)} مهارة · {metricNumber(commandCenter?.portfolio?.results)} نتيجة</small></div>
+          </div>
+
+          <div className="owner-command-lists">
+            <article className="owner-command-card">
+              <div className="owner-command-card-heading"><h3>مصادر الوصول</h3><span>أعلى المصادر مشاهدةً</span></div>
+              {(commandCenter?.analytics?.sources || []).slice(0, 5).length
+                ? (commandCenter?.analytics?.sources || []).slice(0, 5).map(item => {
+                  const maximum = Math.max(1, ...((commandCenter?.analytics?.sources || []).map(row => row.page_views)))
+                  return <div className="owner-command-bar-row" key={item.source}>
+                    <div><b>{item.source}</b><strong>{metricNumber(item.page_views)}</strong></div>
+                    <span><i style={{ width: Math.max(2, item.page_views / maximum * 100) + '%' }}/></span>
+                    <small>{metricNumber(item.visitors)} زائر مقاس</small>
+                  </div>
+                })
+                : <p className="owner-command-empty">لا توجد مصادر وصول مسجلة في هذه الفترة.</p>}
+            </article>
+            <article className="owner-command-card">
+              <div className="owner-command-card-heading"><h3>الصفحات الأكثر زيارة</h3><span>حسب أحداث مشاهدة الصفحة</span></div>
+              {(commandCenter?.analytics?.pages || []).slice(0, 5).length
+                ? (commandCenter?.analytics?.pages || []).slice(0, 5).map(item => {
+                  const maximum = Math.max(1, ...((commandCenter?.analytics?.pages || []).map(row => row.page_views)))
+                  return <div className="owner-command-bar-row" key={item.page_path}>
+                    <div><b dir="ltr">{item.page_path}</b><strong>{metricNumber(item.page_views)}</strong></div>
+                    <span><i style={{ width: Math.max(2, item.page_views / maximum * 100) + '%' }}/></span>
+                    <small>{metricNumber(item.visitors)} زائر مقاس</small>
+                  </div>
+                })
+                : <p className="owner-command-empty">لا توجد مشاهدات صفحات مسجلة في هذه الفترة.</p>}
+            </article>
+            <article className="owner-command-card">
+              <div className="owner-command-card-heading"><h3>استخدام الأدوات</h3><span>بدء مقابل إكمال</span></div>
+              {(commandCenter?.analytics?.tools || []).slice(0, 5).length
+                ? (commandCenter?.analytics?.tools || []).slice(0, 5).map(item => <div className="owner-command-tool-row" key={item.tool}>
+                    <div><b>{item.tool}</b><span>{metricNumber(item.users)} مستخدم · {metricNumber(item.starts)} بدء · {metricNumber(item.completions)} إكمال</span></div>
+                    <strong>{item.starts > 0 ? Math.round(item.completions / item.starts * 100).toLocaleString('ar-SA') + '%' : '—'}</strong>
+                  </div>)
+                : <p className="owner-command-empty">لم تُسجل بدايات أو إكمالات أدوات في هذه الفترة.</p>}
+            </article>
+            <article className="owner-command-card">
+              <div className="owner-command-card-heading"><h3>النشاط اليومي</h3><span>مشاهدات الصفحة</span></div>
+              {(commandCenter?.analytics?.daily || []).slice(-10).length
+                ? <div className="owner-command-daily">{(commandCenter?.analytics?.daily || []).slice(-10).map(item => {
+                    const maximum = Math.max(1, ...((commandCenter?.analytics?.daily || []).map(row => row.page_views)))
+                    return <div key={item.day} title={metricNumber(item.page_views) + ' مشاهدة'}><i style={{ height: Math.max(4, item.page_views / maximum * 100) + '%' }}/><small>{new Date(item.day + 'T00:00:00+03:00').toLocaleDateString('ar-SA', { day: 'numeric', month: 'short' })}</small></div>
+                  })}</div>
+                : <p className="owner-command-empty">لا توجد بيانات يومية مسجلة في هذه الفترة.</p>}
+            </article>
+          </div>
+        </>}
+      <p className="owner-command-footnote"><ShieldCheck size={14}/> تنبيه قياس: مشاهدات الصفحات والزوار هنا تمثل الأحداث التي سُجلت بعد موافقة الزائر، ولا تساوي بالضرورة جميع زوار الموقع. الأرقام غير المتاحة تظهر بشرطة، ولا نستبدلها بأرقام تقديرية.</p>
+    </section>
+
     <section className="owner-grid">
       <article className="owner-card">
         <div className="owner-card-heading"><span><UserPlus size={18}/></span><div><h2>دعوة بالبريد الإلكتروني</h2><p>ترسل دعوة Supabase؛ ينشأ دور العضو الأساسي فقط، بلا دور امتيازي أو تجاوز للموافقة.</p></div></div>
