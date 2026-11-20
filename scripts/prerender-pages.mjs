@@ -119,7 +119,7 @@ function crumbData(route, page) {
 }
 function schemaFor(route, page, record = null) {
   const list = [
-    { '@context': 'https://schema.org', '@type': 'Organization', name: appName, url: urlFor('/'), logo: new URL(`${basePath.replace(/\/$/, '')}/favicon.svg`, site.origin).toString(), description: pages['/'].description },
+    { '@context': 'https://schema.org', '@type': 'Organization', name: appName, url: urlFor('/'), logo: new URL(`${basePath.replace(/\/$/, '')}/brand-mark.svg`, site.origin).toString(), description: pages['/'].description },
     { '@context': 'https://schema.org', '@type': 'WebSite', name: appName, url: urlFor('/'), inLanguage: 'ar' },
     crumbData(route, page),
   ]
@@ -144,7 +144,7 @@ function brandSymbolMarkup() {
   </svg>`
 }
 function brandMarkup(extraClass = '') {
-  return `<a class="brand ${extraClass}" href="${safeText(urlFor('/'))}" aria-label="مجتمع السيطرة المهنية - الرئيسية">
+  return `<a class="brand${extraClass ? ` ${extraClass}` : ''}" href="${safeText(urlFor('/'))}" aria-label="مجتمع السيطرة المهنية - الرئيسية">
     <span class="brand-mark">${brandSymbolMarkup()}</span>
     <span class="brand-word"><b>مجتمع السيطرة المهنية</b><small>PMC · PROFESSIONAL MASTERY</small></span>
   </a>`
