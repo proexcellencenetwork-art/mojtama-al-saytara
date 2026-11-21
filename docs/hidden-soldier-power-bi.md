@@ -24,7 +24,7 @@
 5. بعد الاستيراد أنشئ مؤشرات DAX التالية:
 
 ```DAX
-Participants = DISTINCTCOUNT('hidden-soldier-power-bi'[اسم المشارك])
+Participants = COUNTROWS('hidden-soldier-power-bi')
 
 Submissions = COUNTROWS('hidden-soldier-power-bi')
 
