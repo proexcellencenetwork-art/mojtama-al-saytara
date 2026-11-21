@@ -5,6 +5,7 @@ import type { Role } from '../appTypes'
 import { isSupabaseConfigured } from '../lib/supabase-config'
 import { supabase } from '../lib/supabase'
 import './LearningCenter.css'
+import { HiddenSoldierWorkshop } from './HiddenSoldierWorkshop'
 
 type WorkshopStatus = 'scheduled' | 'live' | 'ended' | 'recorded'
 type Workshop = {
@@ -131,6 +132,7 @@ export default function LearningCenterPage({ role }: { role: Role }) {
       <div className="learning-mark" aria-hidden="true"><Activity size={24}/><span>تعلّم<br/>معاً</span></div>
     </header>
     <div className="learning-notice"><LockKeyhole size={16}/><span>لا تشارك معلومات أو صور المرضى في البث أو المحادثة. دخول الغرف وروابط التسجيل محمية بصلاحية الحساب.</span></div><section className="learning-self-paced"><div><span className="eyebrow"><FileVideo2 size={14}/> ورشة ذاتية الآن</span><h2>اختراق LinkedIn: من ملف ساكن إلى أصل مهني</h2><p>وحدات وتمارين وقائمة تحقق وخطة 30 يوماً. هذه نسخة تعلم ذاتي؛ لا يوجد موعد بث أو تسجيل خارجي مجدول حالياً.</p></div><Link className="btn btn-outline btn-small" to="/linkedin-workshop">ابدأ الورشة الذاتية <ArrowLeft size={14}/></Link></section>
+    <HiddenSoldierWorkshop role={role}/>
     {!isSupabaseConfigured && <StateMessage tone="error">لا يعمل مركز التعلم في وضع التجربة؛ لا تُنشأ جلسات أو حسابات وهمية.</StateMessage>}
     {error && <StateMessage tone="error">{error}</StateMessage>}
     {notice && <StateMessage tone="success"><Check size={15}/>{notice}</StateMessage>}
