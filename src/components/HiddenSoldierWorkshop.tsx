@@ -74,7 +74,7 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
     const submissions = (data || []) as Submission[]
     setRows(submissions)
     const mine = submissions.find(item => item.user_id === authData.user.id)
-    if (mine) setForm({ ...emptyForm, ...mine })
+    setForm(mine ? { ...emptyForm, ...mine } : emptyForm)
     if (facilitator && submissions.length) {
       const ids = [...new Set(submissions.map(item => item.user_id))]
       const { data: people } = await supabase.from('profiles').select('user_id,display_name,profession,specialty').in('user_id', ids)
@@ -85,8 +85,8 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
 
   useEffect(() => { void load() }, [load])
 
-  async function save(event: FormEvent<HTMLFormElement>, publish: boolean) {
-    event.preventDefault()
+  async function save(publish: boolean, event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault()
     if (!supabase || !userId) return
     setSaving(true); setError(''); setNotice('')
     const now = new Date().toISOString()
@@ -154,7 +154,7 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
     {notice && <p className="hidden-soldier-message is-success" role="status"><CheckCircle2 size={16}/>{notice}</p>}
 
     {!facilitator && <div className="hidden-soldier-participant-layout">
-      <form className="hidden-soldier-form" onSubmit={event => save(event, true)}>
+      <form className="hidden-soldier-form" onSubmit={event => void save(true, event)}>
         <div className="hidden-soldier-form-heading"><div><span className="eyebrow">بطاقتك المهنية</span><h3>ابنِ بطاقة إثبات الأثر</h3><p>احفظها كمسودة أو أرسلها للمشاركة في نتائج الورشة.</p></div><span>{completedFields} / 6</span></div>
         <div className="hidden-soldier-progress"><span style={{ width: (completedFields / 6 * 100) + '%' }}/></div>
         <div className="hidden-soldier-select-grid">
@@ -164,7 +164,7 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
         </div>
         {fields.map((field, index) => <label className="hidden-soldier-field" key={field.key}><span><b>{index + 1}.</b> {field.title}</span><small>{field.hint}</small><textarea maxLength={field.max} rows={3} value={String(form[field.key] || '')} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))} placeholder="اكتب إجابتك هنا…"/></label>)}
         <div className="hidden-soldier-measurement"><div><b>قياس النتيجة (اختياري)</b><small>إذا عندك رقم قبل وبعد التحسين، أضفه عشان يظهر في تحليل النتائج.</small></div><div className="hidden-soldier-number-grid"><label>قبل<input type="number" step="any" value={form.baseline_number ?? ''} onChange={event => setForm(current => ({ ...current, baseline_number: event.target.value === '' ? null : Number(event.target.value) }))} placeholder="مثلاً 20"/></label><label>بعد<input type="number" step="any" value={form.result_number ?? ''} onChange={event => setForm(current => ({ ...current, result_number: event.target.value === '' ? null : Number(event.target.value) }))} placeholder="مثلاً 12"/></label><label>وحدة القياس<input maxLength={40} value={form.measurement_unit} onChange={event => setForm(current => ({ ...current, measurement_unit: event.target.value }))} placeholder="دقيقة، نسبة، عدد…"/></label></div></div>
-        <div className="hidden-soldier-submit"><span>{participantSubmission ? participantSubmission.status === 'draft' ? 'مسودتك محفوظة. أكملها وأرسلها.' : 'تم إرسال بطاقتك. يمكنك تحديثها إذا احتجت.' : 'مشاركتك لا تظهر للمقدّم إلا بعد الإرسال.'}</span><div><button type="button" className="btn btn-outline" disabled={saving} onClick={event => { const formElement = event.currentTarget.closest('form'); if (formElement) void save({ preventDefault: () => undefined } as FormEvent<HTMLFormElement>, false) }}><Save size={16}/> حفظ مسودة</button><button type="submit" className="btn btn-primary" disabled={saving || !readyToSubmit}><CheckCircle2 size={16}/>{saving ? 'جارٍ الحفظ…' : 'إرسال البطاقة'}</button></div></div>
+        <div className="hidden-soldier-submit"><span>{participantSubmission ? participantSubmission.status === 'draft' ? 'مسودتك محفوظة. أكملها وأرسلها.' : 'تم إرسال بطاقتك. يمكنك تحديثها إذا احتجت.' : 'مشاركتك لا تظهر للمقدّم إلا بعد الإرسال.'}</span><div><button type="button" className="btn btn-outline" disabled={saving} onClick={() => void save(false)}><Save size={16}/> حفظ مسودة</button><button type="submit" className="btn btn-primary" disabled={saving || !readyToSubmit}><CheckCircle2 size={16}/>{saving ? 'جارٍ الحفظ…' : 'إرسال البطاقة'}</button></div></div>
       </form>
       <aside className="hidden-soldier-live-card"><span className="eyebrow">معاينة البطاقة</span><div className="hidden-soldier-live-top"><span><ClipboardList size={18}/></span><small>بطاقة إثبات الأثر المهني</small></div><h3>{form.problem.trim() || 'المشكلة التي أعمل على حلها'}</h3><div className="hidden-soldier-live-tags"><span>{labelFor(categories, form.problem_category)}</span><span>{labelFor(areas, form.impact_area)}</span></div><div className="hidden-soldier-live-block"><small>النتيجة المستهدفة</small><p>{form.desired_outcome || 'ستظهر هنا النتيجة التي تريد تحقيقها.'}</p></div><div className="hidden-soldier-live-block"><small>مساهمتي</small><p>{form.personal_contribution || 'وضح هنا دورك أنت في معالجة المشكلة.'}</p></div><div className="hidden-soldier-live-block"><small>الدليل</small><p>{form.evidence || 'أضف الدليل الذي يثبت النتيجة.'}</p></div><div className="hidden-soldier-live-bottom"><span><Target size={15}/> {labelFor(outcomes, form.outcome_type)}</span><span>{completedFields}/6 مكتمل</span></div></aside>
     </div>}
