@@ -90,6 +90,8 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
     if (!supabase || !userId) return
     setSaving(true); setError(''); setNotice('')
     const now = new Date().toISOString()
+    const existingSubmission = rows.find(item => item.user_id === userId)
+    const nextStatus = publish ? 'submitted' : (existingSubmission?.status || 'draft')
     const payload = {
       workshop_slug: WORKSHOP, user_id: userId,
       problem: form.problem.trim(), desired_outcome: form.desired_outcome.trim(),
@@ -101,14 +103,14 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
       baseline_value: form.baseline_number === null ? form.baseline_value.trim() : String(form.baseline_number),
       result_value: form.result_number === null ? form.result_value.trim() : String(form.result_number),
       metric_unit: form.measurement_unit.trim() || form.metric_unit.trim(),
-      status: publish ? 'submitted' : 'draft',
-      submitted_at: publish ? now : null,
+      status: nextStatus,
+      submitted_at: nextStatus === 'draft' ? null : (existingSubmission?.submitted_at || now),
       updated_at: now,
     }
     const { error: saveError } = await supabase.from('workshop_submissions').upsert(payload, { onConflict: 'workshop_slug,user_id' })
     setSaving(false)
     if (saveError) { setError('تعذر حفظ البطاقة. تأكد من اكتمال البيانات المطلوبة عند الإرسال النهائي.'); return }
-    setNotice(publish ? 'تم إرسال بطاقة الأثر بنجاح. ظهرت الآن ضمن بيانات الورشة.' : 'تم حفظ المسودة. تقدر ترجع وتكملها قبل الإرسال النهائي.')
+    setNotice(nextStatus === 'draft' ? 'تم حفظ المسودة. تقدر ترجع وتكملها قبل الإرسال النهائي.' : 'تم حفظ التعديلات على بطاقتك المرسلة. بياناتها محدثة في لوحة الورشة.')
     await load()
   }
 
@@ -164,7 +166,7 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
         </div>
         {fields.map((field, index) => <label className="hidden-soldier-field" key={field.key}><span><b>{index + 1}.</b> {field.title}</span><small>{field.hint}</small><textarea maxLength={field.max} rows={3} value={String(form[field.key] || '')} onChange={event => setForm(current => ({ ...current, [field.key]: event.target.value }))} placeholder="اكتب إجابتك هنا…"/></label>)}
         <div className="hidden-soldier-measurement"><div><b>قياس النتيجة (اختياري)</b><small>إذا عندك رقم قبل وبعد التحسين، أضفه عشان يظهر في تحليل النتائج.</small></div><div className="hidden-soldier-number-grid"><label>قبل<input type="number" step="any" value={form.baseline_number ?? ''} onChange={event => setForm(current => ({ ...current, baseline_number: event.target.value === '' ? null : Number(event.target.value) }))} placeholder="مثلاً 20"/></label><label>بعد<input type="number" step="any" value={form.result_number ?? ''} onChange={event => setForm(current => ({ ...current, result_number: event.target.value === '' ? null : Number(event.target.value) }))} placeholder="مثلاً 12"/></label><label>وحدة القياس<input maxLength={40} value={form.measurement_unit} onChange={event => setForm(current => ({ ...current, measurement_unit: event.target.value }))} placeholder="دقيقة، نسبة، عدد…"/></label></div></div>
-        <div className="hidden-soldier-submit"><span>{participantSubmission ? participantSubmission.status === 'draft' ? 'مسودتك محفوظة. أكملها وأرسلها.' : 'تم إرسال بطاقتك. يمكنك تحديثها إذا احتجت.' : 'مشاركتك لا تظهر للمقدّم إلا بعد الإرسال.'}</span><div><button type="button" className="btn btn-outline" disabled={saving} onClick={() => void save(false)}><Save size={16}/> حفظ مسودة</button><button type="submit" className="btn btn-primary" disabled={saving || !readyToSubmit}><CheckCircle2 size={16}/>{saving ? 'جارٍ الحفظ…' : 'إرسال البطاقة'}</button></div></div>
+        <div className="hidden-soldier-submit"><span>{participantSubmission ? participantSubmission.status === 'draft' ? 'مسودتك محفوظة. أكملها وأرسلها.' : 'تم إرسال بطاقتك؛ أي تعديل تحفظه يبقى ظاهراً للمقدّم.' : 'مشاركتك لا تظهر للمقدّم إلا بعد الإرسال.'}</span><div><button type="button" className="btn btn-outline" disabled={saving} onClick={() => void save(false)}><Save size={16}/>{participantSubmission && participantSubmission.status !== 'draft' ? 'حفظ التعديلات' : 'حفظ مسودة'}</button><button type="submit" className="btn btn-primary" disabled={saving || !readyToSubmit}><CheckCircle2 size={16}/>{saving ? 'جارٍ الحفظ…' : 'إرسال البطاقة'}</button></div></div>
       </form>
       <aside className="hidden-soldier-live-card"><span className="eyebrow">معاينة البطاقة</span><div className="hidden-soldier-live-top"><span><ClipboardList size={18}/></span><small>بطاقة إثبات الأثر المهني</small></div><h3>{form.problem.trim() || 'المشكلة التي أعمل على حلها'}</h3><div className="hidden-soldier-live-tags"><span>{labelFor(categories, form.problem_category)}</span><span>{labelFor(areas, form.impact_area)}</span></div><div className="hidden-soldier-live-block"><small>النتيجة المستهدفة</small><p>{form.desired_outcome || 'ستظهر هنا النتيجة التي تريد تحقيقها.'}</p></div><div className="hidden-soldier-live-block"><small>مساهمتي</small><p>{form.personal_contribution || 'وضح هنا دورك أنت في معالجة المشكلة.'}</p></div><div className="hidden-soldier-live-block"><small>الدليل</small><p>{form.evidence || 'أضف الدليل الذي يثبت النتيجة.'}</p></div><div className="hidden-soldier-live-bottom"><span><Target size={15}/> {labelFor(outcomes, form.outcome_type)}</span><span>{completedFields}/6 مكتمل</span></div></aside>
     </div>}
