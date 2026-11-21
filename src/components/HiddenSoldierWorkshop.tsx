@@ -85,6 +85,15 @@ export function HiddenSoldierWorkshop({ role }: { role: Role }) {
 
   useEffect(() => { void load() }, [load])
 
+  useEffect(() => {
+    if (!facilitator || !supabase) return
+    const channel = supabase
+      .channel('hidden-soldier-live-dashboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workshop_submissions', filter: `workshop_slug=eq.${WORKSHOP}` }, () => { void load() })
+      .subscribe()
+    return () => { void supabase?.removeChannel(channel) }
+  }, [facilitator, load])
+
   async function save(publish: boolean, event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault()
     if (!supabase || !userId) return
