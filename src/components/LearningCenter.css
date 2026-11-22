@@ -6,3 +6,33 @@
 .learning-page :is(a, button, input, textarea, select):focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
 .learning-page a:not(.btn) { color: #1d4ed8; text-underline-offset: 3px; }
 .learning-page a:not(.btn):hover { color: #1e3a8a; }
+
+
+/* Persistent workshop discussions are separate from the live 100ms room. */
+.learning-section-title{margin:6px 0 0;font-size:19px;color:#0b2545}
+.learning-toolbar-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.learning-exercise-link{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;margin:24px 0 10px;background:linear-gradient(115deg,#eff6ff,#f8fafc);border:1px solid #bfdbfe;border-radius:15px}
+.learning-exercise-link h2{margin:5px 0;font-size:17px;color:#0b2545}
+.learning-exercise-link p{margin:0;color:#64748b;font-size:12px;line-height:1.8}
+.learning-exercise-link .eyebrow{display:inline-flex;align-items:center;gap:6px;color:#1d4ed8;font-size:11px;font-weight:700}
+.learning-discussion-description{margin-top:10px!important;white-space:pre-wrap}
+.learning-discussion-thread{min-height:430px}
+.learning-discussion-thread>header h2{display:flex;align-items:center;gap:8px}
+.discussion-live-dot{width:8px;height:8px;border-radius:50%;background:#94a3b8;display:inline-block}
+.discussion-live-dot.is-connected{background:#16a34a;box-shadow:0 0 0 3px #16a34a22}
+.discussion-messages{max-height:520px;min-height:280px}
+.discussion-empty{max-width:300px;text-align:center;line-height:1.8}
+.discussion-empty b{color:#1e3a5f}
+.discussion-empty span{display:block;font-size:11px;color:#64748b}
+.discussion-error{margin:0;padding:9px 12px;background:#fff1f2;color:#9f1239;font-size:11px;line-height:1.7}
+.discussion-privacy{display:flex;align-items:flex-start;gap:7px;padding:9px 11px;border-top:1px solid #eff6ff;color:#64748b;font-size:10px;line-height:1.7}
+.discussion-privacy svg{flex:none;margin-top:2px;color:#1d4ed8}
+.discussion-refresh{display:inline-grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#334155}
+.discussion-refresh:disabled{opacity:.45;cursor:wait}
+.app.dark .learning-section-title,.app.dark .learning-exercise-link h2,.app.dark .discussion-empty b{color:#dbeafe}
+.app.dark .learning-exercise-link{background:linear-gradient(115deg,#0f172a,#1e293b);border-color:#334155}
+.app.dark .learning-exercise-link p,.app.dark .discussion-empty span,.app.dark .discussion-privacy{color:#cbd5e1}
+.app.dark .discussion-privacy,.app.dark .learning-discussion-thread>header{border-color:#1e293b}
+.app.dark .discussion-error{background:#3b1725;color:#fecdd3}
+.app.dark .discussion-refresh{background:#1e293b;border-color:#334155;color:#dbeafe}
+@media(max-width:700px){.learning-toolbar-actions{width:100%}.learning-toolbar-actions>.btn{flex:1}.learning-exercise-link{align-items:flex-start;flex-direction:column}.learning-exercise-link>.btn{width:100%;justify-content:center}.discussion-messages{max-height:380px;min-height:240px}}
