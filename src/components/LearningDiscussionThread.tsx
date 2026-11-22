@@ -50,7 +50,7 @@ export function LearningDiscussionThread({
       .from('learning_discussion_messages')
       .select('id,workshop_id,author_id,body,created_at')
       .eq('workshop_id', workshopId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(250)
 
     if (queryError) {
@@ -59,7 +59,7 @@ export function LearningDiscussionThread({
       return
     }
 
-    const rows = (data || []) as DiscussionMessage[]
+    const rows = ((data || []) as DiscussionMessage[]).reverse()
     setMessages(rows)
     const authorIds = [...new Set(rows.map(row => row.author_id))]
     if (authorIds.length) {
