@@ -1,22 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Activity, ArrowLeft, LockKeyhole, Mic, MicOff, MonitorUp, Play, Radio, Send, Users, Video, VideoOff, X } from 'lucide-react'
+import { Activity, ArrowLeft, LockKeyhole, Mic, MicOff, MonitorUp, Play, Radio, Users, Video, VideoOff, X } from 'lucide-react'
 import {
   HMSReactiveStore,
   selectHLSState,
-  selectHMSMessages,
   selectIsConnectedToRoom,
   selectIsLocalAudioEnabled,
   selectIsLocalVideoEnabled,
   selectPeers,
   selectPeersScreenSharing,
   type HMSHLS,
-  type HMSMessage,
   type HMSPeer,
 } from '@100mslive/hms-video-store'
 import type { Role } from '../appTypes'
 import { isSupabaseConfigured } from '../lib/supabase-config'
 import { supabase } from '../lib/supabase'
+import { LearningDiscussionThread } from './LearningDiscussionThread'
 import './LearningCenter.css'
 
 type WorkshopStatus = 'scheduled' | 'live' | 'ended' | 'recorded'
@@ -61,15 +60,12 @@ export default function LearningRoomPage({ role, userId, displayName }: { role: 
   const [joining, setJoining] = useState(false)
   const [connected, setConnected] = useState<boolean | undefined>(undefined)
   const [peers, setPeers] = useState<HMSPeer[]>([])
-  const [messages, setMessages] = useState<HMSMessage[]>([])
   const [audioEnabled, setAudioEnabled] = useState(true)
   const [videoEnabled, setVideoEnabled] = useState(true)
   const [hlsState, setHlsState] = useState<HMSHLS | null>(null)
   const [screenSharing, setScreenSharing] = useState(false)
-  const [draft, setDraft] = useState('')
   const [error, setError] = useState('')
   const [ending, setEnding] = useState(false)
-  const messageEnd = useRef<HTMLDivElement>(null)
   const manager = useMemo(() => {
     const reactive = new HMSReactiveStore()
     reactive.triggerOnSubscribe()
@@ -94,7 +90,6 @@ export default function LearningRoomPage({ role, userId, displayName }: { role: 
     const unsubscribers = [
       manager.store.subscribe(setConnected, selectIsConnectedToRoom),
       manager.store.subscribe(setPeers, selectPeers),
-      manager.store.subscribe(setMessages, selectHMSMessages),
       manager.store.subscribe(setAudioEnabled, selectIsLocalAudioEnabled),
       manager.store.subscribe(setVideoEnabled, selectIsLocalVideoEnabled),
       manager.store.subscribe(setHlsState, selectHLSState),
@@ -108,8 +103,6 @@ export default function LearningRoomPage({ role, userId, displayName }: { role: 
       void manager.actions.leave()
     }
   }, [manager])
-
-  useEffect(() => { messageEnd.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }) }, [messages.length])
 
   const join = async () => {
     if (!supabase || !workshop || !userId || workshop.status !== 'live') return
@@ -136,12 +129,6 @@ export default function LearningRoomPage({ role, userId, displayName }: { role: 
     try { await manager.actions.stopHLSStreaming() }
     catch { setError('تعذر إيقاف البث المباشر؛ أغلق الورشة بعد التحقق من لوحة 100ms.') }
   }
-  const sendQuestion = async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!draft.trim() || draft.trim().length > 500) return
-    try { await manager.actions.sendBroadcastMessage(draft.trim().slice(0, 500)); setDraft('') }
-    catch { setError('تعذر إرسال السؤال في محادثة الورشة.') }
-  }
   const endWorkshop = async () => {
     if (!supabase || !workshop || !ownerOrManager) return
     setEnding(true); setError('')
@@ -161,14 +148,27 @@ export default function LearningRoomPage({ role, userId, displayName }: { role: 
     <header className="room-heading"><div><span className={`learning-status ${workshop.status === 'live' ? 'status-live' : `status-${workshop.status}`}`}>{workshop.status === 'live' && <i/>}{statusNames[workshop.status]}</span><h1>{workshop.title}</h1><p>المدرب/ة: {workshop.instructor_name} · {localDateTime(workshop.scheduled_at)} · {workshop.duration_minutes} دقيقة</p></div><Link className="btn btn-outline btn-small" to="/learning"><ArrowLeft size={15}/> رجوع</Link></header>
     {error && <StateMessage tone="error">{error}</StateMessage>}
     <div className="learning-notice"><LockKeyhole size={15}/><span>مساحة تعليمية خاصة. لا تذكر أسماء أو تفاصيل تعريفية عن المرضى. المحادثة مرئية للمشاركين في الغرفة.</span></div>
-    {!connected ? <section className="room-prejoin"><div className="learning-card-symbol"><Activity size={30}/></div><h2>{workshop.status === 'live' ? 'انضم إلى الورشة الآن' : 'لم يبدأ البث بعد'}</h2><p>{workshop.status === 'live' ? 'سيطلب المتصفح إذناً للميكروفون والكاميرا عند الاتصال. يمكنك إيقافهما من أدوات الغرفة.' : 'تظهر الغرفة عند بدء الورشة من مالك المنصة أو المدير.'}</p>{workshop.status === 'live' && <button className="btn btn-primary" disabled={joining} onClick={() => void join()}><Play size={16}/>{joining ? 'جارٍ الاتصال…' : 'دخول الورشة'}</button>}</section> : <div className="room-layout">
-      <section className="room-stage"><div className="room-stage-top"><span className="room-live-pill"><i/> LIVE</span><span><Users size={15}/>{peers.length} مشارك</span><span className="room-protection"><LockKeyhole size={14}/> دخول موثّق</span></div><div className="room-peers">{peers.map(peer => <PeerTile key={peer.id} peer={peer} store={manager.store} actions={manager.actions}/>)}</div>
-        <div className="room-controls"><button type="button" className={!audioEnabled ? 'disabled-control' : ''} onClick={() => void toggleAudio()} aria-label={audioEnabled ? 'كتم الميكروفون' : 'تشغيل الميكروفون'}>{audioEnabled ? <Mic size={18}/> : <MicOff size={18}/>}<span>{audioEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}</span></button><button type="button" className={!videoEnabled ? 'disabled-control' : ''} onClick={() => void toggleVideo()} aria-label={videoEnabled ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'}>{videoEnabled ? <Video size={18}/> : <VideoOff size={18}/>}<span>{videoEnabled ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'}</span></button>{ownerOrManager && <button type="button" className={screenSharing ? 'is-broadcasting' : ''} onClick={() => void toggleScreenShare()} aria-label={screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}><MonitorUp size={18}/><span>{screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}</span></button>}{ownerOrManager && <button type="button" className={hlsState?.running ? 'is-broadcasting' : ''} onClick={() => void (hlsState?.running ? stopBroadcast() : startBroadcast())} aria-label={hlsState?.running ? 'إيقاف البث والتسجيل' : 'بدء البث والتسجيل'}><Radio size={18}/><span>{hlsState?.running ? 'إيقاف البث' : 'بدء البث والتسجيل'}</span></button>}{ownerOrManager ? <button type="button" className="end-workshop" disabled={ending} onClick={() => void endWorkshop()}><X size={18}/><span>{ending ? 'جارٍ الإنهاء…' : 'إنهاء الورشة'}</span></button> : <button type="button" className="end-workshop" onClick={() => { void manager.actions.leave(); navigate('/learning') }}><X size={18}/><span>مغادرة الغرفة</span></button>}</div>
+    <div className="room-layout">
+      {!connected ? <section className="room-prejoin">
+        <div className="learning-card-symbol"><Activity size={30}/></div>
+        <h2>{workshop.status === 'live' ? 'انضم إلى الورشة الآن' : workshop.status === 'scheduled' ? 'البث لم يبدأ بعد' : workshop.status === 'ended' ? 'انتهى البث، والنقاش مستمر' : 'يمكنك متابعة النقاش هنا'}</h2>
+        <p>{workshop.status === 'live' ? 'يمكنك دخول غرفة الفيديو والصوت الآن، أو متابعة النقاش المحفوظ بجانبها.' : 'غرفة البث منفصلة عن النقاش. تبقى الرسائل متاحة للمتابعة حتى بعد انتهاء الورشة.'}</p>
+        {workshop.status === 'live' && <button className="btn btn-primary" disabled={joining} onClick={() => void join()}><Play size={16}/>{joining ? 'جارٍ الاتصال…' : 'دخول البث المباشر'}</button>}
+      </section> : <section className="room-stage">
+        <div className="room-stage-top"><span className="room-live-pill"><i/> LIVE</span><span><Users size={15}/>{peers.length} مشارك</span><span className="room-protection"><LockKeyhole size={14}/> دخول موثّق</span></div>
+        <div className="room-peers">{peers.map(peer => <PeerTile key={peer.id} peer={peer} store={manager.store} actions={manager.actions}/>)}</div>
+        <div className="room-controls">
+          <button type="button" className={!audioEnabled ? 'disabled-control' : ''} onClick={() => void toggleAudio()} aria-label={audioEnabled ? 'كتم الميكروفون' : 'تشغيل الميكروفون'}>{audioEnabled ? <Mic size={18}/> : <MicOff size={18}/>}<span>{audioEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}</span></button>
+          <button type="button" className={!videoEnabled ? 'disabled-control' : ''} onClick={() => void toggleVideo()} aria-label={videoEnabled ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'}>{videoEnabled ? <Video size={18}/> : <VideoOff size={18}/>}<span>{videoEnabled ? 'إيقاف الكاميرا' : 'تشغيل الكاميرا'}</span></button>
+          {ownerOrManager && <button type="button" className={screenSharing ? 'is-broadcasting' : ''} onClick={() => void toggleScreenShare()} aria-label={screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}><MonitorUp size={18}/><span>{screenSharing ? 'إيقاف مشاركة الشاشة' : 'مشاركة الشاشة'}</span></button>}
+          {ownerOrManager && <button type="button" className={hlsState?.running ? 'is-broadcasting' : ''} onClick={() => void (hlsState?.running ? stopBroadcast() : startBroadcast())} aria-label={hlsState?.running ? 'إيقاف البث والتسجيل' : 'بدء البث والتسجيل'}><Radio size={18}/><span>{hlsState?.running ? 'إيقاف البث' : 'بدء البث والتسجيل'}</span></button>}
+          {ownerOrManager ? <button type="button" className="end-workshop" disabled={ending} onClick={() => void endWorkshop()}><X size={18}/><span>{ending ? 'جارٍ الإنهاء…' : 'إنهاء الورشة'}</span></button> : <button type="button" className="end-workshop" onClick={() => { void manager.actions.leave(); navigate('/learning') }}><X size={18}/><span>مغادرة غرفة البث</span></button>}
+        </div>
         {hlsState?.running && <div className="broadcast-status"><Radio size={15}/> البث الحي والتسجيل يعملان. ستظهر النسخة المسجلة في المكتبة بعد اكتمال الرفع والتحقق من أصل التسجيل.</div>}
-      </section>
-      <aside className="room-chat"><header><div><h2>الأسئلة والمحادثة</h2><small>استخدم اسمك المهني ولا تذكر بيانات مرضى.</small></div><span><Activity size={15}/>{messages.length}</span></header><div className="room-messages" aria-live="polite">{messages.slice(-80).map((message, index) => <article className={`room-message ${message.senderUserId === userId ? 'own-message' : ''}`} key={message.id || index}><b>{message.senderName || 'مشارك'}</b><p>{String(message.message ?? '')}</p><time>{new Date(message.time).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}</time></article>)}{messages.length === 0 && <p className="room-chat-empty">ابدأ بطرح سؤال مهني عام.</p>}<div ref={messageEnd}/></div><form className="room-chat-form" onSubmit={sendQuestion}><label className="sr-only" htmlFor="learning-question">اكتب سؤالاً</label><input id="learning-question" value={draft} maxLength={500} onChange={e => setDraft(e.target.value)} placeholder="اكتب سؤالاً أو تعليقاً…"/><button className="btn btn-primary btn-small" disabled={!draft.trim()} aria-label="إرسال السؤال"><Send size={15}/></button></form></aside>
-    </div>}
-    {!connected && ownerOrManager && workshop.status === 'live' && <StateMessage tone="neutral">بمجرد دخولك بصفتك مديراً سيظهر لك خيار بدء البث والتسجيل وإنهاء الورشة.</StateMessage>}
+      </section>}
+      <LearningDiscussionThread workshopId={workshop.id} userId={userId} displayName={displayName}/>
+    </div>
+    {!connected && ownerOrManager && workshop.status === 'live' && <StateMessage tone="neutral">يمكنك دخول الغرفة أولاً، ثم ستظهر لك أدوات بدء البث والتسجيل وإنهاء الورشة.</StateMessage>}
     <footer className="learning-footer"><span><LockKeyhole size={14}/> رموز الغرفة تصدر من الخادم بصلاحية 10 دقائق.</span><Link to="/learning">العودة إلى مركز التعلم</Link></footer>
   </main>
 }
