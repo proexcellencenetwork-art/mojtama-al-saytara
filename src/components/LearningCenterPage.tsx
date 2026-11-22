@@ -34,7 +34,7 @@ const canCreateWorkshop = (role: Role) => canManage(role) || role === 'coach'
 const localDateTime = (value: string) => new Date(value).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'short' })
 
 function StateMessage({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'error' | 'success' }) {
-  return <div className={`learning-state learning-state-${tone}`} role={tone === 'error' ? 'alert' : 'status'}>{children]</div>
+  return <div className={`learning-state learning-state-${tone}`} role={tone === 'error' ? 'alert' : 'status'}>{children}</div>
 }
 
 export default function LearningCenterPage({ role }: { role: Role }) {
