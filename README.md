@@ -16,7 +16,7 @@
 
 ---
 
-## Founding 20 programme — verified design status (12 November 2026)
+## Founding 20 programme — design status (20 November 2026)
 
 The five Founding 20 operating documents define a proposed, free 20-person pilot. They are programme design documents, not an announcement that recruitment is open or that mentors, employers, sponsors, or universities have committed.
 
