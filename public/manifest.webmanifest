@@ -1,8 +1,8 @@
 {
   "id": "./",
   "name": "مجتمع السيطرة المهنية",
-  "short_name": "السيطرة المهنية",
-  "description": "دقة الأداء، سيطرة القرار السريري. مجتمع مهني يربط الأداء المثبت بالتطوير والابتكار والبحث.",
+  "short_name": "السيطرة",
+  "description": "أداء حقيقي. قيمة قابلة للإثبات. مجتمع مهني يربط الخبرة بالتقدم والابتكار والبحث.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
@@ -11,6 +11,8 @@
   "background_color": "#F4F0E6",
   "theme_color": "#0B2545",
   "icons": [
-    { "src": "brand-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "brand-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

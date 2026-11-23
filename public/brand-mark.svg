@@ -1,9 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 132" role="img" aria-labelledby="title">
-<title id="title">شعار مجتمع السيطرة المهنية</title>
-<circle cx="66" cy="66" r="58" fill="#0B2545" stroke="#F4F0E6" stroke-width="2.5"/>
-<circle cx="66" cy="66" r="40" fill="none" stroke="#F4F0E6" stroke-width="1.2" stroke-dasharray="3 5"/>
-<path d="M66 4V22" stroke="#D7263D" stroke-width="3"/>
-<path d="M66 110V128M4 66H22M110 66H128" stroke="#F4F0E6" stroke-width="2.5"/>
-<circle cx="66" cy="66" r="3.5" fill="#D7263D"/>
-<text x="66" y="78" text-anchor="middle" font-family="Tajawal,Arial,sans-serif" font-weight="900" font-size="38" fill="#F4F0E6">س</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">الشعار الرسمي لمجتمع السيطرة المهنية</title>
+<circle cx="64" cy="64" r="56" fill="none" stroke="#F4F0E6" stroke-width="3"/>
+<circle cx="64" cy="64" r="47" fill="none" stroke="#D7263D" stroke-width="2.2"/>
+<circle cx="64" cy="64" r="37" fill="none" stroke="#F4F0E6" stroke-width="3.2"/>
+<circle cx="64" cy="64" r="28.5" fill="none" stroke="#F4F0E6" stroke-width="1.5" opacity=".65"/>
+<path d="M64 8V22" stroke="#D7263D" stroke-width="4" stroke-linecap="round"/>
+<path d="M23 70C33 70 36 45 46 45C56 45 57 83 67 83C77 83 78 43 88 43C98 43 100 70 105 70" fill="none" stroke="#F4F0E6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24 90H104" stroke="#F4F0E6" stroke-width="1.8" opacity=".6"/>
+<circle cx="64" cy="90" r="4" fill="#D7263D"/>
 </svg>

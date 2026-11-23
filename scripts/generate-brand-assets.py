@@ -5,44 +5,104 @@ OUT = Path(__file__).resolve().parents[1] / "public"
 OUT.mkdir(exist_ok=True)
 
 NAVY = (11, 37, 69)
+NAVY_2 = (19, 49, 92)
 RED = (215, 38, 61)
 PAPER = (244, 240, 230)
+WHITE = (255, 252, 246)
+
+
+def smooth_path(points, steps=12):
+    """Catmull-Rom interpolation for a smooth, connected calibration pulse."""
+    result = []
+    for index in range(len(points) - 1):
+        p0 = points[max(0, index - 1)]
+        p1 = points[index]
+        p2 = points[index + 1]
+        p3 = points[min(len(points) - 1, index + 2)]
+        for step in range(steps):
+            t = step / steps
+            t2, t3 = t * t, t * t * t
+            x = 0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*t +
+                       (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2 +
+                       (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3)
+            y = 0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*t +
+                       (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2 +
+                       (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)
+            result.append((x, y))
+    result.append(points[-1])
+    return result
+
 
 def draw_mark(draw, cx, cy, radius):
-    width = max(1, int(radius * .035))
-    draw.ellipse((cx-radius, cy-radius, cx+radius, cy+radius), outline=PAPER, width=width)
-    inner = radius * .69
-    draw.ellipse((cx-inner, cy-inner, cx+inner, cy+inner), outline=PAPER, width=max(1, int(width*.55)))
-    tick = max(2, int(radius*.055))
-    draw.line((cx, cy-radius, cx, cy-radius*.72), fill=RED, width=tick)
-    draw.line((cx, cy+radius*.72, cx, cy+radius), fill=PAPER, width=width)
-    draw.line((cx-radius, cy, cx-radius*.72, cy), fill=PAPER, width=width)
-    draw.line((cx+radius*.72, cy, cx+radius, cy), fill=PAPER, width=width)
-    dot = max(2, int(radius*.06))
-    draw.ellipse((cx-dot, cy-dot, cx+dot, cy+dot), fill=RED)
+    """Draw the official multi-ring calibration mark and connected pulse."""
+    width = max(2, int(radius * .028))
+    rings = [
+        (1.00, PAPER, width),
+        (.84, RED, max(2, int(width * .85))),
+        (.66, PAPER, max(2, int(width * 1.25))),
+        (.51, PAPER, max(2, int(width * .65))),
+    ]
+    for ratio, color, stroke in rings:
+        r = radius * ratio
+        draw.ellipse((cx-r, cy-r, cx+r, cy+r), outline=color, width=stroke)
+
+    tick = max(3, int(radius * .045))
+    draw.line((cx, cy-radius*.99, cx, cy-radius*.78), fill=RED, width=tick)
+
+    points = [
+        (cx-radius*.68, cy+radius*.08),
+        (cx-radius*.43, cy-radius*.17),
+        (cx-radius*.25, cy-radius*.17),
+        (cx-radius*.02, cy+radius*.15),
+        (cx+radius*.20, cy-radius*.23),
+        (cx+radius*.39, cy-radius*.23),
+        (cx+radius*.66, cy+radius*.08),
+    ]
+    pulse = smooth_path(points, 14)
+    draw.line(pulse, fill=PAPER, width=max(4, int(radius*.075)), joint="curve")
+    draw.line((cx-radius*.66, cy+radius*.30, cx+radius*.66, cy+radius*.30),
+              fill=PAPER, width=max(1, int(radius*.012)))
+    dot = max(3, int(radius*.035))
+    draw.ellipse((cx-dot, cy+radius*.30-dot, cx+dot, cy+radius*.30+dot), fill=RED)
+
 
 def icon(size, path):
-    scale = 3
-    im = Image.new("RGB", (size*scale, size*scale), NAVY)
-    draw_mark(ImageDraw.Draw(im), size*scale/2, size*scale/2, size*scale*.42)
-    im.resize((size,size), Image.Resampling.LANCZOS).save(path, optimize=True)
+    scale = 4
+    canvas = size * scale
+    im = Image.new("RGB", (canvas, canvas), NAVY)
+    draw = ImageDraw.Draw(im)
+    pad = canvas * .045
+    draw.rounded_rectangle((pad, pad, canvas-pad, canvas-pad),
+                           radius=canvas*.17, fill=NAVY)
+    draw_mark(draw, canvas/2, canvas/2, canvas*.405)
+    im.resize((size, size), Image.Resampling.LANCZOS).save(path, optimize=True)
+
 
 def social_card():
-    w,h,scale = 1200,630,2
-    im = Image.new("RGB",(w*scale,h*scale),PAPER)
+    width, height, scale = 1200, 630, 2
+    im = Image.new("RGB", (width*scale, height*scale), PAPER)
     d = ImageDraw.Draw(im)
-    d.rounded_rectangle((34*scale,34*scale,(w-34)*scale,(h-34)*scale), radius=8*scale, fill=NAVY)
-    for x in range(55,w-45,32):
-        d.line((x*scale,42*scale,x*scale,(h-42)*scale),fill=(19,55,93),width=scale)
-    for y in range(55,h-45,32):
-        d.line((42*scale,y*scale,(w-42)*scale,y*scale),fill=(19,55,93),width=scale)
-    draw_mark(d, 900*scale, 315*scale, 190*scale)
-    d.line((110*scale,445*scale,450*scale,445*scale),fill=RED,width=5*scale)
-    d.rectangle((110*scale,465*scale,260*scale,471*scale),fill=PAPER)
-    im.resize((w,h),Image.Resampling.LANCZOS).save(OUT/"og-social.png", optimize=True)
+    d.rounded_rectangle((32*scale, 32*scale, (width-32)*scale, (height-32)*scale),
+                        radius=28*scale, fill=NAVY)
 
-icon(192, OUT/"icon-192.png")
-icon(512, OUT/"icon-512.png")
-icon(180, OUT/"apple-touch-icon.png")
+    # Fine calibration grid and a restrained red registration line.
+    for x in range(55, width-45, 32):
+        d.line((x*scale, 42*scale, x*scale, (height-42)*scale), fill=NAVY_2, width=scale)
+    for y in range(55, height-45, 32):
+        d.line((42*scale, y*scale, (width-42)*scale, y*scale), fill=NAVY_2, width=scale)
+    d.rounded_rectangle((110*scale, 305*scale, 260*scale, 314*scale),
+                        radius=5*scale, fill=RED)
+    d.rounded_rectangle((110*scale, 342*scale, 210*scale, 348*scale),
+                        radius=3*scale, fill=PAPER)
+    draw_mark(d, 900*scale, 315*scale, 190*scale)
+
+    im.resize((width, height), Image.Resampling.LANCZOS).save(
+        OUT / "og-social.png", optimize=True
+    )
+
+
+icon(192, OUT / "icon-192.png")
+icon(512, OUT / "icon-512.png")
+icon(180, OUT / "apple-touch-icon.png")
 social_card()
-print("Generated PMC official navy, paper and red brand assets.")
+print("Generated PMC identity v2 assets: concentric calibration rings, pulse mark, navy, paper and red.")
