@@ -8,3 +8,75 @@
 .dark .career-evidence-panel,.dark .career-evidence-item,.dark .career-value-chain,.dark .career-readiness-row,.dark .career-conversation-guide,.dark .career-innovation-card,.dark .career-ai-cycle article,.dark .career-radar-grid article,.dark .career-radar-article-list article,.dark .career-workshop-progress,.dark .career-workshop-module{background:#183238;border-color:#345053}.dark .career-evidence-header h2,.dark .career-evidence-list>h3,.dark .career-evidence-item h4,.dark .career-radar-meta b,.dark .career-radar-article-list h3,.dark .career-innovation-card h2,.dark .career-ai-cycle h2,.dark .career-readiness-row legend b,.dark .career-workshop-module summary b{color:#c8e3db}.dark .career-evidence-header p,.dark .career-evidence-item dd,.dark .career-radar-grid p,.dark .career-innovation-card p,.dark .career-ai-cycle p,.dark .career-readiness-row legend span,.dark .career-radar-article-list p{color:#adc2be}.dark .career-evidence-form input,.dark .career-evidence-form textarea,.dark .career-module-content textarea{background:#10272c;border-color:#355457;color:#e0edeb}.dark .career-value-chain span,.dark .career-radar-flow span,.dark .career-workshop-outcomes span,.dark .career-conversation-quote{background:#193d3b;color:#c2dfd8}.dark .career-radar-meta,.dark .career-rd-portfolio,.dark .career-readiness-result{background:#173b39;border-color:#2c5e58}.dark .career-question-list,.dark .career-project-gates>ol,.dark .career-ai-governance ul,.dark .career-workshop-action-plan ol,.dark .career-conversation-guide ol,.dark .career-readiness-result p,.dark .career-readiness-result li{color:#b9ccca}.dark .career-empty-state{background:#183238;border-color:#3d5a58;color:#adc1bd}
 @media(max-width:900px){.career-star-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.career-ai-cycle{grid-template-columns:repeat(3,minmax(0,1fr))}.career-readiness-result{grid-template-columns:150px 1fr}}
 @media(max-width:620px){.career-evidence-panel{padding:16px 13px}.career-evidence-header{align-items:flex-start}.career-evidence-header h2{font-size:17px}.career-evidence-form,.career-evidence-list,.career-question-list,.career-radar-grid,.career-radar-article-list{grid-template-columns:1fr}.career-evidence-list>h3{grid-column:auto}.career-value-chain{justify-content:flex-start}.career-value-chain i{display:none}.career-value-chain span{font-size:10px}.career-star-grid,.career-innovation-grid,.career-ai-cycle{grid-template-columns:1fr}.career-star-grid article,.career-innovation-card,.career-ai-cycle article{min-height:0}.career-readiness-row{grid-template-columns:1fr}.career-readiness-row legend b,.career-readiness-row legend span,.career-readiness-row .career-rating-scale{grid-column:1}.career-readiness-row legend b{grid-row:1}.career-readiness-row legend span{grid-row:2}.career-readiness-row .career-rating-scale{grid-row:3}.career-readiness-result{grid-template-columns:1fr}.career-radar-meta{align-items:flex-start;flex-direction:column}.career-workshop-actions{display:grid}.career-workshop-actions .btn{width:100%}.career-workshop-module summary{padding:12px 10px}.career-workshop-module summary b{font-size:11px}.career-radar-flow i{display:none}}
+
+
+/* Account-linked achievement portfolio */
+.career-portfolio-panel{margin:22px 0;padding:22px;border:1px solid #dce9e4;border-radius:18px;background:#fff;box-shadow:0 12px 32px #0b254508}
+.career-portfolio-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.career-portfolio-heading h2{margin:5px 0;color:#193b43;font-size:20px}
+.career-portfolio-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.career-portfolio-form label{display:grid;gap:6px;color:#4c676a;font-size:12px;font-weight:700}
+.career-portfolio-form input,.career-portfolio-form textarea,.career-portfolio-form select{width:100%;min-width:0;padding:11px 12px;border:1px solid #dce8e3;border-radius:10px;background:#fbfdfc;color:#24464b;font:inherit;font-size:13px}
+.career-portfolio-form input:focus,.career-portfolio-form textarea:focus,.career-portfolio-form select:focus{outline:2px solid #168179;outline-offset:1px}
+.career-portfolio-wide{grid-column:1/-1}
+.career-portfolio-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.career-portfolio-inline-note{grid-column:1/-1;display:flex;align-items:center;gap:6px;margin:0;color:#708784;font-size:11px}
+.career-portfolio-actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.career-portfolio-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:20px 0}
+.career-portfolio-summary>div,.career-portfolio-summary>button{display:grid;gap:4px;justify-items:start;min-width:0;padding:13px;border:1px solid #dce9e4;border-radius:12px;background:#fff;color:#24464b;text-align:right}
+.career-portfolio-summary>div strong,.career-portfolio-summary>button b{font-size:23px;line-height:1.1;color:#087f7d}
+.career-portfolio-summary span{font-size:11px;color:#718582;line-height:1.5}
+.career-portfolio-summary>button{cursor:pointer;font:inherit}
+.career-portfolio-summary>button.selected,.career-portfolio-items>.career-portfolio-heading>button.selected{border-color:#168179;background:#eff8f4}
+.career-portfolio-items{margin:28px 0}
+.career-portfolio-items>.career-portfolio-heading>button{padding:8px 12px;border:1px solid #dce9e4;border-radius:9px;background:#fff;color:#315e60;font:inherit;font-size:12px;cursor:pointer}
+.career-portfolio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.career-portfolio-card{display:grid;gap:10px;min-width:0;padding:16px;border:1px solid #dce9e4;border-radius:14px;background:#fff}
+.career-portfolio-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#708784;font-size:11px}
+.career-portfolio-card-top>span:last-child{display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;background:#f2f7f4}
+.career-portfolio-card-top .is-public{color:#167b69}.career-portfolio-card-top .is-private{color:#708784}
+.career-portfolio-card h3{margin:0;color:#24464b;font-size:16px}
+.career-portfolio-card>p,.career-portfolio-result span{margin:0;color:#617a77;font-size:12px;line-height:1.8;white-space:pre-wrap}
+.career-portfolio-result{display:grid;gap:4px;padding:10px;border-radius:10px;background:#f2f8f5}
+.career-portfolio-result b{font-size:11px;color:#315e60}
+.career-portfolio-measure{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;color:#617a77;font-size:12px}
+.career-portfolio-measure strong{font-size:21px;color:#087f7d}
+.career-portfolio-measure small{font-size:10px}
+.career-portfolio-card-actions{display:flex;gap:7px;border-top:1px solid #e6efeb;padding-top:9px}
+.career-portfolio-card-actions button{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;border:1px solid #dce8e3;border-radius:8px;background:transparent;color:#315e60;font:inherit;font-size:11px;cursor:pointer}
+.career-portfolio-error{padding:11px 13px;border:1px solid #e6b9a7;border-radius:10px;background:#fff5f1;color:#984b32;font-size:12px}
+.dark .career-portfolio-panel,.dark .career-portfolio-card,.dark .career-portfolio-summary>div,.dark .career-portfolio-summary>button{background:#183238;border-color:#345053}
+.dark .career-portfolio-heading h2,.dark .career-portfolio-card h3{color:#c8e3db}
+.dark .career-portfolio-form label,.dark .career-portfolio-inline-note,.dark .career-portfolio-summary span,.dark .career-portfolio-card>p,.dark .career-portfolio-result span,.dark .career-portfolio-measure{color:#adc2be}
+.dark .career-portfolio-form input,.dark .career-portfolio-form textarea,.dark .career-portfolio-form select{background:#10272c;border-color:#355457;color:#e0edeb}
+.dark .career-portfolio-summary>button.selected,.dark .career-portfolio-items>.career-portfolio-heading>button.selected{background:#193d3b}
+.dark .career-portfolio-result,.dark .career-portfolio-card-top>span:last-child{background:#193d3b}
+.dark .career-portfolio-card-top .is-public{color:#73cbb2}
+.dark .career-portfolio-card-actions button{border-color:#355457;color:#c8e3db}
+@media(max-width:760px){.career-portfolio-form,.career-portfolio-grid{grid-template-columns:1fr}.career-portfolio-metrics{grid-template-columns:1fr 1fr}.career-portfolio-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.career-portfolio-summary>div{grid-column:1/-1}.career-portfolio-heading{align-items:flex-start;flex-direction:column}}
+@media(max-width:420px){.career-portfolio-panel{padding:14px}.career-portfolio-metrics{grid-template-columns:1fr}}
+
+/* Portfolio-linked professional readiness guidance */
+.career-readiness-summary{margin:20px 0;padding:20px;border:1px solid #dce9e4;border-radius:16px;background:#f7fbf8}
+.career-readiness-summary-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.career-readiness-summary-heading h2{margin:5px 0;color:#244f50;font-size:19px}
+.career-readiness-summary-heading p{margin:0;color:#728783;font-size:11px;line-height:1.8}
+.career-readiness-summary-score{display:grid;place-items:center;flex:none;width:86px;height:86px;border:5px solid #cfe7dc;border-radius:50%;color:#087f7d;font-size:25px;line-height:1}
+.career-readiness-summary-score small{font-size:11px;color:#718783}
+.career-readiness-summary-track{height:9px;overflow:hidden;margin:17px 0 7px;border-radius:99px;background:#e4eee8}
+.career-readiness-summary-track span{display:block;height:100%;border-radius:inherit;background:#13877b;transition:width .2s ease}
+.career-readiness-summary-count{margin:0 0 12px;color:#66807a;font-size:10px}
+.career-readiness-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.career-readiness-summary-grid article{display:grid;gap:5px;padding:12px;border:1px solid #e0ebe5;border-radius:10px;background:#fff}
+.career-readiness-summary-grid article b{font-size:11px;color:#315e60}
+.career-readiness-summary-grid article small{font-size:10px;line-height:1.7;color:#7a8d88}
+.career-readiness-summary-grid article.is-complete{border-inline-start:3px solid #2c9b7a}
+.career-readiness-summary-grid article.is-missing{border-inline-start:3px solid #d2a45f}
+.career-readiness-summary-note{margin:12px 0 0;color:#718581;font-size:10px;line-height:1.8}
+.dark .career-readiness-summary{background:#173b39;border-color:#2c5e58}
+.dark .career-readiness-summary-heading h2,.dark .career-readiness-summary-grid article b{color:#c8e3db}
+.dark .career-readiness-summary-heading p,.dark .career-readiness-summary-grid article small,.dark .career-readiness-summary-count,.dark .career-readiness-summary-note{color:#b9ccca}
+.dark .career-readiness-summary-score{color:#7fd7bf;border-color:#34675e}
+.dark .career-readiness-summary-track{background:#254a46}
+.dark .career-readiness-summary-grid article{background:#183238;border-color:#345053}
+@media(max-width:620px){.career-readiness-summary{padding:15px 13px}.career-readiness-summary-heading{align-items:flex-start}.career-readiness-summary-heading h2{font-size:16px}.career-readiness-summary-score{width:70px;height:70px;font-size:21px}.career-readiness-summary-grid{grid-template-columns:1fr}}

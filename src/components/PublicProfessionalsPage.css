@@ -35,3 +35,21 @@
 .professionals-state.is-error{color:var(--danger,var(--muted))}
 .professionals-directory-note{margin-top:20px;color:var(--muted);font-size:12px;line-height:1.8}
 @media(max-width:760px){.professionals-hero{grid-template-columns:1fr}.professionals-directory-heading{align-items:stretch;flex-direction:column}.professionals-search{width:100%}.professionals-grid{grid-template-columns:1fr}}
+
+/* Explicitly public cards displayed in the professional directory */
+.professional-portfolio{display:grid;gap:9px;padding-top:4px;border-top:1px solid var(--border)}
+.professional-portfolio h4{margin:0;color:var(--text);font-size:14px}
+.professional-portfolio-group{overflow:hidden;border:1px solid var(--border);border-radius:11px;background:var(--surface)}
+.professional-portfolio-group summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;color:var(--text);font-size:12px;font-weight:700;cursor:pointer;list-style:none}
+.professional-portfolio-group summary::-webkit-details-marker{display:none}
+.professional-portfolio-group summary small{display:grid;place-items:center;min-width:23px;height:23px;border-radius:7px;background:var(--surface-2);color:var(--accent);font-size:10px}
+.professional-portfolio-list{display:grid;gap:0;padding-inline:12px}
+.professional-portfolio-list article{display:grid;gap:5px;padding:11px 0;border-top:1px solid var(--border)}
+.professional-portfolio-list article>b{color:var(--text);font-size:12px}
+.professional-portfolio-list article>p{margin:0;color:var(--muted);font-size:11px;line-height:1.8;white-space:pre-wrap}
+.professional-portfolio-result{color:var(--text);font-size:11px;line-height:1.75}
+.professional-portfolio-measure{color:var(--accent);font-size:11px;line-height:1.6}
+.dark .professional-portfolio-group{background:#142b34;border-color:#345053}
+.dark .professional-portfolio-group summary,.dark .professional-portfolio h4,.dark .professional-portfolio-list article>b,.dark .professional-portfolio-result{color:#e0edeb}
+.dark .professional-portfolio-group summary small{background:#193d3b}
+@media(max-width:760px){.professional-portfolio{gap:8px}}
